@@ -1,0 +1,39 @@
+========================================================
+Enterprise SkillHub — Docker Build Result
+Sprint 6-8 Final Build
+Date: 2026-03-20 03:21 (Asia/Shanghai)
+========================================================
+
+## Build Command
+docker build -f deploy/docker/Dockerfile -t enterprise-skillhub:latest .
+
+## Build Stages
+1. Builder (node:20-slim):
+   - apt-get install: python3 make g++ openssl ca-certificates
+   - npm ci: 819 packages installed (26.8s)
+   - prisma generate: Prisma Client v5.22.0
+   - nest build: SUCCESS (9.5s)
+   - npm prune --production: 324 production packages
+
+2. Production (node:20-slim):
+   - Runtime deps: tini curl openssl ca-certificates
+   - Non-root user: skillhub (uid=1001)
+   - Entrypoint: tini → node dist/main.js
+
+## Image Details
+REPOSITORY            TAG       IMAGE ID       SIZE
+enterprise-skillhub   latest    595bc57118e2   584MB
+
+## Image Size: 584 MB
+
+## Build Status: ✅ SUCCESS
+- Multi-stage build completed cleanly
+- No build errors
+- Prisma client generated correctly
+- Production dependencies pruned (819 → 324 packages)
+
+## Security Features
+- Non-root user (skillhub:1001)
+- Tini as PID 1 (proper signal handling)
+- Health check built-in (curl /api/v1/health/live)
+- No dev dependencies in production image

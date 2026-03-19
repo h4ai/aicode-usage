@@ -1,0 +1,45 @@
+# Build artifacts
+node_modules
+dist
+coverage
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Version control
+.git
+.gitignore
+
+# Docker (don't copy Dockerfiles into image)
+deploy/docker/Dockerfile*
+docker-compose*.yml
+
+# Documentation
+LICENSE
+
+# Tests
+test/
+*.spec.ts
+*.e2e-spec.ts
+jest.config.*
+jest-e2e.config.*
+
+# Env files
+.env*
+
+# Linting configs
+.eslintrc*
+.prettierrc*
+
+# Deployment configs (k8s manifests etc.)
+deploy/k8s/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Screenshots
+screenshots/

@@ -1,0 +1,62 @@
+========================================================
+Enterprise SkillHub — Health Check Results
+Sprint 6-8 Final Verification
+Date: 2026-03-20 03:22 (Asia/Shanghai)
+========================================================
+
+## 1. Liveness Check (/api/v1/health/live)
+{
+  "status": "ok",
+  "timestamp": "2026-03-19T19:22:23.450Z",
+  "uptime": 74.573932828
+}
+Status: ✅ PASS
+
+## 2. Readiness Check (/api/v1/health/ready)
+{
+  "status": "ok",
+  "timestamp": "2026-03-19T19:22:23.475Z",
+  "checks": {
+    "postgres": { "status": "up", "latencyMs": 10 },
+    "redis":    { "status": "up", "latencyMs": 15 },
+    "minio":    { "status": "up", "latencyMs": 9 }
+  }
+}
+Status: ✅ PASS (all dependencies healthy)
+
+## 3. Full Health Check (/api/v1/health)
+{
+  "status": "ok",
+  "version": "1.0.0",
+  "timestamp": "2026-03-19T19:22:23.490Z",
+  "uptime": 74.61374069,
+  "memory": {
+    "rss": 115544064 (110.2 MB),
+    "heapTotal": 37289984 (35.6 MB),
+    "heapUsed": 35276592 (33.6 MB),
+    "external": 3553168 (3.4 MB),
+    "arrayBuffers": 120165 (117.3 KB)
+  },
+  "checks": {
+    "postgres": { "status": "up", "latencyMs": 4 },
+    "redis":    { "status": "up", "latencyMs": 6 },
+    "minio":    { "status": "up", "latencyMs": 4 }
+  }
+}
+Status: ✅ PASS (version 1.0.0, all deps connected, memory nominal)
+
+## Summary
+| Check      | Status | Details                          |
+|------------|--------|----------------------------------|
+| Liveness   | ✅ OK  | Uptime: 74.6s                    |
+| Readiness  | ✅ OK  | Postgres, Redis, MinIO all up    |
+| Full       | ✅ OK  | v1.0.0, RSS 110MB, all deps OK  |
+
+## Dependency Latency
+| Service    | Latency |
+|------------|---------|
+| PostgreSQL | 4-10ms  |
+| Redis      | 6-15ms  |
+| MinIO      | 4-9ms   |
+
+All health checks passed. Application is fully operational.

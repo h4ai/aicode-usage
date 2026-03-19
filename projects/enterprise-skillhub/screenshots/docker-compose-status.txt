@@ -1,0 +1,29 @@
+========================================================
+Enterprise SkillHub — Docker Compose Status
+Sprint 6-8 Final Verification
+Date: 2026-03-20 03:22 (Asia/Shanghai)
+========================================================
+
+## Docker Compose PS Output
+
+NAME                        IMAGE                        COMMAND                  SERVICE    CREATED              STATUS                        PORTS
+skillhub-backend            enterprise-skillhub:latest   "tini -- node dist/m…"   backend    About a minute ago   Up 57 seconds (healthy)       0.0.0.0:3000->3000/tcp, [::]:3000->3000/tcp
+skillhub-minio-compose      minio/minio:latest           "/usr/bin/docker-ent…"   minio      About a minute ago   Up About a minute (healthy)   0.0.0.0:19000->9000/tcp, [::]:19000->9000/tcp, 0.0.0.0:19001->9001/tcp, [::]:19001->9001/tcp
+skillhub-postgres-compose   postgres:16-alpine           "docker-entrypoint.s…"   postgres   About a minute ago   Up About a minute (healthy)   0.0.0.0:15432->5432/tcp, [::]:15432->5432/tcp
+skillhub-redis-compose      redis:7-alpine               "docker-entrypoint.s…"   redis      About a minute ago   Up About a minute (healthy)   0.0.0.0:16379->6379/tcp, [::]:16379->6379/tcp
+
+## Container Status Summary
+
+| Service   | Container                  | Image                        | Status  | Port Mapping          |
+|-----------|----------------------------|------------------------------|---------|-----------------------|
+| backend   | skillhub-backend           | enterprise-skillhub:latest   | healthy | 3000→3000             |
+| postgres  | skillhub-postgres-compose  | postgres:16-alpine           | healthy | 15432→5432            |
+| redis     | skillhub-redis-compose     | redis:7-alpine               | healthy | 16379→6379            |
+| minio     | skillhub-minio-compose     | minio/minio:latest           | healthy | 19000→9000,19001→9001 |
+
+## All 4 containers: ✅ HEALTHY
+
+## Notes
+- Host ports remapped (15432, 16379, 19000) to avoid conflicts with existing dev containers
+- Backend connects to services via Docker network (docker_skillhub)
+- All services have health checks configured
