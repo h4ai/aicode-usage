@@ -58,6 +58,9 @@ model Template {
   author      User      @relation("TemplateAuthor", fields: [authorId], references: [id])
   versions    TemplateVersion[]
 
+  downloadCount   Int      @default(0)    // 累计下载次数
+  weeklyDownloads Int      @default(0)    // 周下载次数（定时任务刷新）
+
   @@unique([namespaceId, name])
   @@index([namespaceId])
 }
@@ -68,6 +71,10 @@ model TemplateVersion {
   version         String   // 遵循 SemVer
   manifest        Json     // 模板清单，包含组合规则、变量声明、AI配置等
   fileKey         String   // MinIO 对象存储的 key，指向脚手架包（zip/tar.gz）
+  sourceType      SourceType @default(ZIP)  // ZIP | GIT
+  gitUrl          String?    // Git 仓库地址
+  gitRef          String?    // branch/tag/commit hash
+  gitSubPath      String?    // 仓库中的子目录路径（monorepo 场景）
   status          TemplateStatus @default(DRAFT)
   publishedAt     DateTime?
   createdAt       DateTime @default(now())
@@ -76,6 +83,38 @@ model TemplateVersion {
   skills          TemplateSkill[]
 
   @@unique([templateId, version])
+}
+
+enum SourceType {
+  ZIP
+  GIT
+}
+
+model GitCredential {
+  id          String   @id @default(uuid())
+  name        String   // 显示名称，如 "公司 GitLab"
+  type        GitAuthType  // SSH_KEY | TOKEN | BASIC
+  url         String   // Git 服务器地址前缀，如 "https://gitlab.company.com"
+  credential  String   // 加密存储的凭证（SSH private key / Personal Access Token / password）
+  ownerId     String   // 创建者
+  scope       CredentialScope @default(PERSONAL) // PERSONAL | NAMESPACE | GLOBAL
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner       User     @relation(fields: [ownerId], references: [id])
+  @@index([url])
+}
+
+enum GitAuthType {
+  SSH_KEY
+  TOKEN
+  BASIC
+}
+
+enum CredentialScope {
+  PERSONAL    // 仅创建者可用
+  NAMESPACE   // 命名空间内成员可用
+  GLOBAL      // 全局可用（仅 ADMIN 可创建）
 }
 
 enum TemplateStatus {
@@ -126,10 +165,21 @@ model TemplateSkillLock {
 *   **GET** `/api/v1/templates`
     *   分页、过滤查询模板（支持按命名空间、关键词搜索）。
     *   增加 `?namespace=xxx&tag=xxx&ai=claude` 过滤参数。
+    *   支持排序参数：`?sort=popular|newest|name`，默认按 `popular` (weeklyDownloads DESC) 排序。
 *   **GET** `/api/v1/templates/@:namespace/:name`
     *   获取模板详情（含版本列表、Skill 依赖）。
 *   **POST** `/api/v1/templates/:id/versions`
     *   上传新版本的模板（包含 `manifest` 和脚手架文件）。同时支持 CLI 和 Web 上传。
+    *   支持传入 Git 来源参数：
+        ```json
+        {
+          "sourceType": "GIT",
+          "gitUrl": "https://gitlab.company.com/team/templates/java-springboot.git",
+          "gitRef": "v1.2.0",
+          "gitSubPath": "templates/springboot",
+          "credentialId": "uuid-of-git-credential"
+        }
+        ```
 *   **GET** `/api/v1/templates/:id/versions/:version`
     *   获取特定版本模板的详细信息（清单与下载链接）。
 *   **POST** `/api/v1/templates/:id/versions/:version/publish`
@@ -143,12 +193,40 @@ model TemplateSkillLock {
 *   **POST** `/api/v1/templates/:id/versions/:v/dependencies/resolve`
     *   手动触发依赖重新解析。
 
-### 3.4 CLI 命令设计
+### 3.4 Git 凭证管理 API (新增)
+*   **POST** `/api/v1/git-credentials`
+    *   创建 Git 凭证
+*   **GET** `/api/v1/git-credentials`
+    *   列出我的可用 Git 凭证
+*   **DELETE** `/api/v1/git-credentials/:id`
+    *   删除 Git 凭证
+*   **POST** `/api/v1/git-credentials/:id/test`
+    *   测试凭证连通性
+
+### 3.5 统计与审计 API (新增)
+*   **GET** `/api/v1/stats/top-templates?period=week&limit=20` 
+    *   热门模板排行
+*   **GET** `/api/v1/stats/downloads?resourceType=TEMPLATE&resourceId=xxx` 
+    *   单个资源下载趋势（按天/周/月）
+*   **GET** `/api/v1/admin/download-logs?resourceType=TEMPLATE&startDate=xxx&endDate=xxx` 
+    *   下载明细日志（需 ADMIN 角色，支持导出 CSV）
+*   **GET** `/api/v1/admin/usage-report` 
+    *   使用报告：活跃用户数、总下载量、按部门统计（需 ADMIN 角色）
+
+### 3.6 CLI 命令设计
 *   `skillhub namespace create <name>`
 *   `skillhub template init <@namespace/template-name> [--ai <tool>] [--dir <path>]`
     *   **核心命令**: 触发初始化，拉取模板与依赖。
-*   `skillhub template publish`
-    *   根据目录下的 `template.json` 打包并上传新版本。
+*   `skillhub init --git <url> --ref <tag> [--ai <tool>]`
+    *   直接从 Git 初始化（不经过 SkillHub 注册）。
+*   `skillhub template publish [--git <url>] [--ref <tag>] [--path <subPath>]`
+    *   根据目录下的 `template.json` 打包并上传新版本，或直接从 Git 仓库/子目录拉取创建新版本。
+*   `skillhub git-credential add --name <name> --type <type> --url <url>`
+    *   管理 Git 凭证：添加凭证
+*   `skillhub git-credential list`
+    *   管理 Git 凭证：列表展示
+*   `skillhub git-credential test <id>`
+    *   管理 Git 凭证：测试连通性
 *   `skillhub template search <query> [--tag <tag>] [--ai <tool>]`
     *   搜索模板（关键词+标签）。例如：`skillhub template search "java springboot" [--tag backend] [--ai claude]`
 *   `skillhub template list [--namespace <namespace>] [--page <page>] [--limit <limit>]`
@@ -160,14 +238,18 @@ model TemplateSkillLock {
 *   `skillhub template outdated`
     *   检查模板是否有新版本，也可查看哪些依赖有 major 更新可用。
 
-### 3.5 Web 前端模板页面
+### 3.7 Web 前端模板页面
 *   **模板导航**: 网页端新增"模板"Tab，与"Skills"并列。
-*   **模板列表页**: 卡片展示，支持按命名空间、语言、AI 工具筛选。
-*   **模板详情页**: 展示描述、版本历史、依赖 Skill 列表、安装命令、下载量。支持一键复制安装命令：`skillhub init --template @xxx/yyy --ai claude`。
+*   **模板列表页**: 卡片展示，默认按热门(weeklyDownloads)排序，支持按命名空间、语言、AI 工具筛选，支持排序切换（热门/最新/名称）。
+*   **模板详情页**: 展示描述、版本历史、依赖 Skill 列表、安装命令、下载量。支持一键复制安装命令：`skillhub init --template @xxx/yyy --ai claude`。新增展示近30天下载趋势图。
 *   **Web 上传流程**: 
     *   支持网页端上传模板：选择命名空间 → 填写元数据 → 上传 ZIP → 自动解析 manifest → 提交审核。
     *   上传页面提供 `template.json` 的在线编辑器（支持 JSON Schema 校验）。
     *   上传时自动校验依赖的 Skill 是否存在于 SkillHub 中。
+*   **管理后台 (新增)**:
+    *   新增"使用统计"页面。
+    *   包含总览看板（总下载量、活跃用户数、热门 Top 10）。
+    *   提供用户维度与资源维度的使用明细分析（支持按时间范围、部门、命名空间筛选，并支持导出 CSV）。
 
 ## 4. 业务逻辑
 
@@ -221,6 +303,29 @@ model TemplateSkillLock {
 *   通知方式：SkillHub 站内通知 + 可选飞书/企微 Webhook。
 *   `skillhub template outdated` 命令可查看哪些依赖有 major 更新可用。
 
+### 4.7 Git 仓库集成
+*   **拉取流程**：服务端收到 Git 来源的发布请求后：
+    1.  使用关联的 GitCredential 克隆仓库（shallow clone, depth=1）。
+    2.  切换到指定 ref（branch/tag/commit）。
+    3.  如有 subPath，定位到子目录。
+    4.  解析 `template.json`。
+    5.  打包为 ZIP 存入 MinIO（统一存储格式）。
+    6.  进入审核流程（复用 SPEC-005）。
+*   **Webhook 自动同步**（可选）：
+    *   支持配置 Git Webhook，当仓库 push 新 tag 时自动触发新版本发布。
+    *   Webhook endpoint: `POST /api/v1/webhooks/git`。
+    *   验证 Webhook secret 签名。
+*   **安全约束**：
+    *   Git 凭证加密存储（AES-256-GCM），不明文持久化。
+    *   clone 操作有超时限制（60s）和大小限制（500MB 仓库）。
+    *   不允许 clone 到内网其他服务地址（SSRF 防护：URL 白名单）。
+    *   SSH key 支持 Ed25519/RSA，不支持 DSA。
+
+### 4.8 下载统计与防刷逻辑
+*   每次模板被初始化下载时，写入 `DownloadLog` (见 SPEC-002)，并在 `Template` 上增加 `downloadCount`。
+*   定时任务每周刷新 `weeklyDownloads` 以支持热门榜单。
+*   相同用户在短时间内（例如1小时）重复下载同一模板版本的计为一次增量，避免刷榜。
+
 ## 5. 脚手架引擎 (CLI 端实现)
 
 *   **模板变量替换**:
@@ -253,9 +358,17 @@ model TemplateSkillLock {
 11. **AC-13 (Web 上传)**: 通过网页端上传模板 ZIP 后，系统自动解析 manifest 并校验依赖 Skill 存在性，不存在则返回错误提示。
 12. **AC-14 (Skill 自动同步)**: 当 Skill `code-review` 从 `1.2.0` 更新到 `1.3.0` 时，声明了 `^1.2.0` 的模板自动更新 resolvedVersion 为 `1.3.0`。
 13. **AC-15 (Major 变更通知)**: 当 Skill `code-review` 发布 `2.0.0` 时，系统不自动更新，但向模板作者发送站内通知。
+14. **AC-16 (Git 来源发布)**: 通过 `skillhub template publish --git <url> --ref <tag>` 能成功从 Git 仓库拉取并发布模板版本。
+15. **AC-17 (Git 凭证管理)**: 创建 TOKEN 类型凭证后，`test` 命令验证连通性返回成功；使用错误 token 返回认证失败。
+16. **AC-18 (Git Webhook)**: 配置 Webhook 后，仓库推送新 tag 时自动触发模板新版本发布流程。
+17. **AC-19 (Git 安全)**: clone 超时 60s 后返回错误；凭证在数据库中为加密存储，`GET` 接口不返回明文。
+18. **AC-20 (下载计数)**: 下载模板后，`downloadCount` 正确递增，列表页按下载量排序正确。
+19. **AC-21 (下载日志)**: 管理员可通过 API 查询指定用户的下载历史，包含资源名称、版本、时间、来源。
+20. **AC-22 (去重)**: 同一用户 1 小时内重复下载同一版本，`downloadCount` 只增加 1 次。
 
 ---
 ## 变更记录
 * 0.1 | PM | 初始草案
 * 0.2 | Tech Lead | 补充 CLI 设计与数据模型
 * 0.3 | PO | 补充模板查询/更新/Web端/Skill同步 5 个场景
+* 0.4 | PO | 补充 Git 仓库来源支持 + 下载统计与用户追踪
