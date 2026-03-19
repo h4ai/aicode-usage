@@ -4,7 +4,7 @@ import { ConfigService } from '../config/config.service';
 import { createClient } from 'redis';
 import * as Minio from 'minio';
 
-interface HealthCheck {
+export interface HealthCheck {
   status: 'up' | 'down';
   latencyMs?: number;
   error?: string;

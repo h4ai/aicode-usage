@@ -6,6 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { SkillCategory } from '@prisma/client';
 import { QueryReviewsDto } from './dto/query-reviews.dto';
 import { AssignReviewDto } from './dto/assign-review.dto';
 import { ReviewDecisionDto, ReviewDecision } from './dto/review-decision.dto';
@@ -245,15 +246,16 @@ export class ReviewService {
    * Priority: category+department > category > department > global
    */
   async matchPolicy(category: string, department: string): Promise<any> {
+    const cat = category as SkillCategory;
     // 1. category + department
     let policy = await this.prisma.reviewPolicy.findFirst({
-      where: { category, department, isActive: true },
+      where: { category: cat, department, isActive: true },
     });
     if (policy) return policy;
 
     // 2. category only
     policy = await this.prisma.reviewPolicy.findFirst({
-      where: { category, department: null, isActive: true },
+      where: { category: cat, department: null, isActive: true },
     });
     if (policy) return policy;
 

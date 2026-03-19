@@ -85,6 +85,15 @@ export class ConfigService {
     return this.configService.get<string>('REDIS_URL', 'redis://localhost:6379');
   }
 
+  // CORS
+  get corsOrigins(): string[] {
+    const raw = this.configService.get<string>('CORS_ORIGINS', '');
+    return raw
+      .split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean);
+  }
+
   // BGE-M3
   get bgeM3Url(): string {
     return this.configService.get<string>('BGE_M3_URL', 'http://localhost:8080/v1/encode');

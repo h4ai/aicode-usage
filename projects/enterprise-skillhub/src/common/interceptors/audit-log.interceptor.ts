@@ -3,13 +3,17 @@ import {
   NestInterceptor,
   ExecutionContext,
   CallHandler,
+  Inject,
+  Optional,
 } from '@nestjs/common';
 import { Observable, tap } from 'rxjs';
-import { PrismaService } from '../../prisma/prisma.service';
+import { AuditService } from '../../audit/audit.service';
 
 @Injectable()
 export class AuditLogInterceptor implements NestInterceptor {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @Optional() @Inject(AuditService) private readonly auditService?: AuditService,
+  ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const request = context.switchToHttp().getRequest();
@@ -21,22 +25,18 @@ export class AuditLogInterceptor implements NestInterceptor {
       tap(async () => {
         // Only log mutating operations
         if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
-          try {
-            await this.prisma.auditLog.create({
-              data: {
-                action: `${method} ${url}`,
-                userId: user?.sub || null,
-                ip,
-                userAgent,
-                detail: {
-                  method,
-                  url,
-                  statusCode: context.switchToHttp().getResponse().statusCode,
-                },
+          if (this.auditService) {
+            await this.auditService.log({
+              action: `${method} ${url}`,
+              actorId: user?.sub || null,
+              ipAddress: ip,
+              userAgent,
+              detail: {
+                method,
+                url,
+                statusCode: context.switchToHttp().getResponse().statusCode,
               },
             });
-          } catch {
-            // Audit logging should never break the request
           }
         }
       }),

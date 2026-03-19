@@ -1,6 +1,7 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogEntry } from './audit.service';
 
@@ -29,11 +30,11 @@ export class AuditLogProcessor extends WorkerHost {
           userId: actorId || null,
           ip: ipAddress || null,
           userAgent: userAgent || null,
-          detail: detail || null,
+          detail: detail ? (detail as Prisma.InputJsonValue) : Prisma.JsonNull,
         },
       });
     } catch (error) {
-      this.logger.error(`Failed to write audit log: ${error.message}`);
+      this.logger.error(`Failed to write audit log: ${(error as Error).message}`);
       throw error; // BullMQ will handle retries
     }
   }

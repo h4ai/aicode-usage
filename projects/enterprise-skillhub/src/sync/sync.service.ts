@@ -7,6 +7,7 @@ import {
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 import * as semver from 'semver';
 
 export interface SyncResult {
@@ -14,6 +15,7 @@ export interface SyncResult {
   updated: number;
   skipped: number;
   failed: number;
+  [key: string]: unknown;
 }
 
 @Injectable()
@@ -226,24 +228,21 @@ export class SyncService {
   // ==========================================================
 
   async saveSyncStatus(result: SyncResult): Promise<void> {
+    const syncValue = {
+      time: new Date().toISOString(),
+      successCount: result.created + result.updated,
+      failCount: result.failed,
+      details: result as unknown as Prisma.InputJsonValue,
+    } as Prisma.InputJsonValue;
+
     await this.prisma.systemConfig.upsert({
       where: { key: 'sync_last_run' },
       update: {
-        value: {
-          time: new Date().toISOString(),
-          successCount: result.created + result.updated,
-          failCount: result.failed,
-          details: result,
-        },
+        value: syncValue,
       },
       create: {
         key: 'sync_last_run',
-        value: {
-          time: new Date().toISOString(),
-          successCount: result.created + result.updated,
-          failCount: result.failed,
-          details: result,
-        },
+        value: syncValue,
       },
     });
   }

@@ -97,10 +97,60 @@ export class CreatePolicyDto {
   isActive?: boolean;
 }
 
-export class UpdatePolicyDto extends CreatePolicyDto {
+export class UpdatePolicyDto {
   @IsOptional()
   @IsString()
   name?: string;
+
+  @IsOptional()
+  @IsString()
+  category?: string;
+
+  @IsOptional()
+  @IsString()
+  department?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  autoApprove?: boolean;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  autoApproveMinScore?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  requiredReviews?: number;
+
+  @IsOptional()
+  reviewerAdGroups?: string[];
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  maxReviewDays?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  timeoutHours?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  blockOnSecurityFail?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  blockOnLicenseFail?: boolean;
+
+  @IsOptional()
+  requiredFiles?: string[];
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }
 
 export class UpdateSystemConfigDto {
