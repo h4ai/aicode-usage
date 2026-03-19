@@ -1,6 +1,6 @@
 # SPEC-005: 审核工作流引擎
 
-> 状态: draft
+> 状态: review
 > 优先级: P0
 > 负责人: PO Agent
 > 审核人: PM
@@ -46,6 +46,12 @@ model ReviewPolicy {
   category         Category? // 如果为空则为全局策略
   requireManual    Boolean  @default(true) // 是否强制要求人工审核
   autoApproveScore Int      @default(90)   // 自动通过分数线（如支持）
+  department       String?  // 适用部门
+  requiredApprovers Int      @default(1)    // 需要几个审核人
+  reviewerAdGroups String[] // 有权审核的 AD 组
+  maxReviewDays    Int      @default(3)    // 最长审核天数
+  blockOnSecurityFail Boolean @default(true) // 安全扫描失败直接拒绝
+  requiredFiles    String[] @default(["SKILL.md"]) // 必须包含的文件
 }
 ```
 
@@ -86,7 +92,7 @@ model ReviewPolicy {
   - `DecisionPanel`: 包含三个大按钮（Approve, Reject, Request Changes），旁边带必填的 Comment 输入框（Reject/Revise 时必须填）。
 
 ## 6. 安全要求（认证、权限矩阵、数据脱敏、审计日志）
-- **职责分离**: Skill 作者即便是 REVIEWER，也绝对不能审核自己发布的版本（在 SQL 和逻辑层做严格校验 `ReviewerId != Skill.authorId`）。
+- **职责分离**: Skill 作者即便是 REVIEWER，也绝对不能审核自己发布的版本（在 SQL 和逻辑层做严格校验 `ReviewerId != Skill.ownerId`）。
 - **审查日志**: 所有的决策结果、留言、时间戳不可篡改，且永久保存以备合规审计。
 
 ## 7. 验收标准
@@ -96,4 +102,4 @@ model ReviewPolicy {
 - [ ] 尝试用自己的 REVIEWER 账号审核自己发布的 Skill 会收到 `403 Forbidden`。
 
 ## 8. 变更记录
-- 初始版本 draft。
+- 初始版本 draft。- 增强 ReviewPolicy 模型，补充 department, requiredApprovers 等字段；统一 authorId 为 ownerId。

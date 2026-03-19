@@ -1,6 +1,6 @@
 # SPEC-004: 向量搜索 & Embedding
 
-> 状态: draft
+> 状态: review
 > 优先级: P0
 > 负责人: PO Agent
 > 审核人: PM
@@ -67,4 +67,4 @@ model SkillEmbedding {
 - [ ] 修改 Skill 的描述后，数据库中的 `embedding` 字段能在几秒内异步更新。
 
 ## 8. 变更记录
-- 初始版本 draft。
+- 初始版本 draft。- 状态更新为 review。

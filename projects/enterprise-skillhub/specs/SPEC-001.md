@@ -1,6 +1,6 @@
 # SPEC-001: 用户认证 & AD 域集成
 
-> 状态: draft
+> 状态: review
 > 优先级: P0
 > 负责人: PO Agent
 > 审核人: PM
@@ -18,6 +18,10 @@ model User {
   email          String   @unique // 邮箱 (mail)
   department     String?  // 部门
   employeeNumber String?  // 工号
+  adGroups       String[] // AD memberOf 组列表
+  adDN           String?  // AD distinguishedName
+  avatarUrl      String?  // 头像
+  lastLoginAt    DateTime? // 最后登录时间
   role           UserRole @default(USER)
   status         UserStatus @default(ACTIVE)
   
@@ -90,4 +94,4 @@ enum UserStatus {
 - [ ] 输入错误的密码或不存在的账号，返回 `401` 并给出明确提示，不暴露具体是账号错还是密码错。
 
 ## 8. 变更记录
-- 初始版本 draft。
+- 初始版本 draft。- 修正 User 模型，补充 adGroups, adDN, avatarUrl, lastLoginAt 字段以对齐技术设计文档。

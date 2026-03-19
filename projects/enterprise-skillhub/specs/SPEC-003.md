@@ -1,6 +1,6 @@
 # SPEC-003: 版本管理 & 文件存储
 
-> 状态: draft
+> 状态: review
 > 优先级: P0
 > 负责人: PO Agent
 > 审核人: PM
@@ -19,8 +19,8 @@ model SkillVersion {
   version        String   // 语义化版本，如 '1.0.0'
   changelog      String?  // 更新日志
   
-  fileId         String   @unique
-  file           SkillFile @relation(fields: [fileId], references: [id])
+  files          SkillFile[]
+  
   
   status         VersionStatus @default(PENDING_REVIEW)
   downloads      Int      @default(0)
@@ -38,7 +38,8 @@ model SkillFile {
   sha256       String   // 文件内容哈希，防篡改和校验
   mimeType     String   @default("application/zip")
   
-  version      SkillVersion? // 反向关系
+  versionId    String
+  version      SkillVersion @relation(fields: [versionId], references: [id])
 
   uploadedBy   String
   uploadedAt   DateTime @default(now())
@@ -93,4 +94,4 @@ enum VersionStatus {
 - [ ] 只有拥有下载权限的用户调用下载接口，才能获得有效的重定向链接，并导致 `downloads` 计数 +1。
 
 ## 8. 变更记录
-- 初始版本 draft。
+- 初始版本 draft。- 修正 SkillVersion 和 SkillFile 为一对多关系，并统一 authorId 为 ownerId。
