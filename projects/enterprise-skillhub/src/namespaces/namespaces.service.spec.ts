@@ -126,6 +126,100 @@ describe('NamespacesService', () => {
         service.create({ name: 'Invalid_Name!' }, mockUser),
       ).rejects.toThrow(BadRequestException);
     });
+
+    // === TC-003: Reserved namespace @system returns 403/400 ===
+    it('TC-003: should reject "system" with clear reserved error message', async () => {
+      prisma.namespace.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.create({ name: 'system' }, mockUser),
+      ).rejects.toThrow(/reserved/i);
+    });
+
+    it('TC-003: should reject all reserved names with BadRequestException', async () => {
+      prisma.namespace.findUnique.mockResolvedValue(null);
+      const reservedNames = ['system', 'official', 'skillhub'];
+
+      for (const name of reservedNames) {
+        await expect(
+          service.create({ name }, mockUser),
+        ).rejects.toThrow(BadRequestException);
+      }
+    });
+
+    // === TC-005: Namespace name format validation ===
+    it('TC-005: should reject names longer than 32 characters', async () => {
+      const longName = 'a'.repeat(33);
+      await expect(
+        service.create({ name: longName }, mockUser),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('TC-005: should reject names with spaces', async () => {
+      await expect(
+        service.create({ name: 'my namespace' }, mockUser),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('TC-005: should reject names with Chinese characters', async () => {
+      await expect(
+        service.create({ name: '团队空间' }, mockUser),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('TC-005: should reject names starting with hyphen', async () => {
+      await expect(
+        service.create({ name: '-my-team' }, mockUser),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('TC-005: should reject names ending with hyphen', async () => {
+      await expect(
+        service.create({ name: 'my-team-' }, mockUser),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('TC-005: should reject single-character names', async () => {
+      await expect(
+        service.create({ name: 'a' }, mockUser),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('TC-005: should reject names with uppercase letters', async () => {
+      await expect(
+        service.create({ name: 'MyTeam' }, mockUser),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('TC-005: should reject empty string name', async () => {
+      await expect(
+        service.create({ name: '' }, mockUser),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('TC-005: should accept valid names (3-32 chars, lowercase alphanumeric with hyphens)', async () => {
+      prisma.namespace.findUnique.mockResolvedValue(null);
+      prisma.namespace.create.mockResolvedValue(mockNamespace);
+
+      // These should NOT throw
+      const validNames = ['abc', 'my-team', 'backend-team-01', 'a1b'];
+      for (const name of validNames) {
+        prisma.namespace.findUnique.mockResolvedValue(null);
+        prisma.namespace.create.mockResolvedValue({ ...mockNamespace, name });
+        await expect(
+          service.create({ name }, mockUser),
+        ).resolves.toBeDefined();
+      }
+    });
+
+    it('TC-005: should reject names with special characters (@, #, $, etc.)', async () => {
+      const invalidNames = ['@team', 'team#1', '$team', 'team.name', 'team/name'];
+      for (const name of invalidNames) {
+        await expect(
+          service.create({ name }, mockUser),
+        ).rejects.toThrow(BadRequestException);
+      }
+    });
   });
 
   // ==========================================================

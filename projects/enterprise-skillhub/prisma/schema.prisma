@@ -90,6 +90,9 @@ model User {
   namespaceMemberships NamespaceMember[]
   templates           Template[]         @relation("TemplateAuthor")
 
+  // Sprint 7: Git Credential relation
+  gitCredentials      GitCredential[]
+
   @@index([department])
   @@index([role])
 }
@@ -378,4 +381,35 @@ model TemplateSkill {
   templateVersion   TemplateVersion @relation(fields: [templateVersionId], references: [id], onDelete: Cascade)
 
   @@unique([templateVersionId, skillName])
+}
+
+// ============================================================
+// Sprint 7: Git Credential Management (schema pre-added)
+// ============================================================
+
+enum GitAuthType {
+  SSH_KEY
+  TOKEN
+  BASIC
+}
+
+enum CredentialScope {
+  PERSONAL
+  NAMESPACE
+  GLOBAL
+}
+
+model GitCredential {
+  id         String          @id @default(cuid())
+  name       String
+  type       String          // SSH_KEY, TOKEN, BASIC
+  url        String
+  credential String          // Encrypted credential
+  ownerId    String
+  owner      User            @relation(fields: [ownerId], references: [id])
+  scope      String          @default("PERSONAL") // PERSONAL, NAMESPACE, GLOBAL
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  @@index([ownerId])
 }

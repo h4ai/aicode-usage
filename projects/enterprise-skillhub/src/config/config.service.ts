@@ -124,4 +124,26 @@ export class ConfigService {
   get webhookType(): string {
     return this.configService.get<string>('WEBHOOK_TYPE', 'feishu');
   }
+
+  // Git integration (Sprint 7)
+  get gitCredentialKey(): string {
+    return this.configService.get<string>('GIT_CREDENTIAL_KEY', 'default-dev-key-change-in-prod');
+  }
+
+  get gitAllowedDomains(): string[] {
+    const raw = this.configService.get<string>('GIT_ALLOWED_DOMAINS', '');
+    return raw.split(',').map((d) => d.trim()).filter(Boolean);
+  }
+
+  get gitCloneTimeoutMs(): number {
+    return this.configService.get<number>('GIT_CLONE_TIMEOUT_MS', 60000);
+  }
+
+  get gitMaxRepoSizeMb(): number {
+    return this.configService.get<number>('GIT_MAX_REPO_SIZE_MB', 500);
+  }
+
+  get gitWebhookSecret(): string {
+    return this.configService.get<string>('GIT_WEBHOOK_SECRET', '');
+  }
 }

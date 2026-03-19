@@ -1,0 +1,825 @@
+=== Sprint 6 Fix Test Results ===
+Date: 2026-03-20T02:58:03+08:00
+
+=== TypeScript Type Check ===
+TSC: 0 errors
+
+=== Jest Tests ===
+PASS src/cli/update/conflict-resolver.spec.ts
+  ConflictResolver
+    createConflictFile
+      ✓ should create conflict file in .skillhub/conflicts/ (3 ms)
+      ✓ should create nested directories for deep paths (1 ms)
+      ✓ should overwrite existing conflict file (1 ms)
+    listConflicts
+      ✓ should return empty array when no conflicts (1 ms)
+      ✓ should list all conflict files (1 ms)
+    resolveConflict
+      ✓ should keep local file when choosing "local" (1 ms)
+      ✓ should replace local file when choosing "remote"
+      ✓ should throw when conflict file does not exist (5 ms)
+      ✓ should create parent directories when resolving remote for new path (1 ms)
+    clearAll
+      ✓ should remove all conflict files (1 ms)
+      ✓ should not throw when no conflicts exist
+
+PASS src/cli/update/lock-manager.spec.ts
+  LockManager
+    exists
+      ✓ should return false when no lock file (1 ms)
+      ✓ should return true when lock file exists
+    write
+      ✓ should create .skillhub directory and write lock file
+      ✓ should overwrite existing lock file (1 ms)
+    read
+      ✓ should read and parse lock file (1 ms)
+      ✓ should throw when lock file does not exist (3 ms)
+      ✓ should throw on invalid JSON (1 ms)
+    createInitialLock
+      ✓ should create a lock with file hashes (1 ms)
+      ✓ should exclude .skillhub, node_modules, .git directories (1 ms)
+    hashProjectFiles
+      ✓ should hash all files recursively (1 ms)
+      ✓ should return empty for non-existent directory
+      ✓ should produce consistent hashes for same content (1 ms)
+    hashFile
+      ✓ should compute SHA256 of a file
+
+PASS src/git/git-credential.service.spec.ts
+  GitCredentialService
+    ✓ should be defined (56 ms)
+    create
+      ✓ should create a credential with encrypted value (84 ms)
+      ✓ should default scope to PERSONAL (82 ms)
+    findAll
+      ✓ should return credentials without plaintext (41 ms)
+      ✓ should only query for the given user (41 ms)
+    findOne
+      ✓ should return sanitized credential when owned by user (42 ms)
+      ✓ should throw NotFoundException for non-existent credential (44 ms)
+      ✓ should throw ForbiddenException when not owner (43 ms)
+    remove
+      ✓ should delete credential when owned by user (42 ms)
+      ✓ should throw NotFoundException for non-existent credential (43 ms)
+      ✓ should throw ForbiddenException when not owner (42 ms)
+    testConnectivity
+      ✓ should return success when credential can be decrypted (82 ms)
+      ✓ should return failure when decryption fails (41 ms)
+      ✓ should throw NotFoundException for non-existent credential (42 ms)
+      ✓ should throw ForbiddenException when not owner (41 ms)
+    SSRF protection
+      ✓ should allow URLs with whitelisted domains (82 ms)
+      ✓ should allow URLs with subdomains of whitelisted domains (83 ms)
+      ✓ should reject URLs with non-whitelisted domains (43 ms)
+      ✓ should reject URLs with localhost (44 ms)
+      ✓ should handle SSH-style URLs (84 ms)
+      ✓ should reject SSH-style URLs with non-whitelisted domains (42 ms)
+    getDecryptedCredential
+      ✓ should return decrypted credential for clone operations (82 ms)
+      ✓ should throw NotFoundException if not found (42 ms)
+
+PASS src/git/crypto.util.spec.ts
+  CryptoUtil
+    deriveKey
+      ✓ should derive a 32-byte key from passphrase (42 ms)
+      ✓ should produce same key with same salt (79 ms)
+      ✓ should produce different keys with different passphrases (117 ms)
+    encrypt
+      ✓ should encrypt plaintext to base64 string (41 ms)
+      ✓ should produce different ciphertexts for same plaintext (random IV) (80 ms)
+      ✓ should throw on empty plaintext (3 ms)
+      ✓ should throw on empty key
+    decrypt
+      ✓ should decrypt encrypted data back to original (81 ms)
+      ✓ should handle multi-byte characters (UTF-8) (79 ms)
+      ✓ should handle long SSH keys (80 ms)
+      ✓ should throw on wrong key (86 ms)
+      ✓ should throw on tampered ciphertext (82 ms)
+      ✓ should throw on empty encrypted data
+      ✓ should throw on too short data (1 ms)
+    roundtrip
+      ✓ should roundtrip: "simple-token..." (79 ms)
+      ✓ should roundtrip: "ghp_1234567890abcdef..." (80 ms)
+      ✓ should roundtrip: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQ..." (80 ms)
+      ✓ should roundtrip: "username:password..." (80 ms)
+      ✓ should roundtrip: "{"token":"abc","refresh":"def"..." (79 ms)
+
+PASS src/sync/sync.service.spec.ts
+  SyncService
+    ✓ should be defined (5 ms)
+    triggerSync
+      ✓ should enqueue a sync job (2 ms)
+      ✓ should prevent concurrent syncs (5 ms)
+    getStatus
+      ✓ should return sync status with last run time (2 ms)
+      ✓ should return empty status if never synced (2 ms)
+    processSync
+      ✓ should fetch skills from ClawHub and create new ones (203 ms)
+      ✓ should update existing skill if upstream version is newer (201 ms)
+      ✓ should NOT overwrite locally modified skills (source=LOCAL) (203 ms)
+      ✓ should skip if local version matches upstream (203 ms)
+      ✓ should handle API errors gracefully (2 ms)
+      ✓ should respect rate limit (max 5 req/s) (2 ms)
+    saveSyncStatus
+      ✓ should persist sync results to SystemConfig (1 ms)
+
+PASS src/auth/auth.controller.spec.ts
+  Auth API (e2e)
+    POST /api/v1/auth/login
+      ✓ should return 200 with JWT token for valid credentials (38 ms)
+      ✓ should return 401 for wrong password (5 ms)
+      ✓ should return 400 for missing username (4 ms)
+      ✓ should return 400 for missing password (3 ms)
+    GET /api/v1/auth/me
+      ✓ should return user profile with valid token (4 ms)
+      ✓ should return 401 without token (3 ms)
+    POST /api/v1/auth/logout
+      ✓ should return 200 on successful logout (3 ms)
+
+PASS src/templates/templates.service.spec.ts
+  TemplatesService
+    ✓ should be defined (4 ms)
+    create
+      ✓ should create a template in a namespace (2 ms)
+      ✓ should throw ForbiddenException if user is not namespace member (6 ms)
+      ✓ should throw ConflictException if template name exists in namespace (1 ms)
+      ✓ should allow global ADMIN to create in any namespace (1 ms)
+    findAll
+      ✓ should return paginated templates (2 ms)
+      ✓ should filter by namespace name (1 ms)
+      ✓ should filter by tag (2 ms)
+      ✓ should sort by popular (weeklyDownloads) (1 ms)
+      ✓ should sort by newest (2 ms)
+      ✓ should sort by name (1 ms)
+      ✓ should cap limit to 100 (1 ms)
+    findOne
+      ✓ should return a template by id with versions (1 ms)
+      ✓ should throw NotFoundException if template not found (1 ms)
+    createVersion
+      ✓ should create a new version with valid semver (2 ms)
+      ✓ should throw BadRequestException for invalid semver (1 ms)
+      ✓ should throw ConflictException for duplicate version (2 ms)
+      ✓ should reject ZIP files over 50MB (2 ms)
+      ✓ should throw NotFoundException if template not found (1 ms)
+    getVersion
+      ✓ should return a specific version (2 ms)
+      ✓ should throw NotFoundException if version not found (2 ms)
+    publishVersion
+      ✓ should set version status to PENDING_REVIEW (1 ms)
+      ✓ should throw BadRequestException if version is not DRAFT (2 ms)
+    resolve
+      ✓ should resolve a template with its dependencies (2 ms)
+      ✓ should throw NotFoundException if template not found (1 ms)
+      ✓ should throw NotFoundException if namespace not found (2 ms)
+      ✓ should throw NotFoundException if no published version exists (2 ms)
+      ✓ should resolve a specific version when versionStr is provided (2 ms)
+      ✓ TC-013: should return extends field in resolve response for derived templates (1 ms)
+      ✓ TC-013: should return null extends for base templates (no inheritance) (1 ms)
+      ✓ TC-013: should include manifest for merge logic (derived template overrides base) (2 ms)
+
+PASS src/skills/skills.controller.spec.ts
+  SkillsController
+    ✓ should be defined (8 ms)
+    create
+      ✓ should create a skill and return it (3 ms)
+    findAll
+      ✓ should return paginated results (3 ms)
+      ✓ should pass category filter to service (1 ms)
+      ✓ should pass search term to service (1 ms)
+    findOne
+      ✓ should return a skill by slug (2 ms)
+      ✓ should propagate NotFoundException (4 ms)
+    update
+      ✓ should update and return the skill (1 ms)
+      ✓ should propagate ForbiddenException (2 ms)
+    remove
+      ✓ should soft delete and return result (2 ms)
+      ✓ should propagate ForbiddenException for non-owner (1 ms)
+    incrementDownload
+      ✓ should increment download count (2 ms)
+
+PASS src/git/git-clone.service.spec.ts
+  GitCloneService
+    ✓ should be defined (4 ms)
+    cloneAndPackage
+      ✓ should clone, zip, and upload to MinIO (4 ms)
+      ✓ should use HEAD as default ref (1 ms)
+      ✓ should handle sub-path extraction (1 ms)
+      ✓ should throw when sub-path does not exist (4 ms)
+      ✓ should throw on clone timeout (2 ms)
+      ✓ should throw on clone failure (2 ms)
+      ✓ should throw when repo exceeds size limit (2 ms)
+      ✓ should cleanup temp dir even on error (2 ms)
+
+PASS src/namespaces/namespaces.service.spec.ts
+  NamespacesService
+    ✓ should be defined (4 ms)
+    create
+      ✓ should create a namespace and add creator as ADMIN (2 ms)
+      ✓ should throw ConflictException if namespace name already exists (5 ms)
+      ✓ should reject reserved namespace names (@system) (3 ms)
+      ✓ should reject reserved namespace names (@official) (2 ms)
+      ✓ should reject reserved namespace names (@skillhub) (1 ms)
+      ✓ should reject names shorter than 3 characters (2 ms)
+      ✓ should reject names with invalid characters (2 ms)
+      ✓ TC-003: should reject "system" with clear reserved error message (1 ms)
+      ✓ TC-003: should reject all reserved names with BadRequestException (2 ms)
+      ✓ TC-005: should reject names longer than 32 characters (2 ms)
+      ✓ TC-005: should reject names with spaces (2 ms)
+      ✓ TC-005: should reject names with Chinese characters (1 ms)
+      ✓ TC-005: should reject names starting with hyphen (2 ms)
+      ✓ TC-005: should reject names ending with hyphen (2 ms)
+      ✓ TC-005: should reject single-character names (1 ms)
+      ✓ TC-005: should reject names with uppercase letters (2 ms)
+      ✓ TC-005: should reject empty string name (2 ms)
+      ✓ TC-005: should accept valid names (3-32 chars, lowercase alphanumeric with hyphens) (1 ms)
+      ✓ TC-005: should reject names with special characters (@, #, $, etc.) (3 ms)
+    findAll
+      ✓ should return namespaces the user is a member of (1 ms)
+      ✓ should return all namespaces for ADMIN users (2 ms)
+    addMember
+      ✓ should add a member to namespace when user is ADMIN of namespace (1 ms)
+      ✓ should throw ForbiddenException if user is not namespace ADMIN (2 ms)
+      ✓ should throw NotFoundException if namespace not found (1 ms)
+      ✓ should allow global ADMIN to add members without namespace ADMIN role (1 ms)
+    removeMember
+      ✓ should remove a member from namespace (1 ms)
+      ✓ should throw ForbiddenException if non-admin tries to remove member (1 ms)
+      ✓ should throw NotFoundException if target member not found (2 ms)
+    checkMembership
+      ✓ should return true if user is a member (1 ms)
+      ✓ should return false if user is not a member (1 ms)
+
+PASS src/skills/skills.service.spec.ts
+  SkillsService
+    ✓ should be defined (5 ms)
+    create
+      ✓ should create a skill with valid data (3 ms)
+      ✓ should throw ConflictException if slug already exists (10 ms)
+      ✓ should reject invalid slug format (3 ms)
+      ✓ should reject slug shorter than 3 characters (1 ms)
+      ✓ should reject slug longer than 64 characters (2 ms)
+      ✓ should set default category to GENERAL (2 ms)
+    findAll
+      ✓ should return paginated skills list (2 ms)
+      ✓ should filter by category (2 ms)
+      ✓ should filter by search term (name or summary) (1 ms)
+      ✓ should filter by tags (array contains) (2 ms)
+      ✓ should filter out REMOVED skills (1 ms)
+      ✓ should apply visibility filtering for non-admin users (1 ms)
+      ✓ should use Redis cache for popular sort (2 ms)
+      ✓ should return cached result if available for popular (1 ms)
+      ✓ should cap limit to 100 (2 ms)
+    findOne
+      ✓ should return a skill by slug (1 ms)
+      ✓ should throw NotFoundException if skill does not exist (2 ms)
+      ✓ should throw NotFoundException for REMOVED skills (2 ms)
+      ✓ should allow admin to see PRIVATE skills (2 ms)
+      ✓ should block non-owner from PRIVATE skills (1 ms)
+      ✓ should allow same-department user for DEPARTMENT skills (1 ms)
+      ✓ should block different-department user for DEPARTMENT skills (2 ms)
+    update
+      ✓ should update a skill by owner (1 ms)
+      ✓ should allow admin to update any skill (2 ms)
+      ✓ should throw ForbiddenException for non-owner non-admin (1 ms)
+      ✓ should throw NotFoundException if skill not found (2 ms)
+      ✓ should invalidate cache on update (1 ms)
+    remove (soft delete)
+      ✓ should soft delete by setting moderationStatus to REMOVED (1 ms)
+      ✓ should throw ForbiddenException for non-owner non-admin (3 ms)
+      ✓ should allow admin to soft delete (2 ms)
+      ✓ should invalidate cache on deletion (1 ms)
+    incrementCounter
+      ✓ should atomically increment downloadCount (2 ms)
+      ✓ should atomically increment installCount (2 ms)
+      ✓ should atomically increment starCount (1 ms)
+      ✓ should reject invalid counter field names (2 ms)
+
+PASS src/templates/templates.controller.spec.ts
+  TemplatesController
+    ✓ should be defined (5 ms)
+    POST /templates
+      ✓ should create a template (3 ms)
+    GET /templates
+      ✓ should return templates list (2 ms)
+    GET /templates/:id
+      ✓ should return template details (1 ms)
+    POST /templates/:id/versions
+      ✓ should create a version (1 ms)
+    GET /templates/:id/versions/:version
+      ✓ should return version details (2 ms)
+    POST /templates/:id/versions/:version/publish
+      ✓ should publish a version (1 ms)
+    GET /templates/resolve
+      ✓ should resolve a template (2 ms)
+
+PASS src/admin/admin.controller.spec.ts
+  AdminController
+    ✓ should be defined (7 ms)
+    listUsers
+      ✓ should return paginated users (2 ms)
+      ✓ should pass search, role, department to service (2 ms)
+    updateUserRole
+      ✓ should update user role (2 ms)
+    updateUserStatus
+      ✓ should disable user (1 ms)
+      ✓ should enable user (2 ms)
+    listPolicies
+      ✓ should return policy list (1 ms)
+    createPolicy
+      ✓ should create a new policy (2 ms)
+    updatePolicy
+      ✓ should update a policy (1 ms)
+    deletePolicy
+      ✓ should delete a policy (2 ms)
+    getSystemConfig
+      ✓ should return all config entries (1 ms)
+    updateSystemConfig
+      ✓ should update a config entry (2 ms)
+
+PASS src/review/review.service.spec.ts
+  ReviewService
+    ✓ should be defined (4 ms)
+    findAll
+      ✓ should return paginated review list (2 ms)
+      ✓ should filter by status (2 ms)
+      ✓ should show all reviews for ADMIN (2 ms)
+      ✓ should show only assigned reviews for REVIEWER (1 ms)
+    findOne
+      ✓ should return review with skill and version details (2 ms)
+      ✓ should throw NotFoundException if review not found (5 ms)
+    assign
+      ✓ should allow reviewer to self-claim (no assigneeId) (2 ms)
+      ✓ should allow admin to assign to another reviewer (1 ms)
+      ✓ should reject assignment if review is not PENDING_MANUAL (2 ms)
+      ✓ should reject if reviewer is the submitter (self-review) (1 ms)
+      ✓ should reject if reviewer is the skill owner (1 ms)
+      ✓ should handle concurrent assignment (optimistic lock) (3 ms)
+      ✓ should throw NotFoundException for non-existent review (1 ms)
+    decision
+      APPROVE
+        ✓ should approve a review in IN_REVIEW status (2 ms)
+        ✓ should update SkillVersion.reviewStatus to APPROVED on approve (1 ms)
+        ✓ should update Skill.publishedVersionId on approve (1 ms)
+      REJECT
+        ✓ should reject a review in IN_REVIEW status (1 ms)
+        ✓ should be a final state — no further transitions from REJECTED (1 ms)
+      REVISION_REQUESTED
+        ✓ should request revision for IN_REVIEW review (1 ms)
+      illegal state transitions
+        ✓ should reject APPROVE from PENDING_MANUAL (not IN_REVIEW) (1 ms)
+        ✓ should reject decision from AUTO_REJECTED (1 ms)
+        ✓ should reject decision from APPROVED (2 ms)
+        ✓ should reject decision from PENDING_AUTO (1 ms)
+      authorization
+        ✓ should reject if user is not the assigned reviewer and not admin (1 ms)
+        ✓ should allow admin to make decision even if not assigned (2 ms)
+        ✓ should reject if submitter tries to decide own review (1 ms)
+      review score
+        ✓ should save reviewScore with decision (1 ms)
+    matchPolicy
+      ✓ should match category+department policy first (highest priority) (2 ms)
+      ✓ should fall back to category-only policy (1 ms)
+      ✓ should fall back to department-only policy (1 ms)
+      ✓ should fall back to global policy (1 ms)
+      ✓ should return null if no policy matches (2 ms)
+    createReview
+      ✓ should create a SkillReview in PENDING_AUTO status (1 ms)
+
+PASS src/audit/audit.controller.spec.ts
+  AuditController
+    ✓ should be defined (5 ms)
+    findAll
+      ✓ should return paginated audit logs (2 ms)
+      ✓ should pass query params to service (2 ms)
+      ✓ should support date range filtering (2 ms)
+    exportCsv
+      ✓ should return CSV content (1 ms)
+      ✓ should pass filter params to service (2 ms)
+
+PASS src/admin/admin.service.spec.ts
+  AdminService
+    ✓ should be defined (5 ms)
+    listUsers
+      ✓ should return paginated user list (3 ms)
+      ✓ should filter by search keyword (name or email) (2 ms)
+      ✓ should filter by role (1 ms)
+      ✓ should filter by department (2 ms)
+    updateUserRole
+      ✓ should update user role (2 ms)
+      ✓ should create audit log on role change (1 ms)
+      ✓ should throw NotFoundException if user not found (5 ms)
+      ✓ should reject invalid role (2 ms)
+    updateUserStatus
+      ✓ should enable a disabled user (1 ms)
+      ✓ should disable an active user (1 ms)
+      ✓ should create audit log on status change (2 ms)
+      ✓ should throw NotFoundException if user not found (1 ms)
+    listPolicies
+      ✓ should return all review policies (1 ms)
+    createPolicy
+      ✓ should create a new review policy (1 ms)
+      ✓ should reject duplicate policy name (1 ms)
+    updatePolicy
+      ✓ should update a review policy (2 ms)
+      ✓ should throw NotFoundException if policy not found (1 ms)
+    deletePolicy
+      ✓ should delete a policy with no active reviews (2 ms)
+      ✓ should reject deletion if policy has active reviews (1 ms)
+      ✓ should throw NotFoundException if policy not found (2 ms)
+    getSystemConfig
+      ✓ should return all system configs (1 ms)
+    updateSystemConfig
+      ✓ should upsert a system config entry (2 ms)
+
+PASS src/review/review.controller.spec.ts
+  ReviewController
+    ✓ should be defined (5 ms)
+    findAll
+      ✓ should return paginated reviews (3 ms)
+      ✓ should pass query and user to service (1 ms)
+    findOne
+      ✓ should return review detail (2 ms)
+    assign
+      ✓ should assign review to self (2 ms)
+      ✓ should assign review to another reviewer (1 ms)
+    decision
+      ✓ should approve a review (2 ms)
+      ✓ should reject a review (1 ms)
+      ✓ should request revision (1 ms)
+
+PASS src/audit/audit.service.spec.ts
+  AuditService
+    ✓ should be defined (5 ms)
+    log
+      ✓ should enqueue audit log entry via BullMQ (2 ms)
+      ✓ should not throw if queue fails (fire and forget) (2 ms)
+    findAll
+      ✓ should return paginated audit logs (2 ms)
+      ✓ should filter by actorId (1 ms)
+      ✓ should filter by action (1 ms)
+      ✓ should filter by resource (1 ms)
+      ✓ should filter by date range (1 ms)
+      ✓ should reject date range exceeding 90 days (5 ms)
+      ✓ should apply default sort by createdAt desc (1 ms)
+      ✓ should respect pagination limits (max 200) (1 ms)
+    exportCsv
+      ✓ should return CSV string with header and data (2 ms)
+      ✓ should enforce max 10000 records for export (1 ms)
+      ✓ should handle empty result (1 ms)
+
+PASS src/search/search.controller.spec.ts
+  SearchController
+    ✓ should be defined (5 ms)
+    searchSkills
+      ✓ should return search results with similarity scores (2 ms)
+      ✓ should pass user context for visibility filtering (2 ms)
+      ✓ should handle empty query gracefully (1 ms)
+      ✓ should indicate fallback mode when BGE-M3 unavailable (1 ms)
+      ✓ should respect max limit of 50 (1 ms)
+
+PASS src/namespaces/namespaces.controller.spec.ts
+  NamespacesController
+    ✓ should be defined (5 ms)
+    POST /namespaces
+      ✓ should create a namespace (2 ms)
+    GET /namespaces
+      ✓ should return namespace list (2 ms)
+    POST /namespaces/:id/members
+      ✓ should add a member (1 ms)
+    DELETE /namespaces/:id/members/:userId
+      ✓ should remove a member (1 ms)
+
+PASS src/git/git-credential.controller.spec.ts
+  GitCredentialController
+    ✓ should be defined (4 ms)
+    create
+      ✓ should create a credential and return sanitized result (3 ms)
+    findAll
+      ✓ should return list of credentials for user (2 ms)
+    remove
+      ✓ should delete a credential (1 ms)
+    test
+      ✓ should test credential connectivity (2 ms)
+
+PASS src/git/git-webhook.controller.spec.ts
+  GitWebhookController
+    with webhook secret configured
+      ✓ should be defined (4 ms)
+      GitHub webhook (HMAC-SHA256)
+        ✓ should accept valid GitHub signature (6 ms)
+        ✓ should reject invalid GitHub signature (7 ms)
+        ✓ should reject missing signature when secret is configured (4 ms)
+        ✓ should handle payload with missing optional fields (2 ms)
+      GitLab webhook (token)
+        ✓ should accept valid GitLab token (1 ms)
+        ✓ should reject invalid GitLab token (1 ms)
+    without webhook secret
+      ✓ should accept webhooks without signature when secret is empty (2 ms)
+
+PASS src/review/scanner/scanner.service.spec.ts
+  ScannerService
+    ✓ should be defined (10 ms)
+    Stage 1: File integrity check
+      ✓ should pass when SKILL.md exists (3 ms)
+      ✓ should fail when SKILL.md is missing (2 ms)
+      ✓ should check multiple required files (1 ms)
+    Stage 2: Security scan
+      ✓ should detect hardcoded AWS access key (2 ms)
+      ✓ should detect hardcoded private key (4 ms)
+      ✓ should detect hardcoded password pattern (3 ms)
+      ✓ should detect generic API token patterns (1 ms)
+      ✓ should pass clean code (1 ms)
+      ✓ should not flag environment variable references (2 ms)
+    Stage 3: License check
+      ✓ should pass when LICENSE file with known open-source license exists (1 ms)
+      ✓ should detect Apache-2.0 license (1 ms)
+      ✓ should warn when LICENSE file is missing (1 ms)
+      ✓ should warn for unknown license content (1 ms)
+    Stage 4: Quality assessment
+      ✓ should calculate quality score from file metrics (2 ms)
+      ✓ should give higher score for having documentation (1 ms)
+      ✓ should return 0-100 range (2 ms)
+    runScan (full pipeline)
+      ✓ should set status to AUTO_REJECTED on FATAL finding (1 ms)
+      ✓ should set status to PENDING_MANUAL when scan passes (4 ms)
+      ✓ should auto-approve if policy allows and score meets threshold (1 ms)
+      ✓ should write scan details to autoScanDetail (1 ms)
+
+PASS src/auth/auth.service.spec.ts
+  AuthService
+    login
+      ✓ should return JWT token for valid AD credentials (5 ms)
+      ✓ should throw UnauthorizedException for invalid password (7 ms)
+      ✓ should throw UnauthorizedException for non-existent user (2 ms)
+      ✓ should throw ForbiddenException for disabled user (2 ms)
+      ✓ should sync AD attributes on login (department, email, adGroups) (1 ms)
+      ✓ should map AD groups to UserRole (highest privilege wins) (1 ms)
+      ✓ should return 503 when LDAP server is unavailable (2 ms)
+      ✓ should default to USER role when no AD groups match (1 ms)
+    validateToken
+      ✓ should validate JWT and return user payload (2 ms)
+      ✓ should reject expired tokens (2 ms)
+      ✓ should reject tampered tokens (1 ms)
+      ✓ should reject tokens for deactivated users (2 ms)
+
+PASS src/search/search.service.spec.ts
+  SearchService
+    ✓ should be defined (6 ms)
+    generateEmbedding
+      ✓ should call BGE-M3 API and return embedding vector (6 ms)
+      ✓ should return null when BGE-M3 is unavailable (graceful degradation) (3 ms)
+      ✓ should return null on timeout (1 ms)
+    searchSkills
+      ✓ should perform vector similarity search when embedding available (2 ms)
+      ✓ should fall back to ILIKE text search when embedding unavailable (2 ms)
+      ✓ should use parameterized queries (SQL injection protection) (2 ms)
+      ✓ should enforce max 50 results limit (1 ms)
+      ✓ should apply visibility filtering for non-admin users (1 ms)
+      ✓ should not filter visibility for admin users (2 ms)
+
+PASS src/storage/storage.service.spec.ts
+  StorageService
+    ✓ should be defined (6 ms)
+    uploadFile
+      ✓ should upload a buffer to MinIO with correct storageKey (6 ms)
+      ✓ should generate correct storageKey format (4 ms)
+      ✓ should handle nested file paths in storageKey (2 ms)
+    getPresignedUrl
+      ✓ should generate a pre-signed download URL (5 min expiry) (2 ms)
+    validateZip
+      ✓ should reject non-ZIP files (invalid magic bytes) (11 ms)
+      ✓ should accept valid ZIP magic bytes (1 ms)
+    validateZipEntries
+      ✓ should reject ZIP with uncompressed size > 200MB (4 ms)
+      ✓ should reject ZIP with more than 1000 files (2 ms)
+      ✓ should reject Zip Slip paths (path traversal) (1 ms)
+      ✓ should reject entries with absolute paths (2 ms)
+      ✓ should accept valid ZIP entries (1 ms)
+    validateSkillMd
+      ✓ should require SKILL.md in ZIP root (2 ms)
+      ✓ should pass when SKILL.md exists in root (1 ms)
+    ensureBucket
+      ✓ should create bucket if it does not exist (1 ms)
+      ✓ should skip creation if bucket already exists (1 ms)
+    deleteFile
+      ✓ should delete a file from MinIO (1 ms)
+
+[31m[Nest] 290901  - [39m03/20/2026, 2:58:20 AM [31m  ERROR[39m [38;5;3m[NotificationService] [39m[31mFailed to send notification: Network error[39m
+PASS src/review/notification/notification.service.spec.ts
+  NotificationService
+    ✓ should be defined (5 ms)
+    sendReviewTimeoutAlert
+      ✓ should send webhook notification for overdue review (4 ms)
+      ✓ should include review details in notification payload (1 ms)
+      ✓ should not throw if webhook fails (2 ms)
+      ✓ should skip notification if no webhook URL configured (2 ms)
+    sendReviewAssignedNotification
+      ✓ should send notification when review is assigned (1 ms)
+    notification templates
+      ✓ should format feishu webhook payload correctly (2 ms)
+      ✓ should format wecom webhook payload correctly (1 ms)
+
+PASS src/review/scheduler/review-scheduler.service.spec.ts
+  ReviewSchedulerService
+    ✓ should be defined (4 ms)
+    acquireLock
+      ✓ should acquire lock with Redis SETNX (3 ms)
+      ✓ should fail to acquire lock if already held (1 ms)
+    releaseLock
+      ✓ should release the lock (1 ms)
+    autoAssignReviews
+      ✓ should find PENDING_MANUAL reviews and assign to least-loaded reviewer (2 ms)
+      ✓ should exclude submitter from assignees (1 ms)
+      ✓ should exclude skill owner from assignees (2 ms)
+      ✓ should not assign if no eligible reviewers (1 ms)
+      ✓ should handle no pending reviews gracefully (1 ms)
+    checkTimeoutAlerts
+      ✓ should send alerts for reviews exceeding maxReviewDays (1 ms)
+      ✓ should not alert for fresh reviews (1 ms)
+      ✓ should check both PENDING_MANUAL and IN_REVIEW statuses (1 ms)
+
+PASS src/stats/stats.service.spec.ts
+  StatsService
+    ✓ should be defined (4 ms)
+    getOverview
+      ✓ should return dashboard overview stats (3 ms)
+      ✓ should use cache if available (2 ms)
+      ✓ should cache result with TTL 15 min (3 ms)
+    getTopSkills
+      ✓ should return top 10 skills by installCount (2 ms)
+      ✓ should use cache if available (1 ms)
+      ✓ should limit to 10 results (2 ms)
+    getDepartmentUsage
+      ✓ should return usage aggregated by department (1 ms)
+      ✓ should use cache if available (1 ms)
+    getReviewEfficiency
+      ✓ should return review efficiency metrics (1 ms)
+      ✓ should use cache if available (1 ms)
+      ✓ should handle zero reviews gracefully (1 ms)
+    getTrends
+      ✓ should return 30-day trend data (2 ms)
+      ✓ should use cache if available (1 ms)
+
+PASS src/stats/stats.controller.spec.ts
+  StatsController
+    ✓ should be defined (8 ms)
+    getOverview
+      ✓ should return dashboard overview (8 ms)
+    getTopSkills
+      ✓ should return top skills (6 ms)
+    getDepartmentUsage
+      ✓ should return department usage stats (2 ms)
+    getReviewEfficiency
+      ✓ should return review efficiency metrics (1 ms)
+    getTrends
+      ✓ should return 30-day trend data (1 ms)
+
+PASS src/auth/guards/roles.guard.spec.ts
+  RolesGuard
+    ✓ should allow access when no roles are required (1 ms)
+    ✓ should allow ADMIN to access admin endpoints
+    ✓ should deny USER from accessing admin endpoints
+    ✓ should allow PUBLISHER to create skills
+    ✓ should deny USER from creating skills (1 ms)
+    ✓ should allow REVIEWER to review skills
+    ✓ should deny access when user object is missing
+    ✓ should ADMIN bypass all role checks (ADMIN can do everything) (1 ms)
+
+PASS src/cli/cli-init.spec.ts
+  CLI Init Workflow Integration
+    Full init pipeline
+      ✓ should generate complete project structure with Claude adapter (14 ms)
+      ✓ should generate complete project structure with Cursor adapter (3 ms)
+      ✓ should generate complete project with default adapter when no AI specified (1 ms)
+      ✓ should generate lock file
+    Template commands structure
+      ✓ should parse @namespace/name template references
+      ✓ should reject invalid template references (1 ms)
+
+PASS src/cli/scaffold/hook-runner.spec.ts
+  HookRunner
+    ✓ should execute a successful shell command (11 ms)
+    ✓ should handle failed commands (8 ms)
+    ✓ should run multiple hooks in sequence (15 ms)
+    ✓ should continue on failure (12 ms)
+
+PASS src/auth/guards/department-visibility.guard.spec.ts
+  DepartmentVisibilityGuard
+    ✓ should allow access to PUBLIC skills for any user (1 ms)
+    ✓ should allow access to DEPARTMENT skills for same department
+    ✓ should deny access to DEPARTMENT skills for different department (1 ms)
+    ✓ should allow access to PRIVATE skills for owner only
+    ✓ should deny access to PRIVATE skills for non-owner
+    ✓ should allow ADMIN to access any skill regardless of visibility (1 ms)
+    ✓ should return true when no slug parameter exists (non-skill routes)
+    ✓ should return false when skill is not found
+
+PASS src/cli/scaffold/template-engine.spec.ts
+  TemplateEngine
+    render
+      ✓ should replace Handlebars variables (3 ms)
+      ✓ should handle missing variables gracefully (1 ms)
+      ✓ should not escape HTML characters (1 ms)
+    processDirectory
+      ✓ should process matching files in directory (2 ms)
+      ✓ should skip non-matching files (1 ms)
+    walkDir
+      ✓ should walk directory recursively (1 ms)
+      ✓ should return empty for non-existent directory
+
+PASS src/cli/cli.spec.ts
+  CLI
+    Config Management
+      getConfigPath
+        ✓ should return path to ~/.skillhubrc (1 ms)
+      loadConfig
+        ✓ should load and parse config from ~/.skillhubrc
+        ✓ should return null if config file does not exist (1 ms)
+        ✓ should return null if config file is malformed JSON
+      saveConfig
+        ✓ should write config to ~/.skillhubrc
+        ✓ should set restrictive file permissions (600) (1 ms)
+      clearConfig
+        ✓ should delete the config file
+        ✓ should not throw if config file does not exist (1 ms)
+    Token Validation
+      ✓ should detect expired token
+      ✓ should detect valid token
+    Command Registration
+      ✓ should define login command (1 ms)
+      ✓ should define all 6 commands
+
+PASS src/cli/scaffold/skill-installer.spec.ts
+  SkillInstaller
+    ✓ should install skills for Claude adapter (2 ms)
+    ✓ should install skills for Default adapter (1 ms)
+    ✓ should handle skills without content (1 ms)
+
+PASS src/cli/adapters/codebuddy-adapter.spec.ts
+  CodebuddyAdapter
+    ✓ should have name "codebuddy" (1 ms)
+    ✓ should create .codebuddy/ and .codebuddy/agents/ directories (1 ms)
+    ✓ should generate rules.yaml (1 ms)
+    ✓ should install skills as agents
+    ✓ should include skills in rules.yaml agents section
+    ✓ should return correct skills directory (1 ms)
+
+PASS src/cli/adapters/claude-adapter.spec.ts
+  ClaudeAdapter
+    ✓ should have name "claude" (1 ms)
+    ✓ should create .claude/rules/, .claude/commands/, .claude/skills/ directories (1 ms)
+    ✓ should generate CLAUDE.md at project root (1 ms)
+    ✓ should install skills into .claude/skills/ (1 ms)
+    ✓ should return correct skills directory
+
+PASS src/cli/scaffold/file-filter.spec.ts
+  FileFilter
+    ✓ should remove files for disabled features (2 ms)
+    ✓ should keep files for enabled features (1 ms)
+    ✓ should handle non-existent files gracefully
+    ✓ should handle multiple features (1 ms)
+
+PASS src/cli/adapters/windsurf-adapter.spec.ts
+  WindsurfAdapter
+    ✓ should have name "windsurf" (1 ms)
+    ✓ should create .windsurf/rules/ directory and .windsurfrules file (1 ms)
+    ✓ should generate .windsurfrules with project name (1 ms)
+    ✓ should install skills into .windsurf/rules/
+    ✓ should return correct skills directory (1 ms)
+
+PASS src/cli/adapters/cursor-adapter.spec.ts
+  CursorAdapter
+    ✓ should have name "cursor" (1 ms)
+    ✓ should create .cursor/rules/ directory and .cursorrules file
+    ✓ should generate .cursorrules with project name
+    ✓ should install skills into .cursor/rules/ (1 ms)
+    ✓ should return correct skills directory
+
+PASS src/cli/adapters/adapter-factory.spec.ts
+  AdapterFactory
+    createAdapter
+      ✓ should return ClaudeAdapter for "claude" (2 ms)
+      ✓ should return CursorAdapter for "cursor"
+      ✓ should return CodebuddyAdapter for "codebuddy"
+      ✓ should return WindsurfAdapter for "windsurf"
+      ✓ should return DefaultAdapter when no AI tool is specified (1 ms)
+      ✓ should return DefaultAdapter for unknown AI tool
+      ✓ should be case-insensitive (1 ms)
+    getSupportedTools
+      ✓ should return list of supported tools
+
+PASS src/cli/adapters/default-adapter.spec.ts
+  DefaultAdapter
+    ✓ should have name "default" (2 ms)
+    ✓ should create .ai/, .ai/rules/, .ai/skills/ directories (1 ms)
+    ✓ should generate README.md in .ai/ (1 ms)
+    ✓ should install skills into .ai/skills/ (1 ms)
+    ✓ should return correct skills directory
+
+Test Suites: 44 passed, 44 total
+Tests:       520 passed, 520 total
+Snapshots:   0 total
+Time:        12.417 s
+Ran all test suites.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?
