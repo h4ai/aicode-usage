@@ -1,0 +1,132 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "skillhub-overview",
+    "title": "SkillHub — Overview",
+    "tags": ["skillhub"],
+    "timezone": "browser",
+    "refresh": "30s",
+    "time": { "from": "now-6h", "to": "now" },
+    "panels": [
+      {
+        "id": 1,
+        "title": "API Requests / sec",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+        "targets": [
+          {
+            "expr": "sum(rate(skillhub_http_requests_total[5m])) by (status_code)",
+            "legendFormat": "{{status_code}}"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "API Response Time (p50/p95/p99)",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(skillhub_http_request_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "p50"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(skillhub_http_request_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "p95"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(skillhub_http_request_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "p99"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Active Pods",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 6, "x": 0, "y": 8 },
+        "targets": [
+          {
+            "expr": "count(kube_pod_status_ready{namespace=\"skillhub\", condition=\"true\"})",
+            "legendFormat": "Ready Pods"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Error Rate (%)",
+        "type": "gauge",
+        "gridPos": { "h": 4, "w": 6, "x": 6, "y": 8 },
+        "targets": [
+          {
+            "expr": "sum(rate(skillhub_http_requests_total{status_code=~\"5..\"}[5m])) / sum(rate(skillhub_http_requests_total[5m])) * 100",
+            "legendFormat": "Error %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "steps": [
+                { "value": 0, "color": "green" },
+                { "value": 1, "color": "yellow" },
+                { "value": 5, "color": "red" }
+              ]
+            },
+            "max": 100,
+            "unit": "percent"
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "Review Queue Size",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 6, "x": 12, "y": 8 },
+        "targets": [
+          {
+            "expr": "skillhub_review_queue_size",
+            "legendFormat": "Pending Reviews"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Skill Uploads",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 6, "x": 18, "y": 8 },
+        "targets": [
+          {
+            "expr": "sum(increase(skillhub_skill_uploads_total[24h]))",
+            "legendFormat": "Last 24h"
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Pod Memory Usage",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+        "targets": [
+          {
+            "expr": "container_memory_usage_bytes{namespace=\"skillhub\", container!=\"\"} / 1024 / 1024",
+            "legendFormat": "{{pod}} / {{container}}"
+          }
+        ],
+        "fieldConfig": { "defaults": { "unit": "decmbytes" } }
+      },
+      {
+        "id": 8,
+        "title": "Pod CPU Usage",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+        "targets": [
+          {
+            "expr": "rate(container_cpu_usage_seconds_total{namespace=\"skillhub\", container!=\"\"}[5m])",
+            "legendFormat": "{{pod}} / {{container}}"
+          }
+        ],
+        "fieldConfig": { "defaults": { "unit": "cores" } }
+      }
+    ]
+  }
+}

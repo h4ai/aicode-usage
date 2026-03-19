@@ -1,0 +1,116 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "skillhub-api",
+    "title": "SkillHub — API Performance",
+    "tags": ["skillhub", "api"],
+    "timezone": "browser",
+    "refresh": "10s",
+    "time": { "from": "now-1h", "to": "now" },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Request Rate by Route",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
+        "targets": [
+          {
+            "expr": "sum(rate(skillhub_http_requests_total[5m])) by (route, method)",
+            "legendFormat": "{{method}} {{route}}"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Response Time by Route (p95)",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(skillhub_http_request_duration_seconds_bucket[5m])) by (le, route))",
+            "legendFormat": "{{route}}"
+          }
+        ],
+        "fieldConfig": { "defaults": { "unit": "s" } }
+      },
+      {
+        "id": 3,
+        "title": "Error Rate by Route",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+        "targets": [
+          {
+            "expr": "sum(rate(skillhub_http_requests_total{status_code=~\"5..\"}[5m])) by (route)",
+            "legendFormat": "{{route}}"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "In-Flight Requests",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+        "targets": [
+          {
+            "expr": "sum(skillhub_http_requests_in_flight) by (method)",
+            "legendFormat": "{{method}}"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Search Latency (p50/p95/p99)",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(skillhub_search_latency_seconds_bucket[5m])) by (le, type))",
+            "legendFormat": "p50 {{type}}"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(skillhub_search_latency_seconds_bucket[5m])) by (le, type))",
+            "legendFormat": "p95 {{type}}"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(skillhub_search_latency_seconds_bucket[5m])) by (le, type))",
+            "legendFormat": "p99 {{type}}"
+          }
+        ],
+        "fieldConfig": { "defaults": { "unit": "s" } }
+      },
+      {
+        "id": 6,
+        "title": "HTTP Status Code Distribution",
+        "type": "piechart",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+        "targets": [
+          {
+            "expr": "sum(increase(skillhub_http_requests_total[1h])) by (status_code)",
+            "legendFormat": "{{status_code}}"
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Node.js Memory Usage",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+        "targets": [
+          {
+            "expr": "skillhub_process_resident_memory_bytes / 1024 / 1024",
+            "legendFormat": "RSS (MB)"
+          },
+          {
+            "expr": "skillhub_nodejs_heap_size_used_bytes / 1024 / 1024",
+            "legendFormat": "Heap Used (MB)"
+          },
+          {
+            "expr": "skillhub_nodejs_heap_size_total_bytes / 1024 / 1024",
+            "legendFormat": "Heap Total (MB)"
+          }
+        ],
+        "fieldConfig": { "defaults": { "unit": "decmbytes" } }
+      }
+    ]
+  }
+}

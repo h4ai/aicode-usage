@@ -1,0 +1,41 @@
+########################################################
+# Enterprise SkillHub — BGE-M3 Embedding Service
+# Serves BAAI/bge-m3 model via HTTP API
+########################################################
+
+FROM python:3.11-slim AS base
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install Python dependencies
+COPY requirements-bge.txt ./
+RUN pip install --no-cache-dir -r requirements-bge.txt
+
+# Copy application code
+COPY bge-m3-server.py ./
+
+# Create non-root user
+RUN groupadd -g 1000 bge && \
+    useradd -u 1000 -g bge -m bge
+
+# Model cache directory
+RUN mkdir -p /app/models && chown -R bge:bge /app
+
+USER bge
+
+ENV MODEL_NAME=BAAI/bge-m3
+ENV MAX_BATCH_SIZE=32
+ENV WORKERS=2
+ENV PORT=8080
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
+  CMD curl -f http://localhost:8080/health || exit 1
+
+CMD ["python", "bge-m3-server.py"]

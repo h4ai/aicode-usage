@@ -1,0 +1,87 @@
+########################################################
+# Enterprise SkillHub — PostgreSQL 16 StatefulSet
+########################################################
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: skillhub-postgres
+  namespace: skillhub
+  labels:
+    app: skillhub-postgres
+spec:
+  serviceName: skillhub-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: skillhub-postgres
+  template:
+    metadata:
+      labels:
+        app: skillhub-postgres
+    spec:
+      securityContext:
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+      containers:
+        - name: postgres
+          image: pgvector/pgvector:pg16
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_DB
+              value: skillhub
+            - name: POSTGRES_USER
+              value: skillhub
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: skillhub-secrets
+                  key: PG_PASSWORD
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 4Gi
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+            - name: postgres-config
+              mountPath: /etc/postgresql/conf.d
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - skillhub
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - skillhub
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+      volumes:
+        - name: postgres-config
+          configMap:
+            name: postgres-config
+            optional: true
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: ssd
+        resources:
+          requests:
+            storage: 100Gi

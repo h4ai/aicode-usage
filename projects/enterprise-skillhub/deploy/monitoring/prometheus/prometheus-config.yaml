@@ -1,0 +1,104 @@
+########################################################
+# Enterprise SkillHub — Prometheus Scrape Configuration
+########################################################
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: monitoring
+  labels:
+    app: prometheus
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+      scrape_timeout: 10s
+
+    # Alert manager configuration
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets:
+                - alertmanager:9093
+
+    # Load alert rules
+    rule_files:
+      - /etc/prometheus/rules/*.yaml
+
+    # Scrape configurations
+    scrape_configs:
+      # SkillHub Backend API
+      - job_name: skillhub-backend
+        metrics_path: /api/v1/metrics
+        scrape_interval: 10s
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - skillhub
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            regex: skillhub-backend
+            action: keep
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            target_label: app
+
+      # PostgreSQL (via postgres_exporter sidecar if deployed)
+      - job_name: skillhub-postgres
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - skillhub
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            regex: skillhub-postgres
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port]
+            target_label: __address__
+            regex: (.+)
+            replacement: ${1}:9187
+
+      # Redis (via redis_exporter sidecar if deployed)
+      - job_name: skillhub-redis
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - skillhub
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            regex: skillhub-redis
+            action: keep
+
+      # MinIO
+      - job_name: skillhub-minio
+        metrics_path: /minio/v2/metrics/cluster
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - skillhub
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            regex: skillhub-minio
+            action: keep
+
+      # Kubernetes nodes
+      - job_name: kubernetes-nodes
+        kubernetes_sd_configs:
+          - role: node
+        relabel_configs:
+          - action: labelmap
+            regex: __meta_kubernetes_node_label_(.+)
+
+      # kube-state-metrics
+      - job_name: kube-state-metrics
+        static_configs:
+          - targets:
+              - kube-state-metrics:8080

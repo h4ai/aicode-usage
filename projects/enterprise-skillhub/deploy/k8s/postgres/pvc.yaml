@@ -1,0 +1,19 @@
+########################################################
+# Enterprise SkillHub — PostgreSQL PVC (standalone)
+# Note: StatefulSet creates its own PVC via volumeClaimTemplates.
+# This PVC is for manual provisioning or pre-provisioned storage.
+########################################################
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: skillhub-postgres-data
+  namespace: skillhub
+  labels:
+    app: skillhub-postgres
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ssd
+  resources:
+    requests:
+      storage: 100Gi

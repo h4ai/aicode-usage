@@ -1,0 +1,83 @@
+########################################################
+# Enterprise SkillHub — PostgreSQL Backup CronJob
+# Daily at 02:00 → pg_dump → upload to MinIO
+########################################################
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: skillhub-pg-backup
+  namespace: skillhub
+  labels:
+    app: skillhub-postgres
+    component: backup
+spec:
+  schedule: "0 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 7
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backupLimit: 1
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: pg-backup
+              image: postgres:16-alpine
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+                  BACKUP_FILE="/tmp/skillhub_${TIMESTAMP}.sql.gz"
+
+                  echo "Starting PostgreSQL backup at ${TIMESTAMP}..."
+
+                  # Dump database
+                  PGPASSWORD="${PG_PASSWORD}" pg_dump \
+                    -h skillhub-postgres \
+                    -U skillhub \
+                    -d skillhub \
+                    --no-owner \
+                    --no-privileges \
+                    | gzip > "${BACKUP_FILE}"
+
+                  echo "Backup created: ${BACKUP_FILE} ($(du -h ${BACKUP_FILE} | cut -f1))"
+
+                  # Upload to MinIO
+                  mc alias set backup \
+                    http://skillhub-minio:9000 \
+                    "${MINIO_ACCESS_KEY}" \
+                    "${MINIO_SECRET_KEY}"
+
+                  mc cp "${BACKUP_FILE}" backup/skillhub-backups/postgres/
+
+                  # Cleanup old backups (keep last 30 days)
+                  mc rm --older-than 30d --recursive --force \
+                    backup/skillhub-backups/postgres/
+
+                  echo "Backup uploaded and cleanup complete."
+              env:
+                - name: PG_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: skillhub-secrets
+                      key: PG_PASSWORD
+                - name: MINIO_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: skillhub-secrets
+                      key: MINIO_ACCESS_KEY
+                - name: MINIO_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: skillhub-secrets
+                      key: MINIO_SECRET_KEY
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: 500m
+                  memory: 1Gi

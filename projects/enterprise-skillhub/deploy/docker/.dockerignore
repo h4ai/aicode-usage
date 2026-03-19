@@ -1,0 +1,43 @@
+# Build artifacts
+node_modules
+dist
+coverage
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Version control
+.git
+.gitignore
+
+# Docker
+docker-compose*.yml
+Dockerfile*
+
+# Documentation
+*.md
+LICENSE
+
+# Tests
+test/
+*.spec.ts
+*.e2e-spec.ts
+jest.config.*
+jest-e2e.config.*
+
+# Config files not needed in container
+.env*
+.eslintrc*
+.prettierrc*
+tsconfig.json
+tsconfig.build.json
+
+# Deployment configs
+deploy/
+
+# OS files
+.DS_Store
+Thumbs.db

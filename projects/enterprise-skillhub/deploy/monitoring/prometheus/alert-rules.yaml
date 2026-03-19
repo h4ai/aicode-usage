@@ -1,0 +1,176 @@
+########################################################
+# Enterprise SkillHub — Prometheus Alert Rules
+########################################################
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: skillhub-alert-rules
+  namespace: monitoring
+  labels:
+    app: prometheus
+data:
+  skillhub-alerts.yaml: |
+    groups:
+      # ====================================
+      # API Performance Alerts
+      # ====================================
+      - name: skillhub.api
+        rules:
+          # API response time p99 > 2s
+          - alert: SkillHubAPIHighLatency
+            expr: |
+              histogram_quantile(0.99,
+                sum(rate(skillhub_http_request_duration_seconds_bucket{app="skillhub-backend"}[5m])) by (le)
+              ) > 2
+            for: 5m
+            labels:
+              severity: warning
+              team: backend
+            annotations:
+              summary: "API response time p99 > 2s"
+              description: "The 99th percentile API response time is {{ $value | humanizeDuration }} (threshold: 2s)"
+              runbook: "https://wiki.internal/skillhub/runbook#api-high-latency"
+
+          # API error rate > 5%
+          - alert: SkillHubAPIHighErrorRate
+            expr: |
+              (
+                sum(rate(skillhub_http_requests_total{app="skillhub-backend",status_code=~"5.."}[5m]))
+                /
+                sum(rate(skillhub_http_requests_total{app="skillhub-backend"}[5m]))
+              ) > 0.05
+            for: 3m
+            labels:
+              severity: critical
+              team: backend
+            annotations:
+              summary: "API error rate > 5%"
+              description: "Backend error rate is {{ $value | humanizePercentage }} (threshold: 5%)"
+              runbook: "https://wiki.internal/skillhub/runbook#api-errors"
+
+      # ====================================
+      # Infrastructure Alerts
+      # ====================================
+      - name: skillhub.infra
+        rules:
+          # PostgreSQL connection pool > 80%
+          - alert: SkillHubPGConnectionPoolHigh
+            expr: |
+              skillhub_db_pool_connections{state="active"}
+              /
+              skillhub_db_pool_connections{state="total"}
+              > 0.8
+            for: 5m
+            labels:
+              severity: warning
+              team: dba
+            annotations:
+              summary: "PostgreSQL connection pool usage > 80%"
+              description: "PG connection pool is at {{ $value | humanizePercentage }} capacity"
+              runbook: "https://wiki.internal/skillhub/runbook#pg-pool"
+
+          # Redis memory > 90%
+          - alert: SkillHubRedisMemoryHigh
+            expr: |
+              redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+            for: 5m
+            labels:
+              severity: warning
+              team: infra
+            annotations:
+              summary: "Redis memory usage > 90%"
+              description: "Redis memory is at {{ $value | humanizePercentage }}"
+              runbook: "https://wiki.internal/skillhub/runbook#redis-memory"
+
+          # Disk usage > 85%
+          - alert: SkillHubDiskUsageHigh
+            expr: |
+              (
+                kubelet_volume_stats_used_bytes{namespace="skillhub"}
+                /
+                kubelet_volume_stats_capacity_bytes{namespace="skillhub"}
+              ) > 0.85
+            for: 10m
+            labels:
+              severity: warning
+              team: infra
+            annotations:
+              summary: "Disk usage > 85% in skillhub namespace"
+              description: "Volume {{ $labels.persistentvolumeclaim }} is at {{ $value | humanizePercentage }}"
+              runbook: "https://wiki.internal/skillhub/runbook#disk-usage"
+
+      # ====================================
+      # Pod Health Alerts
+      # ====================================
+      - name: skillhub.pods
+        rules:
+          # Pod restart > 3 times in 5 min
+          - alert: SkillHubPodFrequentRestarts
+            expr: |
+              increase(kube_pod_container_status_restarts_total{namespace="skillhub"}[5m]) > 3
+            for: 1m
+            labels:
+              severity: critical
+              team: backend
+            annotations:
+              summary: "Pod restarting frequently (> 3 times in 5 min)"
+              description: "Pod {{ $labels.pod }} has restarted {{ $value }} times in the last 5 minutes"
+              runbook: "https://wiki.internal/skillhub/runbook#pod-restarts"
+
+          # Pod not ready for > 5 min
+          - alert: SkillHubPodNotReady
+            expr: |
+              kube_pod_status_ready{namespace="skillhub", condition="true"} == 0
+            for: 5m
+            labels:
+              severity: warning
+              team: backend
+            annotations:
+              summary: "Pod not ready for > 5 minutes"
+              description: "Pod {{ $labels.pod }} has been not ready for more than 5 minutes"
+
+      # ====================================
+      # Business Metrics Alerts
+      # ====================================
+      - name: skillhub.business
+        rules:
+          # Review queue backlog > 100
+          - alert: SkillHubReviewQueueBacklog
+            expr: |
+              skillhub_review_queue_size > 100
+            for: 15m
+            labels:
+              severity: warning
+              team: product
+            annotations:
+              summary: "Review queue backlog > 100 items"
+              description: "{{ $value }} reviews pending. Consider adding more reviewers."
+              runbook: "https://wiki.internal/skillhub/runbook#review-backlog"
+
+          # Search latency p99 > 3s
+          - alert: SkillHubSearchSlow
+            expr: |
+              histogram_quantile(0.99,
+                sum(rate(skillhub_search_latency_seconds_bucket[5m])) by (le)
+              ) > 3
+            for: 5m
+            labels:
+              severity: warning
+              team: backend
+            annotations:
+              summary: "Search latency p99 > 3s"
+              description: "Search p99 latency is {{ $value | humanizeDuration }}"
+              runbook: "https://wiki.internal/skillhub/runbook#search-slow"
+
+          # BGE-M3 embedding service down
+          - alert: SkillHubBGEM3Down
+            expr: |
+              up{job="skillhub-bge-m3"} == 0
+            for: 5m
+            labels:
+              severity: critical
+              team: ml
+            annotations:
+              summary: "BGE-M3 embedding service is down"
+              description: "Semantic search will degrade to keyword-only mode"
+              runbook: "https://wiki.internal/skillhub/runbook#bge-m3-down"

@@ -1,0 +1,60 @@
+########################################################
+# Enterprise SkillHub — Redis 7 Deployment
+########################################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: skillhub-redis
+  namespace: skillhub
+  labels:
+    app: skillhub-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: skillhub-redis
+  template:
+    metadata:
+      labels:
+        app: skillhub-redis
+    spec:
+      securityContext:
+        runAsUser: 999
+        runAsGroup: 999
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          command:
+            - redis-server
+            - --maxmemory
+            - "2gb"
+            - --maxmemory-policy
+            - allkeys-lru
+            - --appendonly
+            - "yes"
+            - --appendfsync
+            - everysec
+          ports:
+            - containerPort: 6379
+              name: redis
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 2560Mi
+          livenessProbe:
+            exec:
+              command:
+                - redis-cli
+                - ping
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command:
+                - redis-cli
+                - ping
+            initialDelaySeconds: 5
+            periodSeconds: 5

@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: skillhub-backend
+  namespace: skillhub
+  labels:
+    app: skillhub-backend
+    app.kubernetes.io/name: enterprise-skillhub
+    app.kubernetes.io/component: backend
+spec:
+  type: ClusterIP
+  selector:
+    app: skillhub-backend
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http
+      protocol: TCP

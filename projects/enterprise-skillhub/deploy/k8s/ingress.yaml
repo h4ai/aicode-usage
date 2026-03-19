@@ -1,0 +1,62 @@
+########################################################
+# Enterprise SkillHub — Ingress
+# TLS termination via cert-manager + Let's Encrypt
+########################################################
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: skillhub-ingress
+  namespace: skillhub
+  labels:
+    app.kubernetes.io/name: enterprise-skillhub
+  annotations:
+    # cert-manager TLS
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    # Or for enterprise internal CA:
+    # cert-manager.io/cluster-issuer: "internal-ca-issuer"
+
+    # Nginx ingress rate limiting
+    nginx.ingress.kubernetes.io/limit-rps: "50"
+    nginx.ingress.kubernetes.io/limit-burst-multiplier: "5"
+    nginx.ingress.kubernetes.io/limit-connections: "20"
+
+    # Request size limit (for file uploads)
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+
+    # Timeouts
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "10"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+
+    # Security headers (defense in depth, in addition to Helmet)
+    nginx.ingress.kubernetes.io/server-snippet: |
+      add_header X-Request-ID $request_id always;
+
+    # HSTS via ingress (belt + suspenders with Helmet)
+    nginx.ingress.kubernetes.io/hsts: "true"
+    nginx.ingress.kubernetes.io/hsts-max-age: "31536000"
+    nginx.ingress.kubernetes.io/hsts-include-subdomains: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - skillhub.internal.company.com
+      secretName: skillhub-tls-cert
+  rules:
+    - host: skillhub.internal.company.com
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: skillhub-backend
+                port:
+                  number: 3000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: skillhub-backend
+                port:
+                  number: 3000

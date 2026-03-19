@@ -1,0 +1,49 @@
+########################################################
+# Enterprise SkillHub — Backend ConfigMap
+# Non-sensitive configuration values
+########################################################
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: skillhub-backend-config
+  namespace: skillhub
+  labels:
+    app: skillhub-backend
+data:
+  # Application
+  API_PREFIX: "api/v1"
+  APP_VERSION: "1.0.0"
+
+  # LDAP
+  LDAP_URL: "ldaps://ad.internal.company.com:636"
+  LDAP_BIND_DN: "CN=skillhub-svc,OU=ServiceAccounts,DC=company,DC=com"
+  LDAP_SEARCH_BASE: "OU=Users,DC=company,DC=com"
+  LDAP_SEARCH_FILTER: "(sAMAccountName={{username}})"
+  LDAP_USE_TLS: "true"
+  LDAP_GROUP_ROLE_MAP: |
+    {
+      "CN=SkillHub-Admins,OU=Groups,DC=company,DC=com": "ADMIN",
+      "CN=SkillHub-Reviewers,OU=Groups,DC=company,DC=com": "REVIEWER"
+    }
+
+  # JWT
+  JWT_EXPIRES_IN: "12h"
+
+  # MinIO
+  MINIO_ENDPOINT: "skillhub-minio"
+  MINIO_PORT: "9000"
+  MINIO_USE_SSL: "false"
+  MINIO_BUCKET: "skillhub-packages"
+
+  # Redis
+  REDIS_URL: "redis://skillhub-redis:6379"
+
+  # BGE-M3 Embedding Service
+  BGE_M3_URL: "http://skillhub-bge-m3:8080"
+
+  # CORS
+  CORS_ORIGINS: "https://skillhub.internal.company.com"
+
+  # Upstream Sync
+  UPSTREAM_ALLOWED_URLS: "https://clawhub.com"
+  UPSTREAM_SYNC_CRON: "0 2 * * *"

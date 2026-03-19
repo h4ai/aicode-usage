@@ -1,0 +1,63 @@
+########################################################
+# Enterprise SkillHub — Kustomization
+# Supports dev / staging / prod overlays
+########################################################
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: skillhub
+
+# Common labels applied to all resources
+commonLabels:
+  app.kubernetes.io/name: enterprise-skillhub
+  app.kubernetes.io/managed-by: kustomize
+
+resources:
+  # Namespace
+  - namespace.yaml
+
+  # Network security
+  - network-policy.yaml
+
+  # Secrets template
+  - secrets.yaml
+
+  # Ingress
+  - ingress.yaml
+
+  # Backend
+  - backend/deployment.yaml
+  - backend/service.yaml
+  - backend/hpa.yaml
+  - backend/configmap.yaml
+
+  # PostgreSQL
+  - postgres/statefulset.yaml
+  - postgres/service.yaml
+  - postgres/pvc.yaml
+  - postgres/backup-cronjob.yaml
+
+  # MinIO
+  - minio/statefulset.yaml
+  - minio/service.yaml
+  - minio/pvc.yaml
+
+  # Redis
+  - redis/deployment.yaml
+  - redis/service.yaml
+
+  # BGE-M3 Embedding Service
+  - bge-m3/deployment.yaml
+  - bge-m3/service.yaml
+
+# Image tags — override per environment
+images:
+  - name: enterprise-skillhub
+    newName: registry.internal.company.com/skillhub/backend
+    newTag: latest
+
+# Config overlays per environment
+# Usage:
+#   kubectl apply -k deploy/k8s/                    # base (dev)
+#   kubectl apply -k deploy/k8s/overlays/staging/   # staging
+#   kubectl apply -k deploy/k8s/overlays/prod/      # production

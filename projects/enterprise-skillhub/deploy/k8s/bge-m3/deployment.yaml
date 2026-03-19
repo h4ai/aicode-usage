@@ -1,0 +1,73 @@
+########################################################
+# Enterprise SkillHub — BGE-M3 Embedding Service
+# Optional GPU node affinity
+########################################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: skillhub-bge-m3
+  namespace: skillhub
+  labels:
+    app: skillhub-bge-m3
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: skillhub-bge-m3
+  template:
+    metadata:
+      labels:
+        app: skillhub-bge-m3
+    spec:
+      containers:
+        - name: bge-m3
+          image: registry.internal.company.com/skillhub/bge-m3:latest
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: MODEL_NAME
+              value: "BAAI/bge-m3"
+            - name: MAX_BATCH_SIZE
+              value: "32"
+            - name: WORKERS
+              value: "2"
+          resources:
+            requests:
+              cpu: "1"
+              memory: 4Gi
+              # Uncomment for GPU support:
+              # nvidia.com/gpu: "1"
+            limits:
+              cpu: "4"
+              memory: 8Gi
+              # nvidia.com/gpu: "1"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 120
+            periodSeconds: 30
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+      # Optional: schedule on GPU nodes
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: gpu
+                    operator: In
+                    values:
+                      - "true"
+      tolerations:
+        - key: "nvidia.com/gpu"
+          operator: "Exists"
+          effect: "NoSchedule"

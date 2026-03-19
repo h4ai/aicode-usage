@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: skillhub-minio
+  namespace: skillhub
+  labels:
+    app: skillhub-minio
+spec:
+  type: ClusterIP
+  selector:
+    app: skillhub-minio
+  ports:
+    - name: api
+      port: 9000
+      targetPort: api
+      protocol: TCP
+    - name: console
+      port: 9001
+      targetPort: console
+      protocol: TCP
