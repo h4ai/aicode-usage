@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SkillsService } from './skills.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { StorageService } from '../storage/storage.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import {
   NotFoundException,
@@ -78,6 +79,18 @@ describe('SkillsService', () => {
         SkillsService,
         { provide: PrismaService, useValue: mockPrisma },
         { provide: CACHE_MANAGER, useValue: cacheManager },
+        {
+          provide: StorageService,
+          useValue: {
+            uploadFile: jest.fn(),
+            getPresignedUrl: jest.fn(),
+            deleteFile: jest.fn(),
+            validateZipMagicBytes: jest.fn(),
+            validateZipEntries: jest.fn(),
+            validateSkillMdPresence: jest.fn(),
+            ensureBucket: jest.fn(),
+          },
+        },
       ],
     }).compile();
 

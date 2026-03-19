@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     # Using pgvector image to support vector extension for semantic search

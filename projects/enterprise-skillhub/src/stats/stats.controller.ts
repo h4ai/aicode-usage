@@ -4,7 +4,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 
-@Controller('api/v1/stats')
+@Controller('admin/stats')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN', 'REVIEWER')
 export class StatsController {
