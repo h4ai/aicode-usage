@@ -96,6 +96,18 @@ model TemplateSkill {
 
   @@unique([templateVersionId, skillName])
 }
+
+model TemplateSkillLock {
+  id                String   @id @default(uuid())
+  templateVersionId String
+  skillName         String
+  declaredRange     String   // "^1.2.0"
+  resolvedVersion   String   // "1.3.2" (当前实际解析版本)
+  updatedAt         DateTime @updatedAt
+
+  templateVersion   TemplateVersion @relation(fields: [templateVersionId], references: [id])
+  @@unique([templateVersionId, skillName])
+}
 ```
 
 ## 3. API 设计
@@ -113,8 +125,11 @@ model TemplateSkill {
     *   在指定命名空间下创建模板。
 *   **GET** `/api/v1/templates`
     *   分页、过滤查询模板（支持按命名空间、关键词搜索）。
+    *   增加 `?namespace=xxx&tag=xxx&ai=claude` 过滤参数。
+*   **GET** `/api/v1/templates/@:namespace/:name`
+    *   获取模板详情（含版本列表、Skill 依赖）。
 *   **POST** `/api/v1/templates/:id/versions`
-    *   上传新版本的模板（包含 `manifest` 和脚手架文件）。
+    *   上传新版本的模板（包含 `manifest` 和脚手架文件）。同时支持 CLI 和 Web 上传。
 *   **GET** `/api/v1/templates/:id/versions/:version`
     *   获取特定版本模板的详细信息（清单与下载链接）。
 *   **POST** `/api/v1/templates/:id/versions/:version/publish`
@@ -123,6 +138,10 @@ model TemplateSkill {
 ### 3.3 模板初始化 API（核心）
 *   **GET** `/api/v1/templates/resolve?name=@team/template-name&version=1.0.0`
     *   解析并返回包含模板元数据、脚手架下载 URL 及所有依赖 Skill 的确切版本和下载链接。
+*   **GET** `/api/v1/templates/:id/versions/:v/dependencies`
+    *   查看已解析的依赖版本。
+*   **POST** `/api/v1/templates/:id/versions/:v/dependencies/resolve`
+    *   手动触发依赖重新解析。
 
 ### 3.4 CLI 命令设计
 *   `skillhub namespace create <name>`
@@ -130,8 +149,25 @@ model TemplateSkill {
     *   **核心命令**: 触发初始化，拉取模板与依赖。
 *   `skillhub template publish`
     *   根据目录下的 `template.json` 打包并上传新版本。
-*   `skillhub template search <query>`
-*   `skillhub template list`
+*   `skillhub template search <query> [--tag <tag>] [--ai <tool>]`
+    *   搜索模板（关键词+标签）。例如：`skillhub template search "java springboot" [--tag backend] [--ai claude]`
+*   `skillhub template list [--namespace <namespace>] [--page <page>] [--limit <limit>]`
+    *   列出所有可用模板（支持分页）。
+*   `skillhub template info <@namespace/template-name>`
+    *   查看模板详情（含版本历史、依赖 Skill 列表）。
+*   `skillhub template update [--version <version>] [--dry-run]`
+    *   在已初始化的项目中更新模板到指定或最新版本。`--dry-run` 更新时展示 diff 预览（哪些文件会变更），需用户确认。
+*   `skillhub template outdated`
+    *   检查模板是否有新版本，也可查看哪些依赖有 major 更新可用。
+
+### 3.5 Web 前端模板页面
+*   **模板导航**: 网页端新增"模板"Tab，与"Skills"并列。
+*   **模板列表页**: 卡片展示，支持按命名空间、语言、AI 工具筛选。
+*   **模板详情页**: 展示描述、版本历史、依赖 Skill 列表、安装命令、下载量。支持一键复制安装命令：`skillhub init --template @xxx/yyy --ai claude`。
+*   **Web 上传流程**: 
+    *   支持网页端上传模板：选择命名空间 → 填写元数据 → 上传 ZIP → 自动解析 manifest → 提交审核。
+    *   上传页面提供 `template.json` 的在线编辑器（支持 JSON Schema 校验）。
+    *   上传时自动校验依赖的 Skill 是否存在于 SkillHub 中。
 
 ## 4. 业务逻辑
 
@@ -156,6 +192,35 @@ model TemplateSkill {
 *   允许通过 Manifest 中的 `extends` 字段引用另一个模板作为基础（Base Template）。
 *   CLI 工具在拉取时，递归合并基础模板和当前模板的文件结构，遇到同名文件时，当前团队模板覆盖基础模板。
 
+### 4.5 模板更新逻辑
+*   项目初始化时在本地生成 `.skillhub/template.lock` 文件，记录当前使用的模板名、版本、Skill 依赖版本。
+*   `skillhub template update` 命令读取 lock 文件，对比远端最新版本，生成文件变更 diff。
+*   **更新策略**:
+    *   脚手架文件：只更新未被用户修改过的文件（通过 hash 对比）。
+    *   Skill 文件：始终更新到符合 SemVer 范围的最新版。
+    *   用户修改过的文件：生成 `.skillhub/conflicts/` 冲突文件供手动合并。
+
+### 4.6 Skill 依赖更新策略
+**策略：语义化版本范围自动同步（类似 npm）**
+
+模板中的依赖声明示例：
+```json
+{
+  "skills": {
+    "code-review": "^1.2.0",      // 自动同步 1.x.x（minor+patch）
+    "deploy-helper": "~2.1.0",    // 自动同步 2.1.x（patch only）
+    "security-scan": "3.0.0"      // 锁定版本，不自动同步
+  }
+}
+```
+
+服务端逻辑：
+*   当 Skill 发布新版本时，系统扫描所有引用该 Skill 的 Template。
+*   如果新版本在 SemVer 范围内（如 `^1.2.0` 匹配 `1.3.0`）→ **自动更新**模板的 resolved 版本。
+*   如果新版本是 major 变更（如 `^1.2.0` 不匹配 `2.0.0`）→ **通知模板作者**，不自动更新。
+*   通知方式：SkillHub 站内通知 + 可选飞书/企微 Webhook。
+*   `skillhub template outdated` 命令可查看哪些依赖有 major 更新可用。
+
 ## 5. 脚手架引擎 (CLI 端实现)
 
 *   **模板变量替换**:
@@ -173,25 +238,7 @@ model TemplateSkill {
 *   **审核流程**: 模板版本的发布状态（`PENDING_REVIEW` -> `PUBLISHED`）完全复用 SPEC-005 的审核工作流与通知机制。
 *   **搜索复用**: 模板的搜索接入 pgvector 或 PostgreSQL 的全文检索，与 SPEC-004 的搜索引擎保持一致（通过统一搜索接口或独立的 `/api/v1/templates/search` 但底层复用模块）。
 
-## 7. 安全约束
-
-### 7.1 模板安全扫描
-- 模板上传时复用 SPEC-005 的 4 阶段扫描 Pipeline（文件类型 → 大小 → 安全内容 → 依赖审计）
-- 脚手架中的 shell 脚本（post-init hooks）必须经过人工审核，不得自动执行未审核的脚本
-- 模板变量不得包含 shell 注入风险（变量值必须转义）
-
-### 7.2 命名空间保护
-- 系统保留命名空间：`@system`, `@official`, `@skillhub` 不可被普通用户创建
-- 命名空间名称遵循 `^[a-z0-9][a-z0-9-]*[a-z0-9]$`，3-32 字符
-- 删除命名空间需 ADMIN 确认，且该空间下所有模板标记为 DEPRECATED
-
-### 7.3 模板大小限制
-- 单个脚手架 ZIP ≤ 50MB（含 Skill 依赖解压后 ≤ 200MB）
-- manifest.json ≤ 64KB
-- 变量数量 ≤ 50 个
-- 继承深度 ≤ 3 层
-
-## 8. 验收标准 (AC)
+## 7. 验收标准 (AC)
 
 1.  **AC-1 (数据模型)**: 数据库 Schema 包含 `Namespace`, `Template`, `TemplateVersion`，且关联关系正确。
 2.  **AC-2 (命名空间权限)**: 用户只能在自己所属且有权限的命名空间（例如 `@backend-team`）下成功发布模板，非成员发布返回 403 Forbidden。
@@ -201,12 +248,14 @@ model TemplateSkill {
 6.  **AC-6 (变量替换)**: CLI 提示输入 `projectName` 后，生成的 `pom.xml` 或 `package.json` 中的相应变量（如 `{{projectName}}`）被正确替换。
 7.  **AC-7 (Skill 集成)**: 模板清单中包含的 Skill 依赖，在初始化完成后，相关的 Skill 文件已正确放置在 AI 工具对应的 `skills` 目录下。
 8.  **AC-8 (审核流复用)**: 模板发布提交后，状态变更为 `PENDING_REVIEW`，审批通过后方可被其他用户搜索和 `init` 拉取。
-9.  **AC-9 (模板继承)**: 使用 `extends` 继承基础模板后，本地生成的文件包含基础模板 + 团队覆盖，同名文件以团队模板为准。
-10. **AC-10 (安全约束)**: 脚手架 ZIP > 50MB 时返回 `400`；非成员创建保留命名空间返回 `403`。
+9.  **AC-11 (模板列表查询)**: CLI `skillhub template list` 和网页端均能展示可用模板列表，支持按命名空间和关键词过滤。
+10. **AC-12 (模板更新)**: 在已初始化项目中执行 `skillhub template update`，能正确更新未修改的文件，保留用户修改的文件，并在 `.skillhub/conflicts/` 中生成冲突文件。
+11. **AC-13 (Web 上传)**: 通过网页端上传模板 ZIP 后，系统自动解析 manifest 并校验依赖 Skill 存在性，不存在则返回错误提示。
+12. **AC-14 (Skill 自动同步)**: 当 Skill `code-review` 从 `1.2.0` 更新到 `1.3.0` 时，声明了 `^1.2.0` 的模板自动更新 resolvedVersion 为 `1.3.0`。
+13. **AC-15 (Major 变更通知)**: 当 Skill `code-review` 发布 `2.0.0` 时，系统不自动更新，但向模板作者发送站内通知。
 
-## 9. 变更记录
-
-| 日期 | 版本 | 作者 | 变更说明 |
-|------|------|------|---------|
-| 2026-03-20 | 0.1 | PO Agent | 初稿 |
-| 2026-03-20 | 0.2 | PM | 补充安全约束、AC-9/10 |
+---
+## 变更记录
+* 0.1 | PM | 初始草案
+* 0.2 | Tech Lead | 补充 CLI 设计与数据模型
+* 0.3 | PO | 补充模板查询/更新/Web端/Skill同步 5 个场景
