@@ -1,0 +1,33 @@
+========================================
+Example Skill Upload Results
+========================================
+
+--- code-review-helper ---
+{
+  "skillId": "cmmxnalp3000110bf8pn3kbkg",
+  "slug": "code-review-helper",
+  "versionId": "cmmxnalp9000310bfnk7r0b5m",
+  "version": "1.0.0",
+  "filesCount": 4,
+  "message": "Skill \"code-review-helper\" v1.0.0 uploaded successfully"
+}
+
+--- deploy-automation ---
+{
+  "skillId": "cmmxnalsf000d10bfcfwpvj7h",
+  "slug": "deploy-automation",
+  "versionId": "cmmxnalt8000f10bfzhz0rvex",
+  "version": "1.0.0",
+  "filesCount": 4,
+  "message": "Skill \"deploy-automation\" v1.0.0 uploaded successfully"
+}
+
+--- data-analyzer ---
+{
+  "skillId": "cmmxnalx4000p10bf945lpyau",
+  "slug": "data-analyzer",
+  "versionId": "cmmxnalxb000r10bfmpfm6bhk",
+  "version": "1.0.0",
+  "filesCount": 4,
+  "message": "Skill \"data-analyzer\" v1.0.0 uploaded successfully"
+}

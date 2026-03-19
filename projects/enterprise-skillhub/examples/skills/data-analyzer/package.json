@@ -1,0 +1,9 @@
+{
+  "name": "data-analyzer",
+  "version": "1.0.0",
+  "description": "Data analysis and visualization assistant with statistical insights",
+  "main": "src/index.ts",
+  "author": "SkillHub Team",
+  "license": "MIT",
+  "keywords": ["data", "analysis", "statistics", "visualization"]
+}

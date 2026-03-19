@@ -1,0 +1,437 @@
+========================================
+Search Verification Results
+Thu Mar 19 23:52:08 CST 2026
+========================================
+
+--- Search: web search ---
+{
+  "data": [
+    {
+      "id": "cmmxneku8003111l0oa28f0m9",
+      "name": "Web Search",
+      "slug": "web-search",
+      "summary": "Multi-engine web search with result aggregation and content extraction",
+      "category": "SEARCH",
+      "similarityScore": null,
+      "downloadCount": 0,
+      "installCount": 0,
+      "starCount": 0
+    }
+  ],
+  "total": 1,
+  "fallback": true
+}
+
+--- Search: code review ---
+{
+  "data": [
+    {
+      "id": "cmmxnalp3000110bf8pn3kbkg",
+      "name": "Code Review Helper",
+      "slug": "code-review-helper",
+      "summary": "AI-powered code review assistant that helps identify common issues",
+      "category": "DEVELOPMENT",
+      "similarityScore": null,
+      "downloadCount": 0,
+      "installCount": 0,
+      "starCount": 0
+    }
+  ],
+  "total": 1,
+  "fallback": true
+}
+
+--- Search: deploy ---
+{
+  "data": [
+    {
+      "id": "cmmxnalsf000d10bfcfwpvj7h",
+      "name": "Deploy Automation",
+      "slug": "deploy-automation",
+      "summary": "Automated deployment script generator for multi-cloud environments",
+      "category": "DEVOPS",
+      "similarityScore": null,
+      "downloadCount": 0,
+      "installCount": 0,
+      "starCount": 0
+    }
+  ],
+  "total": 1,
+  "fallback": true
+}
+
+--- Full list ---
+{
+  "data": [
+    {
+      "id": "cmmxneku8003111l0oa28f0m9",
+      "name": "Web Search",
+      "slug": "web-search",
+      "summary": "Multi-engine web search with result aggregation and content extraction",
+      "category": "SEARCH",
+      "visibility": "PUBLIC",
+      "moderationStatus": "ACTIVE",
+      "ownerId": "test-admin-001",
+      "latestVersionId": "cmmxnekue003311l0b0kk80id",
+      "publishedVersionId": "cmmxnekue003311l0b0kk80id",
+      "downloadCount": 0,
+      "installCount": 0,
+      "starCount": 0,
+      "badges": null,
+      "tags": [
+        "search",
+        "web",
+        "browser"
+      ],
+      "createdAt": "2026-03-19T15:51:56.673Z",
+      "updatedAt": "2026-03-19T15:51:56.682Z",
+      "owner": {
+        "id": "test-admin-001",
+        "displayName": "Test User",
+        "department": "Engineering"
+      }
+    },
+    {
+      "id": "cmmxnekje002p11l06gi0bcrj",
+      "name": "Weather Forecast",
+      "slug": "weather-forecast",
+      "summary": "Real-time weather data and forecasts from multiple providers with location auto-detection",
+      "category": "GENERAL",
+      "visibility": "PUBLIC",
+      "moderationStatus": "ACTIVE",
+      "ownerId": "test-admin-001",
+      "latestVersionId": "cmmxnekjj002r11l0dfganf2e",
+      "publishedVersionId": "cmmxnekjj002r11l0dfganf2e",
+      "downloadCount": 0,
+      "installCount": 0,
+      "starCount": 0,
+      "badges": null,
+      "tags": [
+        "weather",
+        "forecast",
+        "api"
+      ],
+      "createdAt": "2026-03-19T15:51:56.283Z",
+      "updatedAt": "2026-03-19T15:51:56.290Z",
+      "owner": {
+        "id": "test-admin-001",
+        "displayName": "Test User",
+        "department": "Engineering"
+      }
+    },
+    {
+      "id": "cmmxnek8k002d11l0yuch4qs0",
+      "name": "Translate Tool",
+      "slug": "translate-tool",
+      "summary": "Multi-language translation supporting 100+ languages with context-aware accuracy",
+      "category": "COMMUNICATION",
+      "visibility": "PUBLIC",
+      "moderationStatus": "ACTIVE",
+      "ownerId": "test-admin-001",
+      "latestVersionId": "cmmxnek8o002f11l0ad5i87r6",
+      "publishedVersionId": "cmmxnek8o002f11l0ad5i87r6",
+      "downloadCount": 0,
+      "installCount": 0,
+      "starCount": 0,
+      "badges": null,
+      "tags": [
+        "translation",
+        "language",
+        "i18n"
+      ],
+      "createdAt": "2026-03-19T15:51:55.893Z",
+      "updatedAt": "2026-03-19T15:51:55.900Z",
+      "owner": {
+        "id": "test-admin-001",
+        "displayName": "Test User",
+        "department": "Engineering"
+      }
+    },
+    {
+      "id": "cmmxnejxq002111l0b36rrs7e",
+      "name": "Image Generator",
+      "slug": "image-generator",
+      "summary": "AI image generation with DALL-E, Stable Diffusion, and Midjourney integration",
+      "category": "MULTIMEDIA",
+      "visibility": "PUBLIC",
+      "moderationStatus": "ACTIVE",
+      "ownerId": "test-admin-001",
+      "latestVersionId": "cmmxnejxu002311l0zfe5jg5z",
+      "publishedVersionId": "cmmxnejxu002311l0zfe5jg5z",
+      "downloadCount": 0,
+      "installCount": 0,
+      "starCount": 0,
+      "badges": null,
+      "tags": [
+        "image",
+        "generation",
+        "ai-art"
+      ],
+      "createdAt": "2026-03-19T15:51:55.502Z",
+      "updatedAt": "2026-03-19T15:51:55.510Z",
+      "owner": {
+        "id": "test-admin-001",
+        "displayName": "Test User",
+        "department": "Engineering"
+      }
+    },
+    {
+      "id": "cmmxnejmt001p11l0eckulbhm",
+      "name": "File Manager",
+      "slug": "file-manager",
+      "summary": "Intelligent file management with pattern matching, batch operations, and deduplication",
+      "category": "GENERAL",
+      "visibility": "PUBLIC",
+      "moderationStatus": "ACTIVE",
+      "ownerId": "test-admin-001",
+      "latestVersionId": "cmmxnejmy001r11l0nc1gfdlp",
+      "publishedVersionId": "cmmxnejmy001r11l0nc1gfdlp",
+      "downloadCount": 0,
+      "installCount": 0,
+      "starCount": 0,
+      "badges": null,
+      "tags": [
+        "files",
+        "filesystem",
+        "management"
+      ],
+      "createdAt": "2026-03-19T15:51:55.109Z",
+      "updatedAt": "2026-03-19T15:51:55.118Z",
+      "owner": {
+        "id": "test-admin-001",
+        "displayName": "Test User",
+        "department": "Engineering"
+      }
+    },
+    {
+      "id": "cmmxnejbl001d11l0v0zdld1t",
+      "name": "Email Assistant",
+      "slug": "email-assistant",
+      "summary": "AI-powered email drafting, summarization, and inbox management",
+      "category": "COMMUNICATION",
+      "visibility": "PUBLIC",
+      "moderationStatus": "ACTIVE",
+      "ownerId": "test-admin-001",
+      "latestVersionId": "cmmxnejbq001f11l0s6jdzyqr",
+      "publishedVersionId": "cmmxnejbq001f11l0s6jdzyqr",
+      "downloadCount": 0,
+      "installCount": 0,
+      "starCount": 0,
+      "badges": null,
+      "tags": [
+        "email",
+        "assistant",
+        "automation"
+      ],
+      "createdAt": "2026-03-19T15:51:54.706Z",
+      "updatedAt": "2026-03-19T15:51:54.713Z",
+      "owner": {
+        "id": "test-admin-001",
+        "displayName": "Test User",
+        "department": "Engineering"
+      }
+    },
+    {
+      "id": "cmmxnej0s001111l0u02s2988",
+      "name": "Database Query",
+      "slug": "database-query",
+      "summary": "Natural language to SQL converter with query optimization and result visualization",
+      "category": "DATA",
+      "visibility": "PUBLIC",
+      "moderationStatus": "ACTIVE",
+      "ownerId": "test-admin-001",
+      "latestVersionId": "cmmxnej0x001311l096i5pive",
+      "publishedVersionId": "cmmxnej0x001311l096i5pive",
+      "downloadCount": 0,
+      "installCount": 0,
+      "starCount": 0,
+      "badges": null,
+      "tags": [
+        "database",
+        "sql",
+        "query"
+      ],
+      "createdAt": "2026-03-19T15:51:54.317Z",
+      "updatedAt": "2026-03-19T15:51:54.325Z",
+      "owner": {
+        "id": "test-admin-001",
+        "displayName": "Test User",
+        "department": "Engineering"
+      }
+    },
+    {
+      "id": "cmmxneipz000p11l06kwt59uz",
+      "name": "Code Interpreter",
+      "slug": "code-interpreter",
+      "summary": "Sandboxed code execution environment supporting Python, JavaScript, and TypeScript",
+      "category": "DEVELOPMENT",
+      "visibility": "PUBLIC",
+      "moderationStatus": "ACTIVE",
+      "ownerId": "test-admin-001",
+      "latestVersionId": "cmmxneiq3000r11l0bz1dgqt6",
+      "publishedVersionId": "cmmxneiq3000r11l0bz1dgqt6",
+      "downloadCount": 0,
+      "installCount": 0,
+      "starCount": 0,
+      "badges": null,
+      "tags": [
+        "code",
+        "interpreter",
+        "sandbox"
+      ],
+      "createdAt": "2026-03-19T15:51:53.927Z",
+      "updatedAt": "2026-03-19T15:51:53.935Z",
+      "owner": {
+        "id": "test-admin-001",
+        "displayName": "Test User",
+        "department": "Engineering"
+      }
+    },
+    {
+      "id": "cmmxneiex000d11l0hpy2k1xa",
+      "name": "Calendar Sync",
+      "slug": "calendar-sync",
+      "summary": "Cross-platform calendar synchronization supporting Google, Outlook, and Apple Calendar",
+      "category": "OFFICE",
+      "visibility": "PUBLIC",
+      "moderationStatus": "ACTIVE",
+      "ownerId": "test-admin-001",
+      "latestVersionId": "cmmxneif3000f11l0qik0haf1",
+      "publishedVersionId": "cmmxneif3000f11l0qik0haf1",
+      "downloadCount": 0,
+      "installCount": 0,
+      "starCount": 0,
+      "badges": null,
+      "tags": [
+        "calendar",
+        "scheduling",
+        "sync"
+      ],
+      "createdAt": "2026-03-19T15:51:53.529Z",
+      "updatedAt": "2026-03-19T15:51:53.540Z",
+      "owner": {
+        "id": "test-admin-001",
+        "displayName": "Test User",
+        "department": "Engineering"
+      }
+    },
+    {
+      "id": "cmmxnei3l000111l0snuxbc9a",
+      "name": "API Tester",
+      "slug": "api-tester",
+      "summary": "Automated API endpoint testing with assertion builder and load testing capabilities",
+      "category": "DEVELOPMENT",
+      "visibility": "PUBLIC",
+      "moderationStatus": "ACTIVE",
+      "ownerId": "test-admin-001",
+      "latestVersionId": "cmmxnei3r000311l03h84t5sr",
+      "publishedVersionId": "cmmxnei3r000311l03h84t5sr",
+      "downloadCount": 0,
+      "installCount": 0,
+      "starCount": 0,
+      "badges": null,
+      "tags": [
+        "api",
+        "testing",
+        "http"
+      ],
+      "createdAt": "2026-03-19T15:51:53.121Z",
+      "updatedAt": "2026-03-19T15:51:53.131Z",
+      "owner": {
+        "id": "test-admin-001",
+        "displayName": "Test User",
+        "department": "Engineering"
+      }
+    },
+    {
+      "id": "cmmxnalx4000p10bf945lpyau",
+      "name": "Data Analyzer",
+      "slug": "data-analyzer",
+      "summary": "Data analysis and visualization assistant with statistical insights",
+      "category": "DATA",
+      "visibility": "PUBLIC",
+      "moderationStatus": "ACTIVE",
+      "ownerId": "test-admin-001",
+      "latestVersionId": "cmmxnalxb000r10bfmpfm6bhk",
+      "publishedVersionId": "cmmxnalxb000r10bfmpfm6bhk",
+      "downloadCount": 0,
+      "installCount": 0,
+      "starCount": 0,
+      "badges": null,
+      "tags": [
+        "data",
+        "analysis",
+        "visualization",
+        "statistics"
+      ],
+      "createdAt": "2026-03-19T15:48:51.448Z",
+      "updatedAt": "2026-03-19T15:48:51.462Z",
+      "owner": {
+        "id": "test-admin-001",
+        "displayName": "Test User",
+        "department": "Engineering"
+      }
+    },
+    {
+      "id": "cmmxnalsf000d10bfcfwpvj7h",
+      "name": "Deploy Automation",
+      "slug": "deploy-automation",
+      "summary": "Automated deployment script generator for multi-cloud environments",
+      "category": "DEVOPS",
+      "visibility": "PUBLIC",
+      "moderationStatus": "ACTIVE",
+      "ownerId": "test-admin-001",
+      "latestVersionId": "cmmxnalt8000f10bfzhz0rvex",
+      "publishedVersionId": "cmmxnalt8000f10bfzhz0rvex",
+      "downloadCount": 0,
+      "installCount": 0,
+      "starCount": 0,
+      "badges": null,
+      "tags": [
+        "deploy",
+        "automation",
+        "ci-cd",
+        "infrastructure"
+      ],
+      "createdAt": "2026-03-19T15:48:51.279Z",
+      "updatedAt": "2026-03-19T15:48:51.315Z",
+      "owner": {
+        "id": "test-admin-001",
+        "displayName": "Test User",
+        "department": "Engineering"
+      }
+    },
+    {
+      "id": "cmmxnalp3000110bf8pn3kbkg",
+      "name": "Code Review Helper",
+      "slug": "code-review-helper",
+      "summary": "AI-powered code review assistant that helps identify common issues",
+      "category": "DEVELOPMENT",
+      "visibility": "PUBLIC",
+      "moderationStatus": "ACTIVE",
+      "ownerId": "test-admin-001",
+      "latestVersionId": "cmmxnalp9000310bfnk7r0b5m",
+      "publishedVersionId": "cmmxnalp9000310bfnk7r0b5m",
+      "downloadCount": 0,
+      "installCount": 0,
+      "starCount": 0,
+      "badges": null,
+      "tags": [
+        "code-review",
+        "quality",
+        "automation"
+      ],
+      "createdAt": "2026-03-19T15:48:51.159Z",
+      "updatedAt": "2026-03-19T15:48:51.171Z",
+      "owner": {
+        "id": "test-admin-001",
+        "displayName": "Test User",
+        "department": "Engineering"
+      }
+    }
+  ],
+  "total": 13,
+  "page": 1,
+  "limit": 20,
+  "totalPages": 1
+}

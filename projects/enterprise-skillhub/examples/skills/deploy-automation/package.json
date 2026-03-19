@@ -1,0 +1,9 @@
+{
+  "name": "deploy-automation",
+  "version": "1.0.0",
+  "description": "Automated deployment script generator for multi-cloud environments",
+  "main": "src/index.ts",
+  "author": "SkillHub Team",
+  "license": "MIT",
+  "keywords": ["deploy", "automation", "kubernetes", "docker", "ci-cd"]
+}
