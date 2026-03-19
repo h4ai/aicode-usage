@@ -32,7 +32,7 @@
 ## 当前进度
 - [x] Phase 1 Step 1: Sprint 6 Dev ✅ (16m, 37 suites / 414 tests, 7 commits, pushed)
 - [ ] Phase 1 Step 2: Sprint 6 QA ⚠️ NOT PASS — tsc 类型失败 + 3 个 TC 未覆盖
-- [ ] Phase 1 Step 2b: Sprint 6 Dev 修复 🔄 (agent:dev:subagent:35d2ff4c) — tsc fix + 补充 TC-003/005/013
+- [x] Phase 1 Step 2b: Sprint 6 Dev 修复 ✅ tsc 0 errors, 44 suites / 520 tests, pushed (4d3c8aa)
 - [x] Phase 1 Step 3: Sprint 6 PO 验收 ✅ CONDITIONAL PASS (extends 待完善)
 - [ ] Phase 2 Step 5: Sprint 7 Dev 🔄 执行中 (agent:dev:subagent:92c9daff)
 - [ ] Phase 2 Step 6-7: Sprint 7 QA + PO — 待 Sprint 7 Dev 完成

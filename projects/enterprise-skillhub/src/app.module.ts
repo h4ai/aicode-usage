@@ -14,6 +14,8 @@ import { HealthModule } from './health/health.module';
 // Sprint 6: Template System
 import { NamespacesModule } from './namespaces/namespaces.module';
 import { TemplatesModule } from './templates/templates.module';
+// Sprint 7: Git Integration
+import { GitModule } from './git/git.module';
 import { MetricsController } from './common/controllers/metrics.controller';
 import { MetricsMiddleware } from './common/middleware/metrics.middleware';
 import { BullModule } from '@nestjs/bullmq';
@@ -62,6 +64,9 @@ import { ConfigService } from './config/config.service';
     // Sprint 6: Template System
     NamespacesModule,
     TemplatesModule,
+
+    // Sprint 7: Git Integration
+    GitModule,
 
     // Infrastructure
     HealthModule,

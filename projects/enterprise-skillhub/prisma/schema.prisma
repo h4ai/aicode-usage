@@ -90,6 +90,9 @@ model User {
   namespaceMemberships NamespaceMember[]
   templates           Template[]         @relation("TemplateAuthor")
 
+  // Sprint 7: Git credentials
+  gitCredentials      GitCredential[]
+
   // Sprint 7: Git Credential relation
   gitCredentials      GitCredential[]
 
@@ -293,6 +296,27 @@ model SystemConfig {
 // Sprint 6: Namespace + Template System
 // ============================================================
 
+// ============================================================
+// Sprint 7: Git Integration Enums
+// ============================================================
+
+enum SourceType {
+  ZIP
+  GIT
+}
+
+enum GitAuthType {
+  SSH_KEY
+  TOKEN
+  BASIC
+}
+
+enum CredentialScope {
+  PERSONAL
+  NAMESPACE
+  GLOBAL
+}
+
 enum NamespaceRole {
   ADMIN
   MEMBER
@@ -366,6 +390,12 @@ model TemplateVersion {
   publishedAt     DateTime?
   createdAt       DateTime       @default(now())
 
+  // Sprint 7: Git source fields
+  sourceType      SourceType     @default(ZIP)
+  gitUrl          String?
+  gitRef          String?
+  gitSubPath      String?
+
   template        Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
   skills          TemplateSkill[]
 
@@ -381,6 +411,26 @@ model TemplateSkill {
   templateVersion   TemplateVersion @relation(fields: [templateVersionId], references: [id], onDelete: Cascade)
 
   @@unique([templateVersionId, skillName])
+}
+
+// ============================================================
+// Sprint 7: Git Credential
+// ============================================================
+
+model GitCredential {
+  id          String          @id @default(uuid())
+  name        String
+  type        GitAuthType
+  url         String
+  credential  String          // AES-256-GCM encrypted
+  ownerId     String
+  scope       CredentialScope @default(PERSONAL)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  owner       User            @relation(fields: [ownerId], references: [id])
+
+  @@index([url])
 }
 
 // ============================================================

@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { SemverResolver, VersionResolution } from './semver-resolver';
 import { NotificationService as SyncNotificationService } from './notification.service';
+import * as semver from 'semver';
 
 @Injectable()
 export class DependencySyncService {
@@ -47,7 +48,7 @@ export class DependencySyncService {
         skillName,
         ts.versionRange,
         skillVersions,
-        null, // We don't track resolvedVersion in the current TemplateSkill model
+        semver.minVersion(ts.versionRange)?.version || null,
       );
 
       if (resolution.action === 'update' && resolution.newVersion) {

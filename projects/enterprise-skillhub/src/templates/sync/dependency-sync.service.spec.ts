@@ -118,7 +118,7 @@ describe('DependencySyncService', () => {
         'user-2',
         'react-starter',
         'deploy-helper',
-        expect.any(String),
+        '1.0.0',
         '2.0.0',
       );
     });

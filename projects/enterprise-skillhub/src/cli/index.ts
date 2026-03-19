@@ -14,6 +14,8 @@ import {
   templateInfoCommand,
   templatePublishCommand,
 } from './commands/template';
+import { templateUpdateCommand } from './commands/template-update';
+import { templateOutdatedCommand } from './commands/template-outdated';
 import { namespaceCreateCommand } from './commands/namespace';
 
 const program = new Command();
@@ -74,6 +76,8 @@ program
   .requiredOption('--template <ref>', 'Template reference (e.g. @namespace/name)')
   .option('--ai <tool>', 'AI tool adapter (claude|cursor|codebuddy|windsurf)')
   .option('--dir <path>', 'Target directory (defaults to template name)')
+  .option('--git <url>', 'Git repository URL (alternative to template registry)')
+  .option('--ref <tag>', 'Git ref/tag/branch (for --git)')
   .action(initCommand);
 
 // Template subcommands
@@ -103,6 +107,17 @@ template
   .command('publish')
   .description('Publish current directory as a template')
   .action(templatePublishCommand);
+
+template
+  .command('update')
+  .description('Update project from template')
+  .option('--dry-run', 'Preview changes without modifying files')
+  .action(templateUpdateCommand);
+
+template
+  .command('outdated')
+  .description('Check for template and skill updates')
+  .action(templateOutdatedCommand);
 
 // Namespace subcommands
 const namespace = program
