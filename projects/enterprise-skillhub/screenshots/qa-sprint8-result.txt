@@ -1,0 +1,132 @@
+Enterprise SkillHub - QA Sprint 8 测试结果
+
+日期时间：2026-03-20 03:17~03:19 (GMT+8)
+项目路径：projects/enterprise-skillhub/
+范围：specs/TEST-PLAN-SPRINT6-8.md 中 Sprint 8 用例（TC-042 ~ TC-058）
+
+============================================================
+1) Prisma generate / 依赖安装
+============================================================
+命令：npm install
+结果：postinstall 自动执行 prisma generate 成功
+- Generated Prisma Client (v5.22.0)
+
+注意：npm audit 提示 25 vulnerabilities (4 low, 9 moderate, 12 high)。
+（本次按测试步骤未执行 npm audit fix；建议后续在安全/依赖治理中处理）
+
+============================================================
+2) TypeScript 类型检查
+============================================================
+命令：npx tsc --noEmit
+结果：0 errors（命令无输出，返回码 0）
+
+============================================================
+3) Jest 全量测试
+============================================================
+命令：npx jest --forceExit
+结果：全绿
+- Test Suites: 54 passed, 54 total
+- Tests:       618 passed, 618 total
+- Time:        15.014 s
+- Exit code:   0
+
+备注：测试日志中出现一条错误级别日志（不影响用例结果，但建议降噪/可控）：
+- [NotificationService] Failed to send notification: Network error
+随后对应用例仍 PASS：src/review/notification/notification.service.spec.ts
+
+============================================================
+4) Sprint 8 用例覆盖对照（TC-042 ~ TC-058）
+============================================================
+说明：本次以“自动化测试（jest spec）覆盖”为主；部分 Web UI/E2E 以及大文件上传等仍建议补充 E2E/IT。
+
+下载统计（TC-042 ~ TC-047）
+- TC-042 下载后 downloadCount +1
+  覆盖：src/downloads/downloads.service.spec.ts + src/downloads/downloads.controller.spec.ts + src/stats/stats.*.spec.ts
+  结论：已覆盖（UT/IT 级别）
+
+- TC-043 同一用户 1h 内重复下载只计 1 次
+  覆盖：src/downloads/downloads.service.spec.ts（去重/计数逻辑）
+  结论：已覆盖（UT/IT 级别；依赖 Redis TTL 的端到端联调可追加）
+
+- TC-044 热门排序（weeklyDownloads DESC）
+  覆盖：src/stats/stats.service.spec.ts + src/stats/stats.controller.spec.ts
+  结论：已覆盖（API 排序逻辑）
+
+- TC-045 管理员查询用户下载历史
+  覆盖：src/admin/admin.controller.spec.ts + src/admin/admin.service.spec.ts + src/auth/guards/roles.guard.spec.ts
+  结论：已覆盖（含 403 权限）
+
+- TC-046 使用报告 API
+  覆盖：src/web/admin-dashboard.controller.spec.ts 或 src/admin/*（usage-report 聚合/接口）
+  结论：已覆盖（接口级）
+
+- TC-047 CSV 导出
+  覆盖：src/web/csv-export.service.spec.ts
+  结论：已覆盖（服务/导出内容结构；建议补充响应头/编码的集成测试断言）
+
+Web 前端模板页面（TC-048 ~ TC-053）
+- TC-048 模板 Tab 入口可见且与 Skills 并列
+  覆盖：src/web/template-page.controller.spec.ts
+  结论：部分覆盖（后端渲染/页面接口有覆盖；纯前端导航/可见性建议补充 E2E）
+
+- TC-049 Web 模板列表筛选与排序
+  覆盖：src/web/template-page.controller.spec.ts + src/search/search.*.spec.ts + src/templates/templates.controller.spec.ts
+  结论：已覆盖（API/Controller 层筛选排序；建议补充 UI E2E）
+
+- TC-050 Web 模板详情展示版本历史与依赖列表
+  覆盖：src/web/template-page.controller.spec.ts + src/templates/templates.*.spec.ts + src/skills/skills.*.spec.ts
+  结论：已覆盖（接口字段组织；UI 展示建议补充 E2E）
+
+- TC-051 Web 一键复制安装命令
+  覆盖：src/web/template-page.controller.spec.ts
+  结论：部分覆盖（命令生成/返回可测；真实复制到剪贴板需前端 E2E）
+
+- TC-052 Web 上传 ZIP 自动解析 manifest + 校验 Skill 依赖存在性
+  覆盖：src/templates/templates.controller.spec.ts + src/templates/templates.service.spec.ts + src/skills/skills.service.spec.ts
+  结论：已覆盖（解析/校验主要逻辑；真实上传 multipart + schema 校验体验建议补充 IT/E2E）
+
+- TC-053 审核流复用：PENDING_REVIEW → PUBLISHED 后可被搜索与 init
+  覆盖：src/review/review.*.spec.ts + src/templates/templates.*.spec.ts + src/search/search.*.spec.ts + src/cli/cli-init.spec.ts
+  结论：已覆盖（状态流转/可见性约束逻辑；跨组件联调可补充 E2E）
+
+安全测试（TC-054 ~ TC-058）
+- TC-054 非 ADMIN 访问管理员 API 返回 403
+  覆盖：src/auth/guards/roles.guard.spec.ts + src/admin/admin.controller.spec.ts
+  结论：已覆盖
+
+- TC-055 非命名空间成员发布返回 403（回归）
+  覆盖：src/namespaces/*/*.spec.ts + src/templates/templates.controller.spec.ts
+  结论：已覆盖
+
+- TC-056 ZIP > 50MB 返回 400
+  覆盖：未见针对 >50MB 的自动化用例（当前 jest suites 未明显覆盖文件体积网关限制）
+  结论：未自动化覆盖（建议以 e2e/supertest 或网关层集成测试补齐）
+
+- TC-057 Git 凭证 AES-256 加密验证
+  覆盖：src/git/crypto.util.spec.ts + src/git/git-credential.service.spec.ts + src/git/git-credential.controller.spec.ts
+  结论：已覆盖（加密/解密/持久化字段非明文、脱敏）
+
+- TC-058 SQL 注入测试（搜索参数）
+  覆盖：src/search/search.controller.spec.ts + src/search/search.service.spec.ts
+  结论：已覆盖（不 500/安全处理；建议补充更多 payload/日志校验）
+
+============================================================
+5) 问题清单 / 风险提示
+============================================================
+P1 - 依赖安全风险：npm audit 报告 25 个漏洞（12 high）。
+- 建议：在不影响功能前提下进行依赖升级/补丁；对暴露在服务端的依赖优先处理。
+
+P2 - 测试日志噪音：NotificationService spec 中出现 ERROR 日志 “Network error”，虽然测试通过，但会干扰 CI 判读与告警。
+- 建议：mock 通知发送；或在测试环境降低日志级别/将可预期失败改为 warn。
+
+P1 - 用例缺口：TC-056（ZIP > 50MB）未见自动化用例。
+- 建议：补充集成测试（multipart 上传 + 断言 400/413 与 message），并在 CI 中跑。
+
+============================================================
+6) 整体结论
+============================================================
+- 编译/类型检查：通过（0 TS errors）
+- 单测/集成测试：Jest 54 suites 全绿（618 tests）
+- Sprint 8 覆盖：TC-042~TC-058 大部分已有自动化覆盖；明确缺口为 TC-056（大文件上传限制）以及若干纯 Web UI 交互类用例建议补 E2E。
+
+结论：Sprint 8 可进入发布候选（RC），但建议在发布前处理：依赖高危漏洞 + 补齐 TC-056 自动化。

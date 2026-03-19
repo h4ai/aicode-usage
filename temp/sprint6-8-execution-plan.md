@@ -38,9 +38,10 @@
 - [ ] Phase 2 Step 6: Sprint 7 QA ⚠️ NOT PASS — Prisma 类型问题（环境问题，非代码bug）
 - [x] Phase 2 Step 6b: Prisma 修复 ✅ postinstall + null-check (tsc 0 errors, 48/569 pass)
 - [x] Phase 2 Step 7: Sprint 7 PO ✅ PASS
-- [ ] Phase 3 Step 9: Sprint 8 Dev 🔄 (agent:dev:subagent:8f050ed9) — 提前并行启动
-- [ ] Phase 3 Step 10-11: Sprint 8 QA + PO — 待 Sprint 8 Dev 完成
-- [ ] Phase 4: OPS Docker — 待 Sprint 8 完成
+- [ ] Phase 3 Step 9: Sprint 8 Dev ✅ (10m, 54 suites / 618 tests, 5 commits, pushed)
+- [ ] Phase 3 Step 10: Sprint 8 QA 🔄 (agent:qa:subagent:d0d64343)
+- [ ] Phase 3 Step 11: Sprint 8 PO 🔄 (agent:po:subagent:68d822fb)
+- [ ] Phase 4: OPS Docker 🔄 (agent:dev:subagent:ec7494c3) — 并行启动
 
 ## 执行时间线
 - 02:30 Sprint 6 Dev 启动
@@ -51,3 +52,8 @@
 - 02:59 Sprint 6 Dev 修复完成 ✅ (44 suites, 520 tests)
 - 03:05 Sprint 7 Dev 完成 ✅ (48 suites, 569 tests)
 - 03:06 Sprint 7 QA + PO + Sprint 8 Dev 并行启动
+- 03:07 Sprint 7 QA NOT PASS (Prisma 环境问题)
+- 03:10 Sprint 7 PO PASS ✅
+- 03:11 Prisma 修复完成 ✅ (postinstall 脚本)
+- 03:17 Sprint 8 Dev 完成 ✅ (54 suites, 618 tests)
+- 03:18 Sprint 8 QA + PO + OPS Docker 并行启动
