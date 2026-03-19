@@ -19,6 +19,10 @@ export async function templateOutdatedCommand() {
 
   try {
     const config = loadConfig();
+    if (!config) {
+      console.error('❌ Not logged in. Run `skillhub login` first.');
+      process.exit(1);
+    }
     const baseUrl = config.apiUrl || 'http://localhost:3000/api/v1';
 
     // Check template version

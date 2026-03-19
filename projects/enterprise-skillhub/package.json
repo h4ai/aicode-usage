@@ -19,6 +19,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
+    "postinstall": "prisma generate",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down"
   },
