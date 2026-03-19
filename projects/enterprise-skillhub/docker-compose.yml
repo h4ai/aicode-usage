@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: skillhub-postgres
+    environment:
+      POSTGRES_USER: skillhub
+      POSTGRES_PASSWORD: skillhub_dev
+      POSTGRES_DB: enterprise_skillhub
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U skillhub']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: skillhub-redis
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: skillhub-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ['CMD', 'mc', 'ready', 'local']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  openldap:
+    image: osixia/openldap:1.5.0
+    container_name: skillhub-openldap
+    environment:
+      LDAP_ORGANISATION: 'SkillHub Dev'
+      LDAP_DOMAIN: example.com
+      LDAP_ADMIN_PASSWORD: admin_password
+      LDAP_READONLY_USER: 'true'
+      LDAP_READONLY_USER_USERNAME: readonly
+      LDAP_READONLY_USER_PASSWORD: readonly_password
+    ports:
+      - '389:389'
+      - '636:636'
+    volumes:
+      - ldap_data:/var/lib/ldap
+      - ldap_config:/etc/ldap/slapd.d
+
+volumes:
+  postgres_data:
+  minio_data:
+  ldap_data:
+  ldap_config:
