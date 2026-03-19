@@ -1,4 +1,4 @@
-import { createTestApp, closeTestApp } from '../test/setup';
+import { createTestApp, closeTestApp } from '../setup';
 import { loginAs } from '../helpers/auth-helper';
 import { createSkill } from '../helpers/skill-helper';
 import { USERS } from '../helpers/test-users';
@@ -59,17 +59,18 @@ describe('SPEC-002 Skill CRUD', () => {
 
     // Act
     const badSlugs = ['Abc', '--a', 'a-', 'a__b'];
-    const results = await Promise.all(
-      badSlugs.map((slug) =>
-        createSkill(t.http, token, {
+    const results: any[] = [];
+    for (const slug of badSlugs) {
+      results.push(
+        await createSkill(t.http, token, {
           slug,
           displayName: 'Bad Slug',
           visibility: 'PUBLIC',
           allowedDepts: [],
           tags: [],
         }),
-      ),
-    );
+      );
+    }
 
     // Assert
     for (const r of results) {

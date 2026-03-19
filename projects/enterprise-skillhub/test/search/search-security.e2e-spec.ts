@@ -1,4 +1,4 @@
-import { createTestApp, closeTestApp } from '../test/setup';
+import { createTestApp, closeTestApp } from '../setup';
 import { loginAs } from '../helpers/auth-helper';
 import { createSkill } from '../helpers/skill-helper';
 import { USERS } from '../helpers/test-users';

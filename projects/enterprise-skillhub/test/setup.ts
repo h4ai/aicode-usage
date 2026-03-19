@@ -14,14 +14,14 @@
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import type { TestingModule } from '@nestjs/testing';
-import request from 'supertest';
+import * as request from 'supertest';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const RedisMock = require('ioredis-mock');
 
 export type TestBootstrap = {
   app: INestApplication;
-  http: ReturnType<typeof request>;
+  http: any;
   moduleRef: TestingModule;
   redis: any;
 };

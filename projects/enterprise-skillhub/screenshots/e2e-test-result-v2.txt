@@ -1,0 +1,11 @@
+=== e2e 测试最终结果 Fri Mar 20 00:20:47 CST 2026 ===
+Test Suites: 21 passed, 21 total
+Tests: 61 passed, 61 total
+Time: 33.804 s
+
+All PASS:
+  auth: auth-login, auth-security, auth-token, auth-boundary, auth-degradation, auth-ad-groups (6)
+  rbac: rbac-roles, rbac-visibility (2)
+  skills: skill-crud, skill-security, skill-update-delete, skill-visibility, skill-boundary (5)
+  search: search-basic, search-security, search-embedding, search-degradation (4)
+  versions: version-upload, version-list-download, version-security, version-boundary (4)

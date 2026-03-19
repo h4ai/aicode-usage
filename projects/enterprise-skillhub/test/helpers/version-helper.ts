@@ -1,7 +1,8 @@
-import type { SuperTest, Test } from 'supertest';
-import fs from 'node:fs';
-import path from 'node:path';
-import os from 'node:os';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Http = any;
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as os from 'node:os';
 
 export type UploadVersionInput = {
   slug: string;
@@ -10,7 +11,7 @@ export type UploadVersionInput = {
   zipPath: string;
 };
 
-export async function uploadVersion(http: SuperTest<Test>, token: string, input: UploadVersionInput) {
+export async function uploadVersion(http: Http, token: string, input: UploadVersionInput) {
   const req = http
     .post(`/api/v1/skills/${encodeURIComponent(input.slug)}/versions`)
     .set('Authorization', `Bearer ${token}`)

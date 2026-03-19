@@ -1,8 +1,8 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import JSZip from 'jszip';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as JSZip from 'jszip';
 
-import { createTestApp, closeTestApp } from '../test/setup';
+import { createTestApp, closeTestApp } from '../setup';
 import { loginAs } from '../helpers/auth-helper';
 import { createSkill } from '../helpers/skill-helper';
 import { uploadVersion, tmpDir } from '../helpers/version-helper';

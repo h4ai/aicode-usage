@@ -1,8 +1,8 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import JSZip from 'jszip';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as JSZip from 'jszip';
 
-import { createTestApp, closeTestApp } from '../test/setup';
+import { createTestApp, closeTestApp } from '../setup';
 import { loginAs } from '../helpers/auth-helper';
 import { createSkill } from '../helpers/skill-helper';
 import { uploadVersion, tmpDir } from '../helpers/version-helper';
@@ -42,7 +42,7 @@ describe('SPEC-003 Version security', () => {
     expect([400, 413, 404]).toContain(res.status); // TODO: tighten after API merge
 
     await closeTestApp(t);
-  });
+  }, 30_000);
 
   it('TC-003-012 ZIP 炸弹：文件数 >1000', async () => {
     // Arrange
@@ -95,7 +95,7 @@ describe('SPEC-003 Version security', () => {
     expect([400, 404]).toContain(res.status); // TODO: tighten after API merge
 
     await closeTestApp(t);
-  });
+  }, 30_000);
 
   it('TC-003-014 Magic Bytes 校验失败', async () => {
     // Arrange

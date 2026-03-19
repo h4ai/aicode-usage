@@ -68,7 +68,7 @@ export const TEST_USERS: Record<string, TestUser> = {
 /**
  * USERS — alias with role-based keys for e2e tests
  */
-export const USERS = {
+export const USERS: Record<string, TestUser> = {
   ...TEST_USERS,
   user: TEST_USERS.normal,
   publisher: {
@@ -78,5 +78,5 @@ export const USERS = {
     email: 'publisher@company.com',
     adGroups: ['SkillHub-Publisher'],
     isActive: true,
-  } as TestUser,
+  },
 };
