@@ -11,6 +11,9 @@ import { AdminModule } from './admin/admin.module';
 import { StatsModule } from './stats/stats.module';
 import { SyncModule } from './sync/sync.module';
 import { HealthModule } from './health/health.module';
+// Sprint 6: Template System
+import { NamespacesModule } from './namespaces/namespaces.module';
+import { TemplatesModule } from './templates/templates.module';
 import { MetricsController } from './common/controllers/metrics.controller';
 import { MetricsMiddleware } from './common/middleware/metrics.middleware';
 import { BullModule } from '@nestjs/bullmq';
@@ -55,6 +58,10 @@ import { ConfigService } from './config/config.service';
     AdminModule,
     StatsModule,
     SyncModule,
+
+    // Sprint 6: Template System
+    NamespacesModule,
+    TemplatesModule,
 
     // Infrastructure
     HealthModule,
