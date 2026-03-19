@@ -36,7 +36,7 @@
 - [x] Phase 1 Step 3: Sprint 6 PO 验收 ✅ CONDITIONAL PASS (extends 待完善)
 - [ ] Phase 2 Step 5: Sprint 7 Dev ✅ (15m, 48 suites / 569 tests, 5 commits, pushed)
 - [ ] Phase 2 Step 6: Sprint 7 QA ⚠️ NOT PASS — Prisma 类型问题（环境问题，非代码bug）
-- [ ] Phase 2 Step 6b: Prisma 修复 🔄 (agent:dev:subagent:10f9894b)
+- [x] Phase 2 Step 6b: Prisma 修复 ✅ postinstall + null-check (tsc 0 errors, 48/569 pass)
 - [x] Phase 2 Step 7: Sprint 7 PO ✅ PASS
 - [ ] Phase 3 Step 9: Sprint 8 Dev 🔄 (agent:dev:subagent:8f050ed9) — 提前并行启动
 - [ ] Phase 3 Step 10-11: Sprint 8 QA + PO — 待 Sprint 8 Dev 完成

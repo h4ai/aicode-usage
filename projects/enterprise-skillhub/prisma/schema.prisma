@@ -59,6 +59,48 @@ enum ReviewStatus {
   REVISION_REQUESTED
 }
 
+enum SourceType {
+  ZIP
+  GIT
+}
+
+enum GitAuthType {
+  SSH_KEY
+  TOKEN
+  BASIC
+}
+
+enum CredentialScope {
+  PERSONAL
+  NAMESPACE
+  GLOBAL
+}
+
+enum NamespaceRole {
+  ADMIN
+  MEMBER
+}
+
+enum TemplateStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  REJECTED
+  DEPRECATED
+}
+
+// Sprint 8: Download tracking enums
+enum ResourceType {
+  SKILL
+  TEMPLATE
+}
+
+enum DownloadSource {
+  CLI
+  WEB
+  API
+}
+
 // ============================================================
 // Models
 // ============================================================
@@ -93,8 +135,8 @@ model User {
   // Sprint 7: Git credentials
   gitCredentials      GitCredential[]
 
-  // Sprint 7: Git Credential relation
-  gitCredentials      GitCredential[]
+  // Sprint 8: Download logs
+  downloadLogs        DownloadLog[]
 
   @@index([department])
   @@index([role])
@@ -113,6 +155,7 @@ model Skill {
   latestVersionId    String?
   publishedVersionId String?
   downloadCount      Int              @default(0)
+  weeklyDownloads    Int              @default(0)
   installCount       Int              @default(0)
   starCount          Int              @default(0)
   badges             Json?
@@ -296,40 +339,6 @@ model SystemConfig {
 // Sprint 6: Namespace + Template System
 // ============================================================
 
-// ============================================================
-// Sprint 7: Git Integration Enums
-// ============================================================
-
-enum SourceType {
-  ZIP
-  GIT
-}
-
-enum GitAuthType {
-  SSH_KEY
-  TOKEN
-  BASIC
-}
-
-enum CredentialScope {
-  PERSONAL
-  NAMESPACE
-  GLOBAL
-}
-
-enum NamespaceRole {
-  ADMIN
-  MEMBER
-}
-
-enum TemplateStatus {
-  DRAFT
-  PENDING_REVIEW
-  PUBLISHED
-  REJECTED
-  DEPRECATED
-}
-
 model Namespace {
   id          String   @id @default(cuid())
   name        String   @unique
@@ -434,32 +443,24 @@ model GitCredential {
 }
 
 // ============================================================
-// Sprint 7: Git Credential Management (schema pre-added)
+// Sprint 8: Download Log
 // ============================================================
 
-enum GitAuthType {
-  SSH_KEY
-  TOKEN
-  BASIC
-}
+model DownloadLog {
+  id            String         @id @default(uuid())
+  userId        String
+  resourceType  ResourceType
+  resourceId    String
+  resourceName  String
+  version       String
+  source        DownloadSource @default(CLI)
+  ip            String?
+  userAgent     String?
+  createdAt     DateTime       @default(now())
 
-enum CredentialScope {
-  PERSONAL
-  NAMESPACE
-  GLOBAL
-}
+  user          User           @relation(fields: [userId], references: [id])
 
-model GitCredential {
-  id         String          @id @default(cuid())
-  name       String
-  type       String          // SSH_KEY, TOKEN, BASIC
-  url        String
-  credential String          // Encrypted credential
-  ownerId    String
-  owner      User            @relation(fields: [ownerId], references: [id])
-  scope      String          @default("PERSONAL") // PERSONAL, NAMESPACE, GLOBAL
-  createdAt  DateTime        @default(now())
-  updatedAt  DateTime        @updatedAt
-
-  @@index([ownerId])
+  @@index([resourceType, resourceId])
+  @@index([userId])
+  @@index([createdAt])
 }
