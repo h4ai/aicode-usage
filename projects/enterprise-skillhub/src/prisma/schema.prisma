@@ -178,10 +178,13 @@ model SkillReview {
   reviewerId    String?
   reviewer      User?        @relation("reviewer", fields: [reviewerId], references: [id])
   status        ReviewStatus @default(PENDING_AUTO)
-  decision      String? // APPROVE, REJECT, REVISE
+  decision      String? // APPROVE, REJECT, REVISION_REQUESTED
   comment       String?
-  scanResult    Json? // Auto-scan output
+  scanResult    Json? // Auto-scan output (autoScanDetail)
+  autoScanPassed Boolean?
   reviewScore   Int? // 1-5
+  policyId      String?
+  policy        ReviewPolicy? @relation(fields: [policyId], references: [id])
   submittedAt   DateTime     @default(now())
   autoScannedAt DateTime?
   assignedAt    DateTime?
@@ -197,16 +200,32 @@ model SkillReview {
 }
 
 model ReviewPolicy {
-  id              String         @id @default(cuid())
-  name            String
-  category        SkillCategory?
-  department      String?
-  autoApprove     Boolean        @default(false)
-  requiredReviews Int            @default(1)
-  timeoutHours    Int            @default(72)
-  isActive        Boolean        @default(true)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  id                  String         @id @default(cuid())
+  name                String         @unique
+  category            SkillCategory?
+  department          String?
+
+  // Policy rules
+  autoApprove         Boolean        @default(false)
+  autoApproveMinScore Int            @default(90)
+  requiredReviews     Int            @default(1)
+  reviewerAdGroups    String[]       @default([])
+  maxReviewDays       Int            @default(3)
+  timeoutHours        Int            @default(72)
+
+  // Auto-scan config
+  blockOnSecurityFail Boolean        @default(true)
+  blockOnLicenseFail  Boolean        @default(true)
+  requiredFiles       String[]       @default(["SKILL.md"])
+
+  isActive            Boolean        @default(true)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  // Relations
+  reviews             SkillReview[]
+
+  @@index([category, department])
 }
 
 model Star {

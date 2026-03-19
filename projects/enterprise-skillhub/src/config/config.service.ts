@@ -106,4 +106,13 @@ export class ConfigService {
   get loginThrottleLimit(): number {
     return this.configService.get<number>('LOGIN_THROTTLE_LIMIT', 10);
   }
+
+  // Webhook notifications
+  get webhookUrl(): string {
+    return this.configService.get<string>('WEBHOOK_URL', '');
+  }
+
+  get webhookType(): string {
+    return this.configService.get<string>('WEBHOOK_TYPE', 'feishu');
+  }
 }
