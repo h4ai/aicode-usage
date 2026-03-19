@@ -1,0 +1,1614 @@
+FAIL test/review/review-state-machine.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/review/review-state-machine.e2e-spec.ts[0m:[93m30[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m30[0m     const publisherToken = await loginAs(t.http, TEST_USERS.publisher);
+    [7m  [0m [91m                                         ~~~~~~[0m
+    [96mtest/review/review-state-machine.e2e-spec.ts[0m:[93m49[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m49[0m     const publisherToken = await loginAs(t.http, TEST_USERS.publisher);
+    [7m  [0m [91m                                         ~~~~~~[0m
+    [96mtest/review/review-state-machine.e2e-spec.ts[0m:[93m63[0m:[93m41[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m63[0m     const reviewerToken = await loginAs(t.http, TEST_USERS.reviewer);
+    [7m  [0m [91m                                        ~~~~~~[0m
+    [96mtest/review/review-state-machine.e2e-spec.ts[0m:[93m82[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m82[0m     const publisherToken = await loginAs(t.http, TEST_USERS.publisher);
+    [7m  [0m [91m                                         ~~~~~~[0m
+    [96mtest/review/review-state-machine.e2e-spec.ts[0m:[93m83[0m:[93m41[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m83[0m     const reviewerToken = await loginAs(t.http, TEST_USERS.reviewer);
+    [7m  [0m [91m                                        ~~~~~~[0m
+    [96mtest/review/review-state-machine.e2e-spec.ts[0m:[93m118[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m118[0m     const publisherToken = await loginAs(t.http, TEST_USERS.publisher);
+    [7m   [0m [91m                                         ~~~~~~[0m
+    [96mtest/review/review-state-machine.e2e-spec.ts[0m:[93m119[0m:[93m41[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m119[0m     const reviewerToken = await loginAs(t.http, TEST_USERS.reviewer);
+    [7m   [0m [91m                                        ~~~~~~[0m
+    [96mtest/review/review-state-machine.e2e-spec.ts[0m:[93m120[0m:[93m38[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m120[0m     const adminToken = await loginAs(t.http, TEST_USERS.admin);
+    [7m   [0m [91m                                     ~~~~~~[0m
+    [96mtest/review/review-state-machine.e2e-spec.ts[0m:[93m149[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m149[0m     const publisherToken = await loginAs(t.http, TEST_USERS.publisher);
+    [7m   [0m [91m                                         ~~~~~~[0m
+    [96mtest/review/review-state-machine.e2e-spec.ts[0m:[93m150[0m:[93m41[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m150[0m     const reviewerToken = await loginAs(t.http, TEST_USERS.reviewer);
+    [7m   [0m [91m                                        ~~~~~~[0m
+    [96mtest/review/review-state-machine.e2e-spec.ts[0m:[93m185[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m185[0m     const publisherToken = await loginAs(t.http, TEST_USERS.publisher);
+    [7m   [0m [91m                                         ~~~~~~[0m
+    [96mtest/review/review-state-machine.e2e-spec.ts[0m:[93m186[0m:[93m41[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m186[0m     const reviewerToken = await loginAs(t.http, TEST_USERS.reviewer);
+    [7m   [0m [91m                                        ~~~~~~[0m
+    [96mtest/review/review-state-machine.e2e-spec.ts[0m:[93m212[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m212[0m     const publisherToken = await loginAs(t.http, TEST_USERS.publisher);
+    [7m   [0m [91m                                         ~~~~~~[0m
+    [96mtest/review/review-state-machine.e2e-spec.ts[0m:[93m213[0m:[93m41[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m213[0m     const reviewerToken = await loginAs(t.http, TEST_USERS.reviewer);
+    [7m   [0m [91m                                        ~~~~~~[0m
+    [96mtest/review/review-state-machine.e2e-spec.ts[0m:[93m235[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m235[0m     const publisherToken = await loginAs(t.http, TEST_USERS.publisher);
+    [7m   [0m [91m                                         ~~~~~~[0m
+    [96mtest/review/review-state-machine.e2e-spec.ts[0m:[93m236[0m:[93m41[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m236[0m     const reviewerToken = await loginAs(t.http, TEST_USERS.reviewer);
+    [7m   [0m [91m                                        ~~~~~~[0m
+
+FAIL test/versions/version-upload.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/versions/version-upload.e2e-spec.ts[0m:[93m5[0m:[93m45[0m - [91merror[0m[90m TS2307: [0mCannot find module '../test/setup' or its corresponding type declarations.
+
+    [7m5[0m import { createTestApp, closeTestApp } from '../test/setup';
+    [7m [0m [91m                                            ~~~~~~~~~~~~~~~[0m
+
+FAIL test/review/review-security.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/review/review-security.e2e-spec.ts[0m:[93m33[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m33[0m     const submitterToken = await loginAs(t.http, submitter);
+    [7m  [0m [91m                                         ~~~~~~[0m
+    [96mtest/review/review-security.e2e-spec.ts[0m:[93m66[0m:[93m46[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m66[0m     const ownerReviewerToken = await loginAs(t.http, TEST_USERS.reviewer);
+    [7m  [0m [91m                                             ~~~~~~[0m
+    [96mtest/review/review-security.e2e-spec.ts[0m:[93m67[0m:[93m46[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m67[0m     const otherReviewerToken = await loginAs(t.http, TEST_USERS.admin); // may have ADMIN; acts as reviewer for test
+    [7m  [0m [91m                                             ~~~~~~[0m
+    [96mtest/review/review-security.e2e-spec.ts[0m:[93m91[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m91[0m     const publisherToken = await loginAs(t.http, TEST_USERS.publisher);
+    [7m  [0m [91m                                         ~~~~~~[0m
+    [96mtest/review/review-security.e2e-spec.ts[0m:[93m92[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m92[0m     const reviewer1Token = await loginAs(t.http, TEST_USERS.reviewer);
+    [7m  [0m [91m                                         ~~~~~~[0m
+    [96mtest/review/review-security.e2e-spec.ts[0m:[93m93[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m93[0m     const reviewer2Token = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                         ~~~~~~[0m
+    [96mtest/review/review-security.e2e-spec.ts[0m:[93m124[0m:[93m33[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m124[0m     const token = await loginAs(t.http, TEST_USERS.reviewer);
+    [7m   [0m [91m                                ~~~~~~[0m
+
+FAIL test/versions/version-security.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/versions/version-security.e2e-spec.ts[0m:[93m5[0m:[93m45[0m - [91merror[0m[90m TS2307: [0mCannot find module '../test/setup' or its corresponding type declarations.
+
+    [7m5[0m import { createTestApp, closeTestApp } from '../test/setup';
+    [7m [0m [91m                                            ~~~~~~~~~~~~~~~[0m
+
+FAIL test/cli/cli-commands.e2e-spec.ts
+  ● CLI — skillhub commands (Sprint 4) › S4-CLI-001: login stores token and whoami prints identity
+
+    expect(received).toMatch(expected)
+
+    Expected pattern: /MOCK_TOKEN|login/i
+    Received string:  ""
+
+      61 |
+      62 |     const login = await runCli(['login', '--username', 'u', '--password', 'p'], env);
+    > 63 |     expect(login.stdout + login.stderr).toMatch(/MOCK_TOKEN|login/i);
+         |                                         ^
+      64 |
+      65 |     const whoami = await runCli(['whoami'], env);
+      66 |     expect(whoami.stdout + whoami.stderr).toMatch(/mock-user|whoami/i);
+
+      at Object.<anonymous> (test/cli/cli-commands.e2e-spec.ts:63:41)
+
+  ● CLI — skillhub commands (Sprint 4) › S4-CLI-002: search prints results (mock)
+
+    expect(received).toMatch(expected)
+
+    Expected pattern: /s1|s2|search/i
+    Received string:  ""
+
+      82 |     const env = { SKILLHUB_BASE_URL: mock.baseUrl };
+      83 |     const out = await runCli(['search', 'test'], env);
+    > 84 |     expect(out.stdout + out.stderr).toMatch(/s1|s2|search/i);
+         |                                     ^
+      85 |     await mock.close();
+      86 |   });
+      87 |
+
+      at Object.<anonymous> (test/cli/cli-commands.e2e-spec.ts:84:37)
+
+  ● CLI — skillhub commands (Sprint 4) › S4-CLI-003: install downloads and confirms success (mock)
+
+    expect(received).toMatch(expected)
+
+    Expected pattern: /install|s1|success|done/i
+    Received string:  ""
+
+       99 |     const env = { SKILLHUB_BASE_URL: mock.baseUrl };
+      100 |     const out = await runCli(['install', 's1'], env);
+    > 101 |     expect(out.stdout + out.stderr).toMatch(/install|s1|success|done/i);
+          |                                     ^
+      102 |     await mock.close();
+      103 |   });
+      104 |
+
+      at Object.<anonymous> (test/cli/cli-commands.e2e-spec.ts:101:37)
+
+  ● CLI — skillhub commands (Sprint 4) › S4-CLI-004: publish uploads and prints published id (mock)
+
+    expect(received).toMatch(expected)
+
+    Expected pattern: /pub_1|publish/i
+    Received string:  ""
+
+      116 |     const env = { SKILLHUB_BASE_URL: mock.baseUrl };
+      117 |     const out = await runCli(['publish', '--path', '.'], env);
+    > 118 |     expect(out.stdout + out.stderr).toMatch(/pub_1|publish/i);
+          |                                     ^
+      119 |     await mock.close();
+      120 |   });
+      121 |
+
+      at Object.<anonymous> (test/cli/cli-commands.e2e-spec.ts:118:37)
+
+FAIL test/skills/skill-crud.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/skills/skill-crud.e2e-spec.ts[0m:[93m1[0m:[93m45[0m - [91merror[0m[90m TS2307: [0mCannot find module '../test/setup' or its corresponding type declarations.
+
+    [7m1[0m import { createTestApp, closeTestApp } from '../test/setup';
+    [7m [0m [91m                                            ~~~~~~~~~~~~~~~[0m
+
+FAIL test/versions/version-list-download.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/versions/version-list-download.e2e-spec.ts[0m:[93m5[0m:[93m45[0m - [91merror[0m[90m TS2307: [0mCannot find module '../test/setup' or its corresponding type declarations.
+
+    [7m5[0m import { createTestApp, closeTestApp } from '../test/setup';
+    [7m [0m [91m                                            ~~~~~~~~~~~~~~~[0m
+
+FAIL test/admin/audit-log.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/admin/audit-log.e2e-spec.ts[0m:[93m27[0m:[93m33[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m27[0m     const token = await loginAs(t.http, TEST_USERS.user);
+    [7m  [0m [91m                                ~~~~~~[0m
+    [96mtest/admin/audit-log.e2e-spec.ts[0m:[93m33[0m:[93m38[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m33[0m     const adminToken = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                     ~~~~~~[0m
+    [96mtest/admin/audit-log.e2e-spec.ts[0m:[93m53[0m:[93m38[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m53[0m     const adminToken = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                     ~~~~~~[0m
+    [96mtest/admin/audit-log.e2e-spec.ts[0m:[93m71[0m:[93m38[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m71[0m     const adminToken = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                     ~~~~~~[0m
+
+FAIL test/admin/review-policy-mgmt.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/admin/review-policy-mgmt.e2e-spec.ts[0m:[93m22[0m:[93m33[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m22[0m     const token = await loginAs(t.http, TEST_USERS.publisher);
+    [7m  [0m [91m                                ~~~~~~[0m
+    [96mtest/admin/review-policy-mgmt.e2e-spec.ts[0m:[93m32[0m:[93m38[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m32[0m     const adminToken = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                     ~~~~~~[0m
+    [96mtest/admin/review-policy-mgmt.e2e-spec.ts[0m:[93m72[0m:[93m38[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m72[0m     const adminToken = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                     ~~~~~~[0m
+
+FAIL test/auth/auth-login.e2e-spec.ts
+  ● Auth — Login (SPEC-001) › TC-001-001: POST /auth/login success then GET /auth/me
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/auth/auth-login.e2e-spec.ts:14:9)
+
+  ● Auth — Login (SPEC-001) › TC-001-002: wrong password returns 401 with unified error body
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/auth/auth-login.e2e-spec.ts:14:9)
+
+  ● Auth — Login (SPEC-001) › TC-001-003: non-existing user returns same as wrong password (anti-enumeration)
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/auth/auth-login.e2e-spec.ts:14:9)
+
+  ● Auth — Login (SPEC-001) › TC-001-004: disabled user login returns 403 and logs audit (no plaintext pwd)
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/auth/auth-login.e2e-spec.ts:14:9)
+
+FAIL test/admin/user-management.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/admin/user-management.e2e-spec.ts[0m:[93m22[0m:[93m33[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m22[0m     const token = await loginAs(t.http, TEST_USERS.user);
+    [7m  [0m [91m                                ~~~~~~[0m
+    [96mtest/admin/user-management.e2e-spec.ts[0m:[93m28[0m:[93m38[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m28[0m     const adminToken = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                     ~~~~~~[0m
+    [96mtest/admin/user-management.e2e-spec.ts[0m:[93m38[0m:[93m38[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m38[0m     const adminToken = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                     ~~~~~~[0m
+    [96mtest/admin/user-management.e2e-spec.ts[0m:[93m56[0m:[93m38[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m56[0m     const adminToken = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                     ~~~~~~[0m
+
+FAIL test/stats/stats-overview.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/stats/stats-overview.e2e-spec.ts[0m:[93m25[0m:[93m33[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m25[0m     const token = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                ~~~~~~[0m
+    [96mtest/stats/stats-overview.e2e-spec.ts[0m:[93m34[0m:[93m33[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m34[0m     const token = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                ~~~~~~[0m
+    [96mtest/stats/stats-overview.e2e-spec.ts[0m:[93m46[0m:[93m33[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m46[0m     const token = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                ~~~~~~[0m
+    [96mtest/stats/stats-overview.e2e-spec.ts[0m:[93m55[0m:[93m33[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m55[0m     const token = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                ~~~~~~[0m
+
+FAIL test/review/review-scanner.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/review/review-scanner.e2e-spec.ts[0m:[93m23[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m23[0m     const publisherToken = await loginAs(t.http, TEST_USERS.publisher);
+    [7m  [0m [91m                                         ~~~~~~[0m
+    [96mtest/review/review-scanner.e2e-spec.ts[0m:[93m24[0m:[93m41[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m24[0m     const reviewerToken = await loginAs(t.http, TEST_USERS.reviewer);
+    [7m  [0m [91m                                        ~~~~~~[0m
+    [96mtest/review/review-scanner.e2e-spec.ts[0m:[93m40[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m40[0m     const publisherToken = await loginAs(t.http, TEST_USERS.publisher);
+    [7m  [0m [91m                                         ~~~~~~[0m
+    [96mtest/review/review-scanner.e2e-spec.ts[0m:[93m55[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m55[0m     const publisherToken = await loginAs(t.http, TEST_USERS.publisher);
+    [7m  [0m [91m                                         ~~~~~~[0m
+    [96mtest/review/review-scanner.e2e-spec.ts[0m:[93m71[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m71[0m     const publisherToken = await loginAs(t.http, TEST_USERS.publisher);
+    [7m  [0m [91m                                         ~~~~~~[0m
+
+FAIL test/skills/skill-visibility.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/skills/skill-visibility.e2e-spec.ts[0m:[93m1[0m:[93m45[0m - [91merror[0m[90m TS2307: [0mCannot find module '../test/setup' or its corresponding type declarations.
+
+    [7m1[0m import { createTestApp, closeTestApp } from '../test/setup';
+    [7m [0m [91m                                            ~~~~~~~~~~~~~~~[0m
+
+FAIL test/versions/version-boundary.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/versions/version-boundary.e2e-spec.ts[0m:[93m5[0m:[93m45[0m - [91merror[0m[90m TS2307: [0mCannot find module '../test/setup' or its corresponding type declarations.
+
+    [7m5[0m import { createTestApp, closeTestApp } from '../test/setup';
+    [7m [0m [91m                                            ~~~~~~~~~~~~~~~[0m
+
+FAIL test/rbac/rbac-roles.e2e-spec.ts
+  ● RBAC — Role matrix (Sprint 1) › PUBLISHER can create skill; USER cannot (skeleton)
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/rbac/rbac-roles.e2e-spec.ts:16:9)
+
+  ● RBAC — Role matrix (Sprint 1) › ADMIN can includeRemoved=true; non-admin rejected (skeleton)
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/rbac/rbac-roles.e2e-spec.ts:16:9)
+
+FAIL test/auth/auth-security.e2e-spec.ts
+  ● Auth — Security (SPEC-001) › TC-001-011: 11 failed logins from same IP triggers 429 on the 11th
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/auth/auth-security.e2e-spec.ts:14:9)
+
+  ● Auth — Security (SPEC-001) › TC-001-012: existing vs non-existing username have same status/body shape
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/auth/auth-security.e2e-spec.ts:14:9)
+
+  ● Auth — Security (SPEC-001) › TC-001-013: tampered JWT payload (role escalated) is rejected
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/auth/auth-security.e2e-spec.ts:14:9)
+
+FAIL test/search/search-security.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/search/search-security.e2e-spec.ts[0m:[93m1[0m:[93m45[0m - [91merror[0m[90m TS2307: [0mCannot find module '../test/setup' or its corresponding type declarations.
+
+    [7m1[0m import { createTestApp, closeTestApp } from '../test/setup';
+    [7m [0m [91m                                            ~~~~~~~~~~~~~~~[0m
+
+FAIL test/skills/skill-security.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/skills/skill-security.e2e-spec.ts[0m:[93m1[0m:[93m45[0m - [91merror[0m[90m TS2307: [0mCannot find module '../test/setup' or its corresponding type declarations.
+
+    [7m1[0m import { createTestApp, closeTestApp } from '../test/setup';
+    [7m [0m [91m                                            ~~~~~~~~~~~~~~~[0m
+
+FAIL test/skills/skill-update-delete.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/skills/skill-update-delete.e2e-spec.ts[0m:[93m1[0m:[93m45[0m - [91merror[0m[90m TS2307: [0mCannot find module '../test/setup' or its corresponding type declarations.
+
+    [7m1[0m import { createTestApp, closeTestApp } from '../test/setup';
+    [7m [0m [91m                                            ~~~~~~~~~~~~~~~[0m
+
+FAIL test/search/search-embedding.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/search/search-embedding.e2e-spec.ts[0m:[93m1[0m:[93m45[0m - [91merror[0m[90m TS2307: [0mCannot find module '../test/setup' or its corresponding type declarations.
+
+    [7m1[0m import { createTestApp, closeTestApp } from '../test/setup';
+    [7m [0m [91m                                            ~~~~~~~~~~~~~~~[0m
+    [96mtest/search/search-embedding.e2e-spec.ts[0m:[93m33[0m:[93m52[0m - [91merror[0m[90m TS2339: [0mProperty 'admin' does not exist on type '{ user: TestUser; publisher: TestUser; }'.
+
+    [7m33[0m     const adminToken = await loginAs(t.http, USERS.admin);
+    [7m  [0m [91m                                                   ~~~~~[0m
+    [96mtest/search/search-embedding.e2e-spec.ts[0m:[93m51[0m:[93m52[0m - [91merror[0m[90m TS2339: [0mProperty 'admin' does not exist on type '{ user: TestUser; publisher: TestUser; }'.
+
+    [7m51[0m     const adminToken = await loginAs(t.http, USERS.admin);
+    [7m  [0m [91m                                                   ~~~~~[0m
+
+FAIL test/auth/auth-token.e2e-spec.ts
+  ● Auth — Token lifecycle (SPEC-001) › TC-001-007: POST /auth/logout then old token still works until expired
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/auth/auth-token.e2e-spec.ts:14:9)
+
+  ● Auth — Token lifecycle (SPEC-001) › TC-001-008: expired token is rejected by /auth/me
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/auth/auth-token.e2e-spec.ts:14:9)
+
+FAIL test/sync/upstream-sync.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/sync/upstream-sync.e2e-spec.ts[0m:[93m22[0m:[93m33[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m22[0m     const token = await loginAs(t.http, TEST_USERS.publisher);
+    [7m  [0m [91m                                ~~~~~~[0m
+    [96mtest/sync/upstream-sync.e2e-spec.ts[0m:[93m28[0m:[93m38[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m28[0m     const adminToken = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                     ~~~~~~[0m
+    [96mtest/sync/upstream-sync.e2e-spec.ts[0m:[93m41[0m:[93m38[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m41[0m     const adminToken = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                     ~~~~~~[0m
+
+FAIL test/auth/auth-boundary.e2e-spec.ts
+  ● Auth — Boundary (SPEC-001) › TC-001-014: login user with null email does not 500; /me returns email=null if allowed
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/auth/auth-boundary.e2e-spec.ts:15:9)
+
+  ● Auth — Boundary (SPEC-001) › TC-001-015: login user with null department then GET /skills does not 500
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/auth/auth-boundary.e2e-spec.ts:15:9)
+
+FAIL test/auth/auth-degradation.e2e-spec.ts
+  ● Auth — LDAP degradation (SPEC-001) › TC-001-009: when LDAP down, /auth/login returns 503; /health shows ldap=down
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/auth/auth-degradation.e2e-spec.ts:15:9)
+
+  ● Auth — LDAP degradation (SPEC-001) › TC-001-010: when LDAP down, existing JWT can still access protected endpoints
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/auth/auth-degradation.e2e-spec.ts:15:9)
+
+FAIL test/search/search-basic.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/search/search-basic.e2e-spec.ts[0m:[93m1[0m:[93m45[0m - [91merror[0m[90m TS2307: [0mCannot find module '../test/setup' or its corresponding type declarations.
+
+    [7m1[0m import { createTestApp, closeTestApp } from '../test/setup';
+    [7m [0m [91m                                            ~~~~~~~~~~~~~~~[0m
+
+FAIL test/admin/system-config.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/admin/system-config.e2e-spec.ts[0m:[93m22[0m:[93m33[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m22[0m     const token = await loginAs(t.http, TEST_USERS.user);
+    [7m  [0m [91m                                ~~~~~~[0m
+    [96mtest/admin/system-config.e2e-spec.ts[0m:[93m28[0m:[93m38[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m28[0m     const adminToken = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                     ~~~~~~[0m
+    [96mtest/admin/system-config.e2e-spec.ts[0m:[93m37[0m:[93m38[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m37[0m     const adminToken = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                     ~~~~~~[0m
+
+FAIL test/review/review-scheduler.e2e-spec.ts
+  ● Review — Scheduler (SPEC-005) › TC-005-014: distributed lock (Redis SETNX) prevents duplicate runs across replicas
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/review/review-scheduler.e2e-spec.ts:20:9)
+
+  ● Review — Scheduler (SPEC-005) › TC-005-015: timeout alert is sent once with noise reduction
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/review/review-scheduler.e2e-spec.ts:20:9)
+
+FAIL test/review/review-policy.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/review/review-policy.e2e-spec.ts[0m:[93m27[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m27[0m     const publisherToken = await loginAs(t.http, TEST_USERS.publisher);
+    [7m  [0m [91m                                         ~~~~~~[0m
+    [96mtest/review/review-policy.e2e-spec.ts[0m:[93m28[0m:[93m41[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m28[0m     const reviewerToken = await loginAs(t.http, TEST_USERS.reviewer);
+    [7m  [0m [91m                                        ~~~~~~[0m
+
+FAIL test/auth/auth-ad-groups.e2e-spec.ts
+  ● Auth — AD Groups to Role Mapping (SPEC-001) › TC-001-005: user in SkillHub-Admin group gets ADMIN role
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/auth/auth-ad-groups.e2e-spec.ts:14:9)
+
+  ● Auth — AD Groups to Role Mapping (SPEC-001) › TC-001-006: multi-group user resolves to highest role (ADMIN)
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/auth/auth-ad-groups.e2e-spec.ts:14:9)
+
+FAIL test/rbac/rbac-visibility.e2e-spec.ts
+  ● RBAC — Visibility isolation (Sprint 1) › DEPARTMENT skill is invisible to other departments (skeleton)
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/rbac/rbac-visibility.e2e-spec.ts:16:9)
+
+FAIL test/skills/skill-boundary.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/skills/skill-boundary.e2e-spec.ts[0m:[93m1[0m:[93m45[0m - [91merror[0m[90m TS2307: [0mCannot find module '../test/setup' or its corresponding type declarations.
+
+    [7m1[0m import { createTestApp, closeTestApp } from '../test/setup';
+    [7m [0m [91m                                            ~~~~~~~~~~~~~~~[0m
+
+FAIL test/stats/stats-efficiency.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/stats/stats-efficiency.e2e-spec.ts[0m:[93m25[0m:[93m33[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m25[0m     const token = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                ~~~~~~[0m
+    [96mtest/stats/stats-efficiency.e2e-spec.ts[0m:[93m34[0m:[93m33[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m34[0m     const token = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                ~~~~~~[0m
+
+FAIL test/search/search-degradation.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/search/search-degradation.e2e-spec.ts[0m:[93m1[0m:[93m45[0m - [91merror[0m[90m TS2307: [0mCannot find module '../test/setup' or its corresponding type declarations.
+
+    [7m1[0m import { createTestApp, closeTestApp } from '../test/setup';
+    [7m [0m [91m                                            ~~~~~~~~~~~~~~~[0m
+    [96mtest/search/search-degradation.e2e-spec.ts[0m:[93m27[0m:[93m52[0m - [91merror[0m[90m TS2339: [0mProperty 'admin' does not exist on type '{ user: TestUser; publisher: TestUser; }'.
+
+    [7m27[0m     const adminToken = await loginAs(t.http, USERS.admin);
+    [7m  [0m [91m                                                   ~~~~~[0m
+
+Summary of all failing tests
+FAIL test/review/review-state-machine.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/review/review-state-machine.e2e-spec.ts[0m:[93m30[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m30[0m     const publisherToken = await loginAs(t.http, TEST_USERS.publisher);
+    [7m  [0m [91m                                         ~~~~~~[0m
+    [96mtest/review/review-state-machine.e2e-spec.ts[0m:[93m49[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m49[0m     const publisherToken = await loginAs(t.http, TEST_USERS.publisher);
+    [7m  [0m [91m                                         ~~~~~~[0m
+    [96mtest/review/review-state-machine.e2e-spec.ts[0m:[93m63[0m:[93m41[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m63[0m     const reviewerToken = await loginAs(t.http, TEST_USERS.reviewer);
+    [7m  [0m [91m                                        ~~~~~~[0m
+    [96mtest/review/review-state-machine.e2e-spec.ts[0m:[93m82[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m82[0m     const publisherToken = await loginAs(t.http, TEST_USERS.publisher);
+    [7m  [0m [91m                                         ~~~~~~[0m
+    [96mtest/review/review-state-machine.e2e-spec.ts[0m:[93m83[0m:[93m41[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m83[0m     const reviewerToken = await loginAs(t.http, TEST_USERS.reviewer);
+    [7m  [0m [91m                                        ~~~~~~[0m
+    [96mtest/review/review-state-machine.e2e-spec.ts[0m:[93m118[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m118[0m     const publisherToken = await loginAs(t.http, TEST_USERS.publisher);
+    [7m   [0m [91m                                         ~~~~~~[0m
+    [96mtest/review/review-state-machine.e2e-spec.ts[0m:[93m119[0m:[93m41[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m119[0m     const reviewerToken = await loginAs(t.http, TEST_USERS.reviewer);
+    [7m   [0m [91m                                        ~~~~~~[0m
+    [96mtest/review/review-state-machine.e2e-spec.ts[0m:[93m120[0m:[93m38[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m120[0m     const adminToken = await loginAs(t.http, TEST_USERS.admin);
+    [7m   [0m [91m                                     ~~~~~~[0m
+    [96mtest/review/review-state-machine.e2e-spec.ts[0m:[93m149[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m149[0m     const publisherToken = await loginAs(t.http, TEST_USERS.publisher);
+    [7m   [0m [91m                                         ~~~~~~[0m
+    [96mtest/review/review-state-machine.e2e-spec.ts[0m:[93m150[0m:[93m41[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m150[0m     const reviewerToken = await loginAs(t.http, TEST_USERS.reviewer);
+    [7m   [0m [91m                                        ~~~~~~[0m
+    [96mtest/review/review-state-machine.e2e-spec.ts[0m:[93m185[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m185[0m     const publisherToken = await loginAs(t.http, TEST_USERS.publisher);
+    [7m   [0m [91m                                         ~~~~~~[0m
+    [96mtest/review/review-state-machine.e2e-spec.ts[0m:[93m186[0m:[93m41[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m186[0m     const reviewerToken = await loginAs(t.http, TEST_USERS.reviewer);
+    [7m   [0m [91m                                        ~~~~~~[0m
+    [96mtest/review/review-state-machine.e2e-spec.ts[0m:[93m212[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m212[0m     const publisherToken = await loginAs(t.http, TEST_USERS.publisher);
+    [7m   [0m [91m                                         ~~~~~~[0m
+    [96mtest/review/review-state-machine.e2e-spec.ts[0m:[93m213[0m:[93m41[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m213[0m     const reviewerToken = await loginAs(t.http, TEST_USERS.reviewer);
+    [7m   [0m [91m                                        ~~~~~~[0m
+    [96mtest/review/review-state-machine.e2e-spec.ts[0m:[93m235[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m235[0m     const publisherToken = await loginAs(t.http, TEST_USERS.publisher);
+    [7m   [0m [91m                                         ~~~~~~[0m
+    [96mtest/review/review-state-machine.e2e-spec.ts[0m:[93m236[0m:[93m41[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m236[0m     const reviewerToken = await loginAs(t.http, TEST_USERS.reviewer);
+    [7m   [0m [91m                                        ~~~~~~[0m
+
+FAIL test/versions/version-upload.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/versions/version-upload.e2e-spec.ts[0m:[93m5[0m:[93m45[0m - [91merror[0m[90m TS2307: [0mCannot find module '../test/setup' or its corresponding type declarations.
+
+    [7m5[0m import { createTestApp, closeTestApp } from '../test/setup';
+    [7m [0m [91m                                            ~~~~~~~~~~~~~~~[0m
+
+FAIL test/review/review-security.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/review/review-security.e2e-spec.ts[0m:[93m33[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m33[0m     const submitterToken = await loginAs(t.http, submitter);
+    [7m  [0m [91m                                         ~~~~~~[0m
+    [96mtest/review/review-security.e2e-spec.ts[0m:[93m66[0m:[93m46[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m66[0m     const ownerReviewerToken = await loginAs(t.http, TEST_USERS.reviewer);
+    [7m  [0m [91m                                             ~~~~~~[0m
+    [96mtest/review/review-security.e2e-spec.ts[0m:[93m67[0m:[93m46[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m67[0m     const otherReviewerToken = await loginAs(t.http, TEST_USERS.admin); // may have ADMIN; acts as reviewer for test
+    [7m  [0m [91m                                             ~~~~~~[0m
+    [96mtest/review/review-security.e2e-spec.ts[0m:[93m91[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m91[0m     const publisherToken = await loginAs(t.http, TEST_USERS.publisher);
+    [7m  [0m [91m                                         ~~~~~~[0m
+    [96mtest/review/review-security.e2e-spec.ts[0m:[93m92[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m92[0m     const reviewer1Token = await loginAs(t.http, TEST_USERS.reviewer);
+    [7m  [0m [91m                                         ~~~~~~[0m
+    [96mtest/review/review-security.e2e-spec.ts[0m:[93m93[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m93[0m     const reviewer2Token = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                         ~~~~~~[0m
+    [96mtest/review/review-security.e2e-spec.ts[0m:[93m124[0m:[93m33[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m124[0m     const token = await loginAs(t.http, TEST_USERS.reviewer);
+    [7m   [0m [91m                                ~~~~~~[0m
+
+FAIL test/versions/version-security.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/versions/version-security.e2e-spec.ts[0m:[93m5[0m:[93m45[0m - [91merror[0m[90m TS2307: [0mCannot find module '../test/setup' or its corresponding type declarations.
+
+    [7m5[0m import { createTestApp, closeTestApp } from '../test/setup';
+    [7m [0m [91m                                            ~~~~~~~~~~~~~~~[0m
+
+FAIL test/cli/cli-commands.e2e-spec.ts
+  ● CLI — skillhub commands (Sprint 4) › S4-CLI-001: login stores token and whoami prints identity
+
+    expect(received).toMatch(expected)
+
+    Expected pattern: /MOCK_TOKEN|login/i
+    Received string:  ""
+
+      61 |
+      62 |     const login = await runCli(['login', '--username', 'u', '--password', 'p'], env);
+    > 63 |     expect(login.stdout + login.stderr).toMatch(/MOCK_TOKEN|login/i);
+         |                                         ^
+      64 |
+      65 |     const whoami = await runCli(['whoami'], env);
+      66 |     expect(whoami.stdout + whoami.stderr).toMatch(/mock-user|whoami/i);
+
+      at Object.<anonymous> (test/cli/cli-commands.e2e-spec.ts:63:41)
+
+  ● CLI — skillhub commands (Sprint 4) › S4-CLI-002: search prints results (mock)
+
+    expect(received).toMatch(expected)
+
+    Expected pattern: /s1|s2|search/i
+    Received string:  ""
+
+      82 |     const env = { SKILLHUB_BASE_URL: mock.baseUrl };
+      83 |     const out = await runCli(['search', 'test'], env);
+    > 84 |     expect(out.stdout + out.stderr).toMatch(/s1|s2|search/i);
+         |                                     ^
+      85 |     await mock.close();
+      86 |   });
+      87 |
+
+      at Object.<anonymous> (test/cli/cli-commands.e2e-spec.ts:84:37)
+
+  ● CLI — skillhub commands (Sprint 4) › S4-CLI-003: install downloads and confirms success (mock)
+
+    expect(received).toMatch(expected)
+
+    Expected pattern: /install|s1|success|done/i
+    Received string:  ""
+
+       99 |     const env = { SKILLHUB_BASE_URL: mock.baseUrl };
+      100 |     const out = await runCli(['install', 's1'], env);
+    > 101 |     expect(out.stdout + out.stderr).toMatch(/install|s1|success|done/i);
+          |                                     ^
+      102 |     await mock.close();
+      103 |   });
+      104 |
+
+      at Object.<anonymous> (test/cli/cli-commands.e2e-spec.ts:101:37)
+
+  ● CLI — skillhub commands (Sprint 4) › S4-CLI-004: publish uploads and prints published id (mock)
+
+    expect(received).toMatch(expected)
+
+    Expected pattern: /pub_1|publish/i
+    Received string:  ""
+
+      116 |     const env = { SKILLHUB_BASE_URL: mock.baseUrl };
+      117 |     const out = await runCli(['publish', '--path', '.'], env);
+    > 118 |     expect(out.stdout + out.stderr).toMatch(/pub_1|publish/i);
+          |                                     ^
+      119 |     await mock.close();
+      120 |   });
+      121 |
+
+      at Object.<anonymous> (test/cli/cli-commands.e2e-spec.ts:118:37)
+
+FAIL test/skills/skill-crud.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/skills/skill-crud.e2e-spec.ts[0m:[93m1[0m:[93m45[0m - [91merror[0m[90m TS2307: [0mCannot find module '../test/setup' or its corresponding type declarations.
+
+    [7m1[0m import { createTestApp, closeTestApp } from '../test/setup';
+    [7m [0m [91m                                            ~~~~~~~~~~~~~~~[0m
+
+FAIL test/versions/version-list-download.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/versions/version-list-download.e2e-spec.ts[0m:[93m5[0m:[93m45[0m - [91merror[0m[90m TS2307: [0mCannot find module '../test/setup' or its corresponding type declarations.
+
+    [7m5[0m import { createTestApp, closeTestApp } from '../test/setup';
+    [7m [0m [91m                                            ~~~~~~~~~~~~~~~[0m
+
+FAIL test/admin/audit-log.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/admin/audit-log.e2e-spec.ts[0m:[93m27[0m:[93m33[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m27[0m     const token = await loginAs(t.http, TEST_USERS.user);
+    [7m  [0m [91m                                ~~~~~~[0m
+    [96mtest/admin/audit-log.e2e-spec.ts[0m:[93m33[0m:[93m38[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m33[0m     const adminToken = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                     ~~~~~~[0m
+    [96mtest/admin/audit-log.e2e-spec.ts[0m:[93m53[0m:[93m38[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m53[0m     const adminToken = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                     ~~~~~~[0m
+    [96mtest/admin/audit-log.e2e-spec.ts[0m:[93m71[0m:[93m38[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m71[0m     const adminToken = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                     ~~~~~~[0m
+
+FAIL test/admin/review-policy-mgmt.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/admin/review-policy-mgmt.e2e-spec.ts[0m:[93m22[0m:[93m33[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m22[0m     const token = await loginAs(t.http, TEST_USERS.publisher);
+    [7m  [0m [91m                                ~~~~~~[0m
+    [96mtest/admin/review-policy-mgmt.e2e-spec.ts[0m:[93m32[0m:[93m38[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m32[0m     const adminToken = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                     ~~~~~~[0m
+    [96mtest/admin/review-policy-mgmt.e2e-spec.ts[0m:[93m72[0m:[93m38[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m72[0m     const adminToken = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                     ~~~~~~[0m
+
+FAIL test/auth/auth-login.e2e-spec.ts
+  ● Auth — Login (SPEC-001) › TC-001-001: POST /auth/login success then GET /auth/me
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/auth/auth-login.e2e-spec.ts:14:9)
+
+  ● Auth — Login (SPEC-001) › TC-001-002: wrong password returns 401 with unified error body
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/auth/auth-login.e2e-spec.ts:14:9)
+
+  ● Auth — Login (SPEC-001) › TC-001-003: non-existing user returns same as wrong password (anti-enumeration)
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/auth/auth-login.e2e-spec.ts:14:9)
+
+  ● Auth — Login (SPEC-001) › TC-001-004: disabled user login returns 403 and logs audit (no plaintext pwd)
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/auth/auth-login.e2e-spec.ts:14:9)
+
+FAIL test/admin/user-management.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/admin/user-management.e2e-spec.ts[0m:[93m22[0m:[93m33[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m22[0m     const token = await loginAs(t.http, TEST_USERS.user);
+    [7m  [0m [91m                                ~~~~~~[0m
+    [96mtest/admin/user-management.e2e-spec.ts[0m:[93m28[0m:[93m38[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m28[0m     const adminToken = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                     ~~~~~~[0m
+    [96mtest/admin/user-management.e2e-spec.ts[0m:[93m38[0m:[93m38[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m38[0m     const adminToken = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                     ~~~~~~[0m
+    [96mtest/admin/user-management.e2e-spec.ts[0m:[93m56[0m:[93m38[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m56[0m     const adminToken = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                     ~~~~~~[0m
+
+FAIL test/stats/stats-overview.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/stats/stats-overview.e2e-spec.ts[0m:[93m25[0m:[93m33[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m25[0m     const token = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                ~~~~~~[0m
+    [96mtest/stats/stats-overview.e2e-spec.ts[0m:[93m34[0m:[93m33[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m34[0m     const token = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                ~~~~~~[0m
+    [96mtest/stats/stats-overview.e2e-spec.ts[0m:[93m46[0m:[93m33[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m46[0m     const token = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                ~~~~~~[0m
+    [96mtest/stats/stats-overview.e2e-spec.ts[0m:[93m55[0m:[93m33[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m55[0m     const token = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                ~~~~~~[0m
+
+FAIL test/review/review-scanner.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/review/review-scanner.e2e-spec.ts[0m:[93m23[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m23[0m     const publisherToken = await loginAs(t.http, TEST_USERS.publisher);
+    [7m  [0m [91m                                         ~~~~~~[0m
+    [96mtest/review/review-scanner.e2e-spec.ts[0m:[93m24[0m:[93m41[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m24[0m     const reviewerToken = await loginAs(t.http, TEST_USERS.reviewer);
+    [7m  [0m [91m                                        ~~~~~~[0m
+    [96mtest/review/review-scanner.e2e-spec.ts[0m:[93m40[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m40[0m     const publisherToken = await loginAs(t.http, TEST_USERS.publisher);
+    [7m  [0m [91m                                         ~~~~~~[0m
+    [96mtest/review/review-scanner.e2e-spec.ts[0m:[93m55[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m55[0m     const publisherToken = await loginAs(t.http, TEST_USERS.publisher);
+    [7m  [0m [91m                                         ~~~~~~[0m
+    [96mtest/review/review-scanner.e2e-spec.ts[0m:[93m71[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m71[0m     const publisherToken = await loginAs(t.http, TEST_USERS.publisher);
+    [7m  [0m [91m                                         ~~~~~~[0m
+
+FAIL test/skills/skill-visibility.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/skills/skill-visibility.e2e-spec.ts[0m:[93m1[0m:[93m45[0m - [91merror[0m[90m TS2307: [0mCannot find module '../test/setup' or its corresponding type declarations.
+
+    [7m1[0m import { createTestApp, closeTestApp } from '../test/setup';
+    [7m [0m [91m                                            ~~~~~~~~~~~~~~~[0m
+
+FAIL test/versions/version-boundary.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/versions/version-boundary.e2e-spec.ts[0m:[93m5[0m:[93m45[0m - [91merror[0m[90m TS2307: [0mCannot find module '../test/setup' or its corresponding type declarations.
+
+    [7m5[0m import { createTestApp, closeTestApp } from '../test/setup';
+    [7m [0m [91m                                            ~~~~~~~~~~~~~~~[0m
+
+FAIL test/rbac/rbac-roles.e2e-spec.ts
+  ● RBAC — Role matrix (Sprint 1) › PUBLISHER can create skill; USER cannot (skeleton)
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/rbac/rbac-roles.e2e-spec.ts:16:9)
+
+  ● RBAC — Role matrix (Sprint 1) › ADMIN can includeRemoved=true; non-admin rejected (skeleton)
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/rbac/rbac-roles.e2e-spec.ts:16:9)
+
+FAIL test/auth/auth-security.e2e-spec.ts
+  ● Auth — Security (SPEC-001) › TC-001-011: 11 failed logins from same IP triggers 429 on the 11th
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/auth/auth-security.e2e-spec.ts:14:9)
+
+  ● Auth — Security (SPEC-001) › TC-001-012: existing vs non-existing username have same status/body shape
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/auth/auth-security.e2e-spec.ts:14:9)
+
+  ● Auth — Security (SPEC-001) › TC-001-013: tampered JWT payload (role escalated) is rejected
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/auth/auth-security.e2e-spec.ts:14:9)
+
+FAIL test/search/search-security.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/search/search-security.e2e-spec.ts[0m:[93m1[0m:[93m45[0m - [91merror[0m[90m TS2307: [0mCannot find module '../test/setup' or its corresponding type declarations.
+
+    [7m1[0m import { createTestApp, closeTestApp } from '../test/setup';
+    [7m [0m [91m                                            ~~~~~~~~~~~~~~~[0m
+
+FAIL test/skills/skill-security.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/skills/skill-security.e2e-spec.ts[0m:[93m1[0m:[93m45[0m - [91merror[0m[90m TS2307: [0mCannot find module '../test/setup' or its corresponding type declarations.
+
+    [7m1[0m import { createTestApp, closeTestApp } from '../test/setup';
+    [7m [0m [91m                                            ~~~~~~~~~~~~~~~[0m
+
+FAIL test/skills/skill-update-delete.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/skills/skill-update-delete.e2e-spec.ts[0m:[93m1[0m:[93m45[0m - [91merror[0m[90m TS2307: [0mCannot find module '../test/setup' or its corresponding type declarations.
+
+    [7m1[0m import { createTestApp, closeTestApp } from '../test/setup';
+    [7m [0m [91m                                            ~~~~~~~~~~~~~~~[0m
+
+FAIL test/search/search-embedding.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/search/search-embedding.e2e-spec.ts[0m:[93m1[0m:[93m45[0m - [91merror[0m[90m TS2307: [0mCannot find module '../test/setup' or its corresponding type declarations.
+
+    [7m1[0m import { createTestApp, closeTestApp } from '../test/setup';
+    [7m [0m [91m                                            ~~~~~~~~~~~~~~~[0m
+    [96mtest/search/search-embedding.e2e-spec.ts[0m:[93m33[0m:[93m52[0m - [91merror[0m[90m TS2339: [0mProperty 'admin' does not exist on type '{ user: TestUser; publisher: TestUser; }'.
+
+    [7m33[0m     const adminToken = await loginAs(t.http, USERS.admin);
+    [7m  [0m [91m                                                   ~~~~~[0m
+    [96mtest/search/search-embedding.e2e-spec.ts[0m:[93m51[0m:[93m52[0m - [91merror[0m[90m TS2339: [0mProperty 'admin' does not exist on type '{ user: TestUser; publisher: TestUser; }'.
+
+    [7m51[0m     const adminToken = await loginAs(t.http, USERS.admin);
+    [7m  [0m [91m                                                   ~~~~~[0m
+
+FAIL test/auth/auth-token.e2e-spec.ts
+  ● Auth — Token lifecycle (SPEC-001) › TC-001-007: POST /auth/logout then old token still works until expired
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/auth/auth-token.e2e-spec.ts:14:9)
+
+  ● Auth — Token lifecycle (SPEC-001) › TC-001-008: expired token is rejected by /auth/me
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/auth/auth-token.e2e-spec.ts:14:9)
+
+FAIL test/sync/upstream-sync.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/sync/upstream-sync.e2e-spec.ts[0m:[93m22[0m:[93m33[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m22[0m     const token = await loginAs(t.http, TEST_USERS.publisher);
+    [7m  [0m [91m                                ~~~~~~[0m
+    [96mtest/sync/upstream-sync.e2e-spec.ts[0m:[93m28[0m:[93m38[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m28[0m     const adminToken = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                     ~~~~~~[0m
+    [96mtest/sync/upstream-sync.e2e-spec.ts[0m:[93m41[0m:[93m38[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m41[0m     const adminToken = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                     ~~~~~~[0m
+
+FAIL test/auth/auth-boundary.e2e-spec.ts
+  ● Auth — Boundary (SPEC-001) › TC-001-014: login user with null email does not 500; /me returns email=null if allowed
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/auth/auth-boundary.e2e-spec.ts:15:9)
+
+  ● Auth — Boundary (SPEC-001) › TC-001-015: login user with null department then GET /skills does not 500
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/auth/auth-boundary.e2e-spec.ts:15:9)
+
+FAIL test/auth/auth-degradation.e2e-spec.ts
+  ● Auth — LDAP degradation (SPEC-001) › TC-001-009: when LDAP down, /auth/login returns 503; /health shows ldap=down
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/auth/auth-degradation.e2e-spec.ts:15:9)
+
+  ● Auth — LDAP degradation (SPEC-001) › TC-001-010: when LDAP down, existing JWT can still access protected endpoints
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/auth/auth-degradation.e2e-spec.ts:15:9)
+
+FAIL test/search/search-basic.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/search/search-basic.e2e-spec.ts[0m:[93m1[0m:[93m45[0m - [91merror[0m[90m TS2307: [0mCannot find module '../test/setup' or its corresponding type declarations.
+
+    [7m1[0m import { createTestApp, closeTestApp } from '../test/setup';
+    [7m [0m [91m                                            ~~~~~~~~~~~~~~~[0m
+
+FAIL test/admin/system-config.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/admin/system-config.e2e-spec.ts[0m:[93m22[0m:[93m33[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m22[0m     const token = await loginAs(t.http, TEST_USERS.user);
+    [7m  [0m [91m                                ~~~~~~[0m
+    [96mtest/admin/system-config.e2e-spec.ts[0m:[93m28[0m:[93m38[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m28[0m     const adminToken = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                     ~~~~~~[0m
+    [96mtest/admin/system-config.e2e-spec.ts[0m:[93m37[0m:[93m38[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m37[0m     const adminToken = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                     ~~~~~~[0m
+
+FAIL test/review/review-scheduler.e2e-spec.ts
+  ● Review — Scheduler (SPEC-005) › TC-005-014: distributed lock (Redis SETNX) prevents duplicate runs across replicas
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/review/review-scheduler.e2e-spec.ts:20:9)
+
+  ● Review — Scheduler (SPEC-005) › TC-005-015: timeout alert is sent once with noise reduction
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/review/review-scheduler.e2e-spec.ts:20:9)
+
+FAIL test/review/review-policy.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/review/review-policy.e2e-spec.ts[0m:[93m27[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m27[0m     const publisherToken = await loginAs(t.http, TEST_USERS.publisher);
+    [7m  [0m [91m                                         ~~~~~~[0m
+    [96mtest/review/review-policy.e2e-spec.ts[0m:[93m28[0m:[93m41[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m28[0m     const reviewerToken = await loginAs(t.http, TEST_USERS.reviewer);
+    [7m  [0m [91m                                        ~~~~~~[0m
+
+FAIL test/auth/auth-ad-groups.e2e-spec.ts
+  ● Auth — AD Groups to Role Mapping (SPEC-001) › TC-001-005: user in SkillHub-Admin group gets ADMIN role
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/auth/auth-ad-groups.e2e-spec.ts:14:9)
+
+  ● Auth — AD Groups to Role Mapping (SPEC-001) › TC-001-006: multi-group user resolves to highest role (ADMIN)
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/auth/auth-ad-groups.e2e-spec.ts:14:9)
+
+FAIL test/rbac/rbac-visibility.e2e-spec.ts
+  ● RBAC — Visibility isolation (Sprint 1) › DEPARTMENT skill is invisible to other departments (skeleton)
+
+    TypeError: (0 , supertest_1.default) is not a function
+
+      47 |   return {
+      48 |     app,
+    > 49 |     http: request(app.getHttpServer()),
+         |                  ^
+      50 |     moduleRef,
+      51 |     redis,
+      52 |   };
+
+      at createTestApp (test/setup.ts:49:18)
+      at async Object.<anonymous> (test/rbac/rbac-visibility.e2e-spec.ts:16:9)
+
+FAIL test/skills/skill-boundary.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/skills/skill-boundary.e2e-spec.ts[0m:[93m1[0m:[93m45[0m - [91merror[0m[90m TS2307: [0mCannot find module '../test/setup' or its corresponding type declarations.
+
+    [7m1[0m import { createTestApp, closeTestApp } from '../test/setup';
+    [7m [0m [91m                                            ~~~~~~~~~~~~~~~[0m
+
+FAIL test/stats/stats-efficiency.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/stats/stats-efficiency.e2e-spec.ts[0m:[93m25[0m:[93m33[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m25[0m     const token = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                ~~~~~~[0m
+    [96mtest/stats/stats-efficiency.e2e-spec.ts[0m:[93m34[0m:[93m33[0m - [91merror[0m[90m TS2345: [0mArgument of type 'TestAgent<Test>' is not assignable to parameter of type 'SuperTest<Test>'.
+      Type 'TestAgent<Test>' is missing the following properties from type 'Stream': pipe, compose, addListener, removeListener, and 11 more.
+
+    [7m34[0m     const token = await loginAs(t.http, TEST_USERS.admin);
+    [7m  [0m [91m                                ~~~~~~[0m
+
+FAIL test/search/search-degradation.e2e-spec.ts
+  ● Test suite failed to run
+
+    [96mtest/search/search-degradation.e2e-spec.ts[0m:[93m1[0m:[93m45[0m - [91merror[0m[90m TS2307: [0mCannot find module '../test/setup' or its corresponding type declarations.
+
+    [7m1[0m import { createTestApp, closeTestApp } from '../test/setup';
+    [7m [0m [91m                                            ~~~~~~~~~~~~~~~[0m
+    [96mtest/search/search-degradation.e2e-spec.ts[0m:[93m27[0m:[93m52[0m - [91merror[0m[90m TS2339: [0mProperty 'admin' does not exist on type '{ user: TestUser; publisher: TestUser; }'.
+
+    [7m27[0m     const adminToken = await loginAs(t.http, USERS.admin);
+    [7m  [0m [91m                                                   ~~~~~[0m
+
+
+Test Suites: 34 failed, 34 total
+Tests:       24 failed, 1 passed, 25 total
+Snapshots:   0 total
+Time:        16.247 s
+Ran all test suites.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?
