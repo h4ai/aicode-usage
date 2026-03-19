@@ -6,6 +6,10 @@ import { SkillsModule } from './skills/skills.module';
 import { StorageModule } from './storage/storage.module';
 import { SearchModule } from './search/search.module';
 import { ReviewModule } from './review/review.module';
+import { AuditModule } from './audit/audit.module';
+import { AdminModule } from './admin/admin.module';
+import { StatsModule } from './stats/stats.module';
+import { SyncModule } from './sync/sync.module';
 import { BullModule } from '@nestjs/bullmq';
 import { ConfigService } from './config/config.service';
 
@@ -26,6 +30,10 @@ class HealthController {
     StorageModule,
     SearchModule,
     ReviewModule,
+    AuditModule,
+    AdminModule,
+    StatsModule,
+    SyncModule,
     BullModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
