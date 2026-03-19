@@ -1,0 +1,134 @@
+# npm audit report
+
+ajv  7.0.0-alpha.0 - 8.17.1
+Severity: moderate
+ajv has ReDoS when using `$data` option - https://github.com/advisories/GHSA-2g4f-4pwh-qvx6
+fix available via `npm audit fix --force`
+Will install @nestjs/cli@11.0.16, which is a breaking change
+node_modules/ajv
+  @angular-devkit/core  12.0.0-next.0 - 19.2.21 || 20.0.0-next.0 - 20.3.17 || 21.0.0-next.0 - 21.1.4 || 21.2.0-next.0 - 21.2.0-rc.2
+  Depends on vulnerable versions of ajv
+  node_modules/@angular-devkit/core
+    @angular-devkit/schematics  12.0.0-next.0 - 19.2.21 || 20.0.0-next.0 - 20.3.17 || 21.0.0-next.0 - 21.1.4 || 21.2.0-next.0 - 21.2.0-rc.2
+    Depends on vulnerable versions of @angular-devkit/core
+    node_modules/@angular-devkit/schematics
+    @angular-devkit/schematics-cli  0.12.0-beta.0 - 19.2.21 || 20.0.0-next.0 - 20.3.17 || 21.0.0-next.0 - 21.1.4 || 21.2.0-next.0 - 21.2.0-rc.2
+    Depends on vulnerable versions of @angular-devkit/core
+    Depends on vulnerable versions of @angular-devkit/schematics
+    Depends on vulnerable versions of inquirer
+    node_modules/@angular-devkit/schematics-cli
+    @nestjs/cli  2.0.0-rc.1 - 11.0.16
+    Depends on vulnerable versions of @angular-devkit/core
+    Depends on vulnerable versions of @angular-devkit/schematics
+    Depends on vulnerable versions of @angular-devkit/schematics-cli
+    Depends on vulnerable versions of @nestjs/schematics
+    Depends on vulnerable versions of glob
+    Depends on vulnerable versions of inquirer
+    Depends on vulnerable versions of webpack
+    node_modules/@nestjs/cli
+    @nestjs/schematics  8.0.0 - 11.0.9
+    Depends on vulnerable versions of @angular-devkit/core
+    Depends on vulnerable versions of @angular-devkit/schematics
+    node_modules/@nestjs/schematics
+
+file-type  13.0.0 - 21.3.1
+Severity: moderate
+file-type affected by infinite loop in ASF parser on malformed input with zero-size sub-header - https://github.com/advisories/GHSA-5v7r-6r5c-r473
+file-type: ZIP Decompression Bomb DoS via [Content_Types].xml entry - https://github.com/advisories/GHSA-j47w-4g3g-c36v
+fix available via `npm audit fix`
+node_modules/file-type
+  @nestjs/common  10.4.16 - 10.4.22 || 11.0.16 - 11.1.16 || >=12.0.0-alpha.0
+  Depends on vulnerable versions of file-type
+  node_modules/@nestjs/common
+
+glob  10.2.0 - 10.4.5
+Severity: high
+glob CLI: Command injection via -c/--cmd executes matches with shell:true - https://github.com/advisories/GHSA-5j98-mcp5-4vw2
+fix available via `npm audit fix --force`
+Will install @nestjs/cli@11.0.16, which is a breaking change
+node_modules/glob
+
+lodash  4.0.0 - 4.17.21
+Severity: moderate
+Lodash has Prototype Pollution Vulnerability in `_.unset` and `_.omit` functions - https://github.com/advisories/GHSA-xxjr-mmjv-4gpg
+fix available via `npm audit fix --force`
+Will install @nestjs/config@4.0.3, which is a breaking change
+node_modules/lodash
+  @nestjs/config  1.1.6 - 4.0.2
+  Depends on vulnerable versions of lodash
+  node_modules/@nestjs/config
+
+multer  <=2.1.0
+Severity: high
+Multer vulnerable to Denial of Service via incomplete cleanup - https://github.com/advisories/GHSA-xf7r-hgr6-v32p
+Multer vulnerable to Denial of Service via resource exhaustion - https://github.com/advisories/GHSA-v52c-386h-88mc
+Multer Vulnerable to Denial of Service via Uncontrolled Recursion - https://github.com/advisories/GHSA-5528-5vmv-3xc2
+fix available via `npm audit fix --force`
+Will install @nestjs/platform-express@11.1.17, which is a breaking change
+node_modules/multer
+  @nestjs/platform-express  <=11.1.14 || >=12.0.0-alpha.0
+  Depends on vulnerable versions of @nestjs/core
+  Depends on vulnerable versions of multer
+  node_modules/@nestjs/platform-express
+    @nestjs/core  7.6.0-next.1 - 11.0.0-next.4
+    Depends on vulnerable versions of @nestjs/platform-express
+    node_modules/@nestjs/core
+      @nestjs/bull-shared  10.0.0 - 10.2.3
+      Depends on vulnerable versions of @nestjs/core
+      node_modules/@nestjs/bullmq/node_modules/@nestjs/bull-shared
+      @nestjs/bullmq  10.0.0 - 10.2.3
+      Depends on vulnerable versions of @nestjs/bull-shared
+      Depends on vulnerable versions of @nestjs/core
+      node_modules/@nestjs/bullmq
+      @nestjs/cache-manager  2.0.1 - 3.0.0-next.0
+      Depends on vulnerable versions of @nestjs/core
+      node_modules/@nestjs/cache-manager
+      @nestjs/schedule  3.0.0 - 4.1.2
+      Depends on vulnerable versions of @nestjs/core
+      node_modules/@nestjs/schedule
+      @nestjs/testing  7.6.0-next.1 - 11.0.0-next.4
+      Depends on vulnerable versions of @nestjs/core
+      Depends on vulnerable versions of @nestjs/platform-express
+      node_modules/@nestjs/testing
+
+tar  <=7.5.10
+Severity: high
+node-tar Vulnerable to Arbitrary File Creation/Overwrite via Hardlink Path Traversal - https://github.com/advisories/GHSA-34x7-hfp2-rc4v
+node-tar is Vulnerable to Arbitrary File Overwrite and Symlink Poisoning via Insufficient Path Sanitization - https://github.com/advisories/GHSA-8qq5-rm4j-mr97
+Arbitrary File Read/Write via Hardlink Target Escape Through Symlink Chain in node-tar Extraction - https://github.com/advisories/GHSA-83g3-92jg-28cx
+tar has Hardlink Path Traversal via Drive-Relative Linkpath - https://github.com/advisories/GHSA-qffp-2rhf-9h96
+node-tar Symlink Path Traversal via Drive-Relative Linkpath - https://github.com/advisories/GHSA-9ppj-qmqm-q256
+Race Condition in node-tar Path Reservations via Unicode Ligature Collisions on macOS APFS - https://github.com/advisories/GHSA-r6q2-hw4h-h46w
+fix available via `npm audit fix`
+node_modules/tar
+  @mapbox/node-pre-gyp  <=1.0.11
+  Depends on vulnerable versions of tar
+  node_modules/@mapbox/node-pre-gyp
+
+tmp  <=0.2.3
+tmp allows arbitrary temporary file / directory write via symbolic link `dir` parameter - https://github.com/advisories/GHSA-52f5-9888-hmc6
+fix available via `npm audit fix --force`
+Will install @nestjs/cli@11.0.16, which is a breaking change
+node_modules/tmp
+  external-editor  >=1.1.1
+  Depends on vulnerable versions of tmp
+  node_modules/external-editor
+    inquirer  3.0.0 - 8.2.6 || 9.0.0 - 9.3.7
+    Depends on vulnerable versions of external-editor
+    node_modules/@angular-devkit/schematics-cli/node_modules/inquirer
+    node_modules/inquirer
+
+webpack  5.49.0 - 5.104.0
+webpack buildHttp: allowedUris allow-list bypass via URL userinfo (@) leading to build-time SSRF behavior - https://github.com/advisories/GHSA-8fgc-7cc6-rx7x
+webpack buildHttp HttpUriPlugin allowedUris bypass via HTTP redirects → SSRF + cache persistence - https://github.com/advisories/GHSA-38r7-794h-5758
+fix available via `npm audit fix --force`
+Will install @nestjs/cli@11.0.16, which is a breaking change
+node_modules/webpack
+
+25 vulnerabilities (4 low, 9 moderate, 12 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
