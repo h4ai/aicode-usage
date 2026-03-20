@@ -37,37 +37,121 @@
 | Vercel Deployment | Docker + K8s Helm Chart | Nginx 静态文件 / Node SSR 服务 |
 | Nitro + h3 (BFF) | TanStack Start Server Functions | 可选，优先直接请求 NestJS API |
 
-### 2.3 项目结构 (目录树)
+### 2.3 项目结构 (Monorepo — pnpm/Bun workspace)
+
+整个项目采用 **Monorepo** 架构，前后端 + 共享类型在同一个仓库中。
+
 ```
-src/
-├── app/
-│   ├── routes/                # TanStack Router 路由 (文件即路由)
-│   │   ├── _layout.tsx        # 主框架 Layout
-│   │   ├── index.tsx          # 市场大厅
-│   │   ├── login.tsx          # 认证页
-│   │   ├── skills/            # Skill 模块路由
-│   │   ├── admin/             # 管理员后台路由
-│   │   └── templates/         # 模板模块路由
-│   ├── components/            # 业务与通用组件
-│   │   ├── ui/                # 基础 Radix 包装组件
-│   │   ├── layout/            # Navbar, Sidebar, Footer
-│   │   └── domain/            # 业务组件 (SkillCard, VersionUploader...)
-│   ├── lib/                   # 核心库
-│   │   ├── api-client.ts      # Axios 实例及拦截器
-│   │   └── auth.ts            # JWT Cookie 相关
-│   ├── queries/               # TanStack Query Hook 封装
-│   ├── stores/                # Zustand Store 定义
-│   └── routeTree.gen.ts       # TanStack Router 自动生成文件
-├── public/                    # 静态资源
-├── package.json
-└── vite.config.ts
+enterprise-skillhub/
+├── packages/
+│   ├── backend/                    # 现有 NestJS 后端（从根目录 src/ 迁入）
+│   │   ├── src/
+│   │   ├── prisma/
+│   │   ├── test/
+│   │   └── package.json
+│   ├── frontend/                   # 新建 TanStack Start 前端
+│   │   ├── src/
+│   │   │   ├── app/
+│   │   │   │   ├── routes/         # TanStack Router 路由 (文件即路由)
+│   │   │   │   │   ├── _layout.tsx
+│   │   │   │   │   ├── index.tsx   # 市场大厅
+│   │   │   │   │   ├── login.tsx   # 认证页
+│   │   │   │   │   ├── skills/     # Skill 模块路由
+│   │   │   │   │   ├── admin/      # 管理员后台路由
+│   │   │   │   │   └── templates/  # 模板模块路由
+│   │   │   │   ├── components/
+│   │   │   │   │   ├── ui/         # 基础 Radix 包装组件
+│   │   │   │   │   ├── layout/     # Navbar, Sidebar, Footer
+│   │   │   │   │   └── domain/     # 业务组件 (SkillCard, VersionUploader...)
+│   │   │   │   ├── lib/
+│   │   │   │   │   ├── api-client.ts  # Axios 实例及拦截器
+│   │   │   │   │   └── auth.ts        # JWT Cookie 相关
+│   │   │   │   ├── queries/        # TanStack Query Hook 封装
+│   │   │   │   └── stores/         # Zustand Store 定义
+│   │   │   └── routeTree.gen.ts
+│   │   ├── public/
+│   │   └── package.json
+│   └── shared/                     # 🔑 共享类型包 @skillhub/shared
+│       ├── src/
+│       │   ├── api-types.ts        # API 请求/响应 TypeScript 类型
+│       │   ├── dto/                # 从后端 DTO 同步的类型定义
+│       │   ├── enums.ts            # 共享枚举 (Role, SkillStatus, ReviewStatus...)
+│       │   └── constants.ts        # 共享常量
+│       └── package.json
+├── package.json                    # workspace 根配置
+├── pnpm-workspace.yaml             # 或 Bun workspace 配置
+├── deploy/                         # Docker + K8s 部署配置
+├── specs/                          # SPEC 文档
+└── .github/                        # CI/CD
 ```
 
-### 2.4 构建/开发/部署命令
-*   **开发**: `bun run dev`
-*   **构建**: `bun run build`
-*   **启动 (生产)**: `bun run start`
-*   **Lint/Test**: `bun run lint`, `bun run test`
+### 2.4 前后端协同机制（关键！）
+
+#### 2.4.1 共享类型包 `@skillhub/shared`
+
+前后端通过共享 TypeScript 类型包保持 API 契约一致：
+
+```typescript
+// packages/shared/src/api-types.ts
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+export interface LoginResponse {
+  access_token: string;
+  user: UserProfile;
+}
+export interface SkillListResponse {
+  items: SkillSummary[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+// ... 所有 API 的 Request/Response 类型
+```
+
+- 后端 Controller 的参数和返回值引用 `@skillhub/shared` 的类型
+- 前端 API Client 的请求和响应引用同一套类型
+- **改了类型 → 前后端任何一方不更新 → tsc 编译失败 → 卡住**
+
+#### 2.4.2 OpenAPI 自动生成 + 类型同步
+
+```
+后端 NestJS (@nestjs/swagger 装饰器)
+    ↓ build 时自动导出
+openapi.json（API 的单一真相源）
+    ↓ openapi-typescript 自动生成
+packages/shared/src/generated/api.d.ts（前端可用的类型）
+```
+
+CI 流程：
+```yaml
+- step: backend-build         # 后端编译
+- step: generate-openapi      # 生成最新 openapi.json
+- step: generate-types        # 从 openapi.json 生成 TS 类型到 shared/
+- step: frontend-type-check   # 前端基于新类型做 tsc --noEmit
+- step: contract-test         # 检测 openapi.json 有无 breaking change
+```
+
+#### 2.4.3 契约测试（CI 门禁）
+
+每次 PR 合并前自动运行：
+1. **OpenAPI Diff** — 对比新旧 `openapi.json`，检测 breaking change（字段删除、类型变更、必填改选填）
+2. **TypeScript 类型检查** — 前端基于最新的 `@skillhub/shared` 做 `tsc --noEmit`
+3. **E2E 联调** — Playwright 测试前端真实调用后端 API
+
+任何一层失败 → CI 红灯 → PR 合不进去。
+
+### 2.5 构建/开发/部署命令
+*   **安装依赖**: `pnpm install`（或 `bun install`，自动安装所有 workspace 包）
+*   **开发（前端）**: `pnpm --filter frontend dev`
+*   **开发（后端）**: `pnpm --filter backend start:dev`
+*   **开发（全栈）**: `pnpm dev`（并行启动前后端）
+*   **构建**: `pnpm build`（构建 shared → backend → frontend）
+*   **类型生成**: `pnpm generate:types`（从 openapi.json 生成 shared 类型）
+*   **类型检查**: `pnpm typecheck`（前后端 + shared 全量 tsc --noEmit）
+*   **Lint/Test**: `pnpm lint`, `pnpm test`
+*   **E2E**: `pnpm test:e2e`（Playwright 前后端联调测试）
 
 ## 3. 页面清单 & 路由表
 
