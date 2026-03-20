@@ -292,9 +292,115 @@ grep -n "Pattern-Key: <关键词>" .learnings/LEARNINGS.md .learnings/ERRORS.md
 2. 用 `assets/SKILL-TEMPLATE.md` 为模板填充内容
 3. 原条目 Status 改为 `promoted_to_skill`，加 `Skill-Path: skills/<name>`
 
-## Make It Yours
+---
 
-This is a starting point. Add your own conventions, style, and rules as you figure out what works.
+## 🛡️ SDD 强制执行流程（Spec 驱动开发 — 4 道防线 + 3 层保障）
+
+> **核心原则：人会忘记，系统不会。把流程变成代码，把检查变成门禁，把记忆变成文件。**
+> **"没有被追踪的延后，就是被遗忘的承诺。"**
+
+### 🚨 触发条件
+
+当 PM 派发任何涉及 SPEC 的开发任务时（Dev → QA → PO 流水线），必须按以下流程执行。**不是凭记忆，而是按脚本一步步走。**
+
+---
+
+### 防线 1: PM SPEC 覆盖矩阵（规划阶段）
+
+每次 Sprint 规划时，PM 必须：
+1. 读取 `specs/SPEC-COVERAGE-MATRIX.md`
+2. 遍历**每个 SPEC 的每个章节**
+3. 为每个章节标注：`✅ 本期实现` / `⏭️ 延后到 Sprint X` / `❌ 不适用`
+4. **禁止空白** — 不做的也必须有记录和延后原因
+5. 更新覆盖矩阵文件
+
+### 防线 2: Dev Implementation Checklist（编码阶段）
+
+Dev 任务 Prompt 中必须包含以下**强制前置步骤**：
+```
+Step 0: 读取 SPEC 原文（完整内容，不是摘要）
+        读取 SPEC-COVERAGE-MATRIX.md 找到本 Sprint 应覆盖的章节
+Step 1: 生成 Implementation Checklist
+        → 保存到 specs/checklists/sprint-{X}-dev-checklist.md
+        → 遍历 SPEC 每个章节，标注 ✅实现 / ⏭️延后 / ❌不适用
+Step 2: 按 Checklist 逐项编码（TDD）
+Step 3: 自检（tsc + 全量测试 + 更新 Checklist 打勾）
+Step 4: Checklist 文件必须随代码一起 git commit
+
+【交付物 — 缺少任何一项则任务不算完成】
+□ 代码 □ 测试 □ specs/checklists/sprint-{X}-dev-checklist.md □ git commit
+```
+
+### 防线 3: QA Spec AC 对照测试（测试阶段）
+
+QA 任务 Prompt 中必须包含以下**强制前置步骤**：
+```
+Step 0: 读取 SPEC 原文 + Dev Checklist + 覆盖矩阵
+Step 1: 从 SPEC 提取所有 AC，逐条标注 🧪测试 / ⏭️延后 / ❌不适用
+Step 2: 交叉检查 Dev Checklist
+        → Dev 声称实现的 → 验证是否真的实现了
+        → Dev 声称跳过的 → 验证是否在覆盖矩阵有记录
+        → 不一致 → 标记 P0 Bug
+Step 3: 执行测试
+Step 4: 交付报告 → specs/reports/sprint-{X}-qa-report.md
+        → 必须包含 "Spec AC 覆盖矩阵" 章节
+        → 必须包含 "Dev Checklist 合规检查" 章节
+
+【交付物 — 缺少任何一项则任务不算完成】
+□ specs/reports/sprint-{X}-qa-report.md □ AC 对照表 □ Dev 合规检查 □ 测试结果
+```
+
+### 防线 4: PO Spec 覆盖率门禁（验收阶段）
+
+PO 任务 Prompt 中必须包含以下**强制前置步骤**：
+```
+Step 0: 读取 SPEC 原文 + Dev Checklist + QA Report + 覆盖矩阵
+Step 1: 逐章核对 SPEC（对比 Dev Checklist 和 QA Report）
+Step 2: 计算覆盖率 → ≥95% 通过，<95% 直接打回
+Step 3: 检查延后项 → 全部必须有目标 Sprint，禁止"待定"
+Step 4: 交付验收报告 → specs/reports/sprint-{X}-acceptance-report.md
+
+【交付物 — 缺少任何一项则任务不算完成】
+□ specs/reports/sprint-{X}-acceptance-report.md □ 覆盖率统计 □ 延后项追踪 □ PASS/REJECT 决定
+```
+
+---
+
+### 🚧 文件门禁（阶段间硬卡点）
+
+```
+Dev 完成 → PM 检查 checklist 文件存在 → 才能派 QA
+QA 完成 → PM 检查 report 文件存在   → 才能派 PO
+PO 完成 → PM 检查 acceptance 文件存在 → 才能进下一 Sprint
+```
+
+**文件不存在 = 门禁不通过 = 流程卡住。**
+
+### 📋 PM Sprint 编排脚本（7 步标准流程）
+
+每次启动新 Sprint，PM 按此脚本执行（不凭记忆）：
+
+```
+Phase 0: 读覆盖矩阵 → 确认本 Sprint 应覆盖的 SPEC 章节
+Phase 1: 用 Dev 模板派发（模板写死了强制步骤）
+Phase 2: 检查 Dev 交付物（门禁 1 — checklist 文件存在 + 覆盖率合格）
+Phase 3: 用 QA 模板派发
+Phase 4: 检查 QA 交付物（门禁 2 — report 文件存在 + AC 覆盖矩阵）
+Phase 5: 用 PO 模板派发
+Phase 6: 检查 PO 交付物（门禁 3 — acceptance 文件存在 + 覆盖率 ≥95%）
+Phase 7: commit + push + 更新覆盖矩阵 + 汇报
+```
+
+### 📁 相关文件位置（项目内）
+
+| 文件 | 用途 |
+|------|------|
+| `specs/SPEC-COVERAGE-MATRIX.md` | 全量覆盖矩阵（防线 1 产出） |
+| `specs/checklists/sprint-{X}-dev-checklist.md` | Dev 实现清单（防线 2 产出） |
+| `specs/reports/sprint-{X}-qa-report.md` | QA 测试报告（防线 3 产出） |
+| `specs/reports/sprint-{X}-acceptance-report.md` | PO 验收报告（防线 4 产出） |
+| `SDD-ENFORCEMENT.md` | 4 道防线设计文档 |
+| `SDD-AUTOMATION.md` | 自动化门禁详细方案 |
 
 ---
 
