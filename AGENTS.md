@@ -353,6 +353,9 @@ Step 4: 交付报告 → specs/reports/sprint-{X}-qa-report.md
 
 【交付物 — 缺少任何一项则任务不算完成】
 □ specs/reports/sprint-{X}-qa-report.md □ AC 对照表 □ Dev 合规检查 □ 测试结果
+□ screenshots/sprint-{X}/ 目录（Web UI 端到端截图，前端 Sprint 必须）
+  → 每个已实现页面：正常状态 + 关键交互 + 异常/空状态
+  → 文件名格式：{页面名}-{状态}.png
 ```
 
 ### 防线 4: PO Spec 覆盖率门禁（验收阶段）

@@ -269,3 +269,74 @@ PM 每次启动新 Sprint 时，按以下脚本执行（不是凭记忆）：
 5. **覆盖率趋势** — 每个 Sprint 都能看到覆盖率在增长，停滞立即可见
 
 > **一句话总结：把流程变成代码，把检查变成门禁，把记忆变成文件。**
+
+---
+
+## 全自动 Sprint 流水线（无确认串行执行）
+
+### 触发方式
+沈老板说"开始执行" → PM 读取 Sprint 队列 → 自动串行推进所有 Sprint
+
+### Sprint 队列
+```
+queue = [F1, F2, F3]
+for sprint in queue:
+    run_sprint(sprint)       # Phase 0-7 自动执行
+    if blocker:              # 2 轮修复不过
+        notify_user()        # 唯一打断点
+        wait_for_instruction()
+    else:
+        post_progress()      # 群里发简短进度（不需确认）
+        continue             # 自动进入下一个 Sprint
+post_summary_report()        # 全部完成后发汇总报告
+```
+
+### 每个 Sprint 内的自动执行流程
+```
+Phase 0: PM 读覆盖矩阵 → 生成 Task 描述
+Phase 1: 自动同步文件到 Dev workspace → spawn Dev Agent
+Phase 2: 自动门禁检查 Dev 交付物
+  ├─ 通过 → Phase 3
+  └─ 失败 → 自动派 Dev 修复 → 重新检查（最多 2 轮）
+       └─ 2 轮不过 → 通知沈老板
+Phase 3: 自动同步文件到 QA workspace → spawn QA Agent
+Phase 4: 自动门禁检查 QA 交付物
+  ├─ 通过 → Phase 5
+  └─ P0 Bug → 自动派 Dev 修复 → 重新 QA（最多 2 轮）
+       └─ 2 轮不过 → 通知沈老板
+Phase 5: 自动同步文件到 PO workspace → spawn PO Agent
+Phase 6: 自动门禁检查 PO 交付物
+  ├─ PASS → Phase 7
+  ├─ CONDITIONAL PASS → 记录条件 + Phase 7（下 Sprint 修）
+  └─ REJECT → 自动派 Dev 修复 → 重走 Phase 1（最多 2 轮）
+       └─ 2 轮不过 → 通知沈老板
+Phase 7: git commit + push + 更新覆盖矩阵 + 群里发进度
+```
+
+### 自动门禁检查（PM 自动执行）
+```bash
+# Phase 2 门禁：Dev 交付物
+check_file_exists "specs/checklists/sprint-{X}-dev-checklist.md"
+check_no_blank_sections    # Checklist 无空白章节
+check_git_has_commits      # git log 有本 Sprint commit
+check_tdd_order            # test commit 在 feat commit 之前
+
+# Phase 4 门禁：QA 交付物
+check_file_exists "specs/reports/sprint-{X}-qa-report.md"
+check_has_section "Spec AC 覆盖矩阵"
+check_has_section "Dev Checklist 合规检查"
+check_has_section "Web UI 截图清单"     # 前端 Sprint 必须
+check_screenshots_exist "screenshots/sprint-{X}/"  # 截图目录非空
+
+# Phase 6 门禁：PO 交付物
+check_file_exists "specs/reports/sprint-{X}-acceptance-report.md"
+check_coverage_rate >= 95%
+check_all_deferred_have_target_sprint
+check_verdict in [PASS, CONDITIONAL_PASS]
+```
+
+### 通知策略
+- **中间不打扰**：Phase 0-7 自动执行，不找用户确认
+- **进度通知**：每个 Sprint 完成时群里发一条简短进度
+- **Blocker 通知**：2 轮自动修复不过才通知沈老板
+- **最终汇报**：全部 Sprint 完成后发汇总报告（含覆盖率趋势 + 截图 + 统计）
