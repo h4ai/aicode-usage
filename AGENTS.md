@@ -323,7 +323,12 @@ Step 0: 读取 SPEC 原文（完整内容，不是摘要）
 Step 1: 生成 Implementation Checklist
         → 保存到 specs/checklists/sprint-{X}-dev-checklist.md
         → 遍历 SPEC 每个章节，标注 ✅实现 / ⏭️延后 / ❌不适用
-Step 2: 按 Checklist 逐项编码（TDD）
+Step 2: TDD 编码（严格 Red-Green-Refactor）
+        → 🔴 先写失败测试 → git commit "test(模块): add failing test for X"
+        → 🟢 写最少代码通过 → git commit "feat(模块): implement X"
+        → 🔵 重构（可选）→ git commit "refactor(模块): clean X"
+        → 禁止先写实现后补测试（TAD）
+        → 禁止测试和实现混在同一个 commit
 Step 3: 自检（tsc + 全量测试 + 更新 Checklist 打勾）
 Step 4: Checklist 文件必须随代码一起 git commit
 
