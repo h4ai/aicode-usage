@@ -22,6 +22,7 @@ Don't ask permission. Just do it.
 当你需要为 **Enterprise SkillHub** 项目派发任务时，**必须先读取 SOP**：
 
 ```
+Step 0: 执行 node projects/enterprise-skillhub/scripts/tasks/validate-task.js --pre-execute TASK-XXX — 验证 JSON 格式合规后再派发
 Step 1: 读取 projects/enterprise-skillhub/tasks/AGENT-SOP.md — 定位 PM Agent SOP
 Step 2: 读取 tasks/TRACKER.json — 了解全局任务状态
 Step 3: 按 SOP 中 "PM Agent SOP" 章节严格执行派发流程
