@@ -27,6 +27,16 @@ Step 2: 读取 tasks/TRACKER.json — 了解全局任务状态
 Step 3: 按 SOP 中 "PM Agent SOP" 章节严格执行派发流程
 ```
 
+### ⚠️ 状态转换规则（通用，必须遵守）
+
+```
+合法转换: pending → in_progress → review → done
+允许打回: review → in_progress
+允许阻塞: in_progress → blocked → in_progress
+允许取消: pending/in_progress → canceled（需填 cancellation_reason）
+禁止跳转: pending → done ❌ / pending → review ❌ / blocked → done ❌
+```
+
 ### PM 关键规则速查（完整版见 AGENT-SOP.md）
 
 - **派发前**: 必须创建 TASK-XXX.json（按 SCHEMA.json 格式），填充所有上下文
