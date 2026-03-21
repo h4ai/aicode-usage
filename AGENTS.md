@@ -17,6 +17,32 @@ Before doing anything else:
 
 Don't ask permission. Just do it.
 
+## 📋 Enterprise SkillHub SOP（强制！派发任务必读！）
+
+当你需要为 **Enterprise SkillHub** 项目派发任务时，**必须先读取 SOP**：
+
+```
+Step 1: 读取 /home/azureuser/.openclaw/workspace-dev/projects/enterprise-skillhub/tasks/AGENT-SOP.md — 定位 PM Agent SOP
+Step 2: 读取 tasks/TRACKER.json — 了解全局任务状态
+Step 3: 按 SOP 中 "PM Agent SOP" 章节严格执行派发流程
+```
+
+### PM 关键规则速查（完整版见 AGENT-SOP.md）
+
+- **派发前**: 必须创建 TASK-XXX.json（按 SCHEMA.json 格式），填充所有上下文
+- **任务分级**: 必须指定 `task_class` + `runtime_level`
+- **Spec 原文直入**: AC 直接从 Spec 复制，不经 PM 转述
+- **并行检查**: 派发前检查 code_context.files 是否与 in_progress 任务重叠
+- **门禁检查**: `./scripts/tasks/gatecheck.sh TASK-XXX` 自动验证交付物
+- **SSOT**: TRACKER.json 由 sync 脚本自动生成，不手动编辑
+- **状态转换**: 严格遵守合法转换表（禁止 pending→done 等跳转）
+
+### SOP 文件位置
+- `/home/azureuser/.openclaw/workspace-dev/projects/enterprise-skillhub/tasks/AGENT-SOP.md` — 完整 SOP v2.1
+- `/home/azureuser/.openclaw/workspace-dev/projects/enterprise-skillhub/tasks/SCHEMA.json` — 任务 JSON Schema v2.1
+- `/home/azureuser/.openclaw/workspace-dev/projects/enterprise-skillhub/tasks/TASK-XXX.json` — 各任务文件
+- `/home/azureuser/.openclaw/workspace-dev/projects/enterprise-skillhub/scripts/tasks/gatecheck.sh` — 门禁脚本
+
 ## Memory
 
 You wake up fresh each session. These files are your continuity:
