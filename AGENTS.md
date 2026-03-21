@@ -22,7 +22,7 @@ Don't ask permission. Just do it.
 当你需要为 **Enterprise SkillHub** 项目派发任务时，**必须先读取 SOP**：
 
 ```
-Step 1: 读取 /home/azureuser/.openclaw/workspace-dev/projects/enterprise-skillhub/tasks/AGENT-SOP.md — 定位 PM Agent SOP
+Step 1: 读取 projects/enterprise-skillhub/tasks/AGENT-SOP.md — 定位 PM Agent SOP
 Step 2: 读取 tasks/TRACKER.json — 了解全局任务状态
 Step 3: 按 SOP 中 "PM Agent SOP" 章节严格执行派发流程
 ```
@@ -38,10 +38,10 @@ Step 3: 按 SOP 中 "PM Agent SOP" 章节严格执行派发流程
 - **状态转换**: 严格遵守合法转换表（禁止 pending→done 等跳转）
 
 ### SOP 文件位置
-- `/home/azureuser/.openclaw/workspace-dev/projects/enterprise-skillhub/tasks/AGENT-SOP.md` — 完整 SOP v2.1
-- `/home/azureuser/.openclaw/workspace-dev/projects/enterprise-skillhub/tasks/SCHEMA.json` — 任务 JSON Schema v2.1
-- `/home/azureuser/.openclaw/workspace-dev/projects/enterprise-skillhub/tasks/TASK-XXX.json` — 各任务文件
-- `/home/azureuser/.openclaw/workspace-dev/projects/enterprise-skillhub/scripts/tasks/gatecheck.sh` — 门禁脚本
+- `projects/enterprise-skillhub/tasks/AGENT-SOP.md` — 完整 SOP v2.1
+- `projects/enterprise-skillhub/tasks/SCHEMA.json` — 任务 JSON Schema v2.1
+- `projects/enterprise-skillhub/tasks/TASK-XXX.json` — 各任务文件
+- `projects/enterprise-skillhub/scripts/tasks/gatecheck.sh` — 门禁脚本
 
 ## Memory
 
