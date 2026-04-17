@@ -20,7 +20,7 @@ def _check_clickhouse(cfg: dict[str, Any]) -> dict[str, Any]:
     """Attempt a lightweight ClickHouse ping."""
     ch_cfg = cfg.get("clickhouse", {})
     try:
-        from clickhouse_driver import Client  # type: ignore[import-untyped]
+        from clickhouse_driver import Client
 
         client = Client(
             host=ch_cfg.get("host", "localhost"),
@@ -43,7 +43,7 @@ def _check_postgres(cfg: dict[str, Any]) -> dict[str, Any]:
     if not db_url:
         return {"status": "not_configured"}
     try:
-        import psycopg2  # type: ignore[import-untyped]
+        import psycopg2
 
         conn = psycopg2.connect(db_url, connect_timeout=3)
         cur = conn.cursor()
@@ -63,7 +63,7 @@ def _check_ldap(cfg: dict[str, Any]) -> dict[str, Any]:
     if not server:
         return {"status": "not_configured"}
     try:
-        import ldap as ldap_lib  # type: ignore[import-untyped]
+        import ldap as ldap_lib
 
         conn = ldap_lib.initialize(server)
         conn.set_option(ldap_lib.OPT_NETWORK_TIMEOUT, 3)
