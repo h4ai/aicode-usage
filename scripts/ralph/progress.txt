@@ -137,3 +137,15 @@ Started: Fri Apr 17 23:55:45 CST 2026
   - Export range validation: (end - start).days > 92 → 400
   - Frontend CSV download: fetch with Bearer token → blob → object URL → click
 ---
+
+## 2026-04-18 - US-010
+- Implemented GET /api/metrics/model-distribution returning per-model token totals with percent
+- Added get_model_distribution() in clickhouse.py with TTLCache, grouped by request_model_name
+- Created ModelDistribution.vue: ECharts donut (pie with inner radius) chart with time range filter
+- Added ModelDistribution component to DashboardView between TrendChart and DetailTable
+- Files: backend/app/services/clickhouse.py, backend/app/routers/metrics.py, frontend/src/components/ModelDistribution.vue (new), frontend/src/views/DashboardView.vue
+- **Learnings for future iterations:**
+  - Donut chart: `radius: ['40%', '70%']` for ring shape, `center: ['60%', '50%']` to leave room for legend
+  - Percent calculation done server-side in the router for simplicity
+  - Reuses _resolve_date_range() helper from US-009 for consistent date param handling
+---

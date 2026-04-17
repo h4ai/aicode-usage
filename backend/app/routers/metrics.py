@@ -20,6 +20,7 @@ from app.services.clickhouse import (
     get_daily_request_count,
     get_daily_trend,
     get_detail_records,
+    get_model_distribution,
     get_monthly_active_days,
     get_monthly_request_count,
     get_monthly_token_usage,
@@ -93,6 +94,33 @@ def metrics_trend(
 
     rows = get_daily_trend(user_id, start_date, end_date)
     return [TrendItem(**row) for row in rows]
+
+
+class ModelDistributionItem(BaseModel):
+    model: str
+    total_token: int
+    percent: float
+
+
+@router.get("/model-distribution", response_model=list[ModelDistributionItem])
+def metrics_model_distribution(
+    start: Optional[str] = Query(None),
+    end: Optional[str] = Query(None),
+    days: int = Query(30),
+    user: dict[str, Any] = Depends(get_current_user),
+) -> list[ModelDistributionItem]:
+    user_id: str = user.get("userId") or user.get("sub", "")
+    start_date, end_date = _resolve_date_range(start, end, days)
+    rows = get_model_distribution(user_id, start_date, end_date)
+    grand_total = sum(r["total_token"] for r in rows)
+    return [
+        ModelDistributionItem(
+            model=r["model"],
+            total_token=r["total_token"],
+            percent=round(r["total_token"] / grand_total * 100, 1) if grand_total else 0,
+        )
+        for r in rows
+    ]
 
 
 class DetailItem(BaseModel):

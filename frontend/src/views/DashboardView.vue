@@ -7,6 +7,7 @@
     <QuotaProgressBar />
     <MetricCards />
     <TrendChart />
+    <ModelDistribution />
     <DetailTable />
   </div>
 </template>
@@ -15,6 +16,7 @@
 import QuotaProgressBar from '@/components/QuotaProgressBar.vue'
 import MetricCards from '@/components/MetricCards.vue'
 import TrendChart from '@/components/TrendChart.vue'
+import ModelDistribution from '@/components/ModelDistribution.vue'
 import DetailTable from '@/components/DetailTable.vue'
 </script>
 

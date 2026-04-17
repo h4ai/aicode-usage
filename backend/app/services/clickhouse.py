@@ -171,6 +171,35 @@ def get_daily_trend(
     return result
 
 
+def get_model_distribution(
+    user_id: str, start_date: str, end_date: str
+) -> list[dict[str, Any]]:
+    """Return token usage grouped by model for the given date range."""
+    cache_key = f"model_dist:{user_id}:{start_date}:{end_date}"
+    if cache_key in _cache:
+        return list(_cache[cache_key])
+
+    client = _get_client()
+    rows = client.execute(
+        f"SELECT {REQUEST_MODEL_NAME}, sum({TOTAL_TOKEN}) AS total"
+        f" FROM events"
+        f" WHERE {USER_ID} = %(uid)s"
+        f" AND {EVENT_DATE} >= %(start)s AND {EVENT_DATE} <= %(end)s"
+        f" GROUP BY {REQUEST_MODEL_NAME}"
+        f" ORDER BY total DESC",
+        {"uid": user_id, "start": start_date, "end": end_date},
+    )
+    result: list[dict[str, Any]] = [
+        {
+            "model": str(row[0] or "unknown"),
+            "total_token": int(row[1] or 0),
+        }
+        for row in rows
+    ]
+    _cache[cache_key] = result
+    return result
+
+
 def get_detail_records(
     user_id: str,
     start_date: str,
