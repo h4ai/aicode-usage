@@ -13,7 +13,7 @@ from cachetools import TTLCache
 from clickhouse_driver import Client as CHClient
 
 from app.config import get_config
-from app.data_schema import TOTAL_TOKEN, USER_ID
+from app.data_schema import EVENT_DATE, TOTAL_TOKEN, USER_ID
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +46,65 @@ def get_monthly_token_usage(user_id: str) -> int:
         f" WHERE {USER_ID} = %(uid)s"
         f" AND event_date >= %(start)s",
         {"uid": user_id, "start": month_start},
+    )
+    total = int(result[0][0]) if result and result[0][0] else 0
+    _cache[cache_key] = total
+    return total
+
+
+def get_monthly_request_count(user_id: str) -> int:
+    """Return total request count by *user_id* in the current calendar month."""
+    now = datetime.now(tz=timezone.utc)
+    month_start = date(now.year, now.month, 1).isoformat()
+    cache_key = f"monthly_req:{user_id}:{month_start}"
+    if cache_key in _cache:
+        return int(_cache[cache_key])
+
+    client = _get_client()
+    result = client.execute(
+        f"SELECT count() FROM events"
+        f" WHERE {USER_ID} = %(uid)s"
+        f" AND event_date >= %(start)s",
+        {"uid": user_id, "start": month_start},
+    )
+    count = int(result[0][0]) if result and result[0][0] else 0
+    _cache[cache_key] = count
+    return count
+
+
+def get_monthly_active_days(user_id: str) -> int:
+    """Return number of distinct days with activity in the current month."""
+    now = datetime.now(tz=timezone.utc)
+    month_start = date(now.year, now.month, 1).isoformat()
+    cache_key = f"monthly_active_days:{user_id}:{month_start}"
+    if cache_key in _cache:
+        return int(_cache[cache_key])
+
+    client = _get_client()
+    result = client.execute(
+        f"SELECT count(DISTINCT {EVENT_DATE}) FROM events"
+        f" WHERE {USER_ID} = %(uid)s"
+        f" AND event_date >= %(start)s",
+        {"uid": user_id, "start": month_start},
+    )
+    days = int(result[0][0]) if result and result[0][0] else 0
+    _cache[cache_key] = days
+    return days
+
+
+def get_today_token_usage(user_id: str) -> int:
+    """Return total tokens used by *user_id* today."""
+    today = date.today().isoformat()
+    cache_key = f"today_token:{user_id}:{today}"
+    if cache_key in _cache:
+        return int(_cache[cache_key])
+
+    client = _get_client()
+    result = client.execute(
+        f"SELECT sum({TOTAL_TOKEN}) FROM events"
+        f" WHERE {USER_ID} = %(uid)s"
+        f" AND event_date = %(today)s",
+        {"uid": user_id, "today": today},
     )
     total = int(result[0][0]) if result and result[0][0] else 0
     _cache[cache_key] = total
