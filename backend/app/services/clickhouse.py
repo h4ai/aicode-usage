@@ -13,7 +13,15 @@ from cachetools import TTLCache
 from clickhouse_driver import Client as CHClient
 
 from app.config import get_config
-from app.data_schema import EVENT_DATE, INPUT_TOKEN, OUTPUT_TOKEN, TOTAL_TOKEN, USER_ID
+from app.data_schema import (
+    EVENT_DATE,
+    IDE_TYPE,
+    INPUT_TOKEN,
+    OUTPUT_TOKEN,
+    REQUEST_MODEL_NAME,
+    TOTAL_TOKEN,
+    USER_ID,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -156,6 +164,63 @@ def get_daily_trend(
             "input_token": int(row[1] or 0),
             "output_token": int(row[2] or 0),
             "total_token": int(row[3] or 0),
+        }
+        for row in rows
+    ]
+    _cache[cache_key] = result
+    return result
+
+
+def get_detail_records(
+    user_id: str,
+    start_date: str,
+    end_date: str,
+    model: str | None = None,
+    ide_type: str | None = None,
+) -> list[dict[str, Any]]:
+    """Return usage records grouped by date + model, with optional filters."""
+    cache_key = f"detail:{user_id}:{start_date}:{end_date}:{model}:{ide_type}"
+    if cache_key in _cache:
+        return list(_cache[cache_key])
+
+    conditions = [
+        f"{USER_ID} = %(uid)s",
+        f"{EVENT_DATE} >= %(start)s",
+        f"{EVENT_DATE} <= %(end)s",
+    ]
+    params: dict[str, Any] = {
+        "uid": user_id,
+        "start": start_date,
+        "end": end_date,
+    }
+    if model:
+        conditions.append(f"{REQUEST_MODEL_NAME} = %(model)s")
+        params["model"] = model
+    if ide_type:
+        conditions.append(f"{IDE_TYPE} = %(ide_type)s")
+        params["ide_type"] = ide_type
+
+    where = " AND ".join(conditions)
+    client = _get_client()
+    rows = client.execute(
+        f"SELECT {EVENT_DATE}, {REQUEST_MODEL_NAME},"
+        f" count() AS request_count,"
+        f" sum({INPUT_TOKEN}), sum({OUTPUT_TOKEN}), sum({TOTAL_TOKEN})"
+        f" FROM events WHERE {where}"
+        f" GROUP BY {EVENT_DATE}, {REQUEST_MODEL_NAME}"
+        f" ORDER BY {EVENT_DATE} DESC, {REQUEST_MODEL_NAME}",
+        params,
+    )
+    result: list[dict[str, Any]] = [
+        {
+            "date": (
+                row[0].isoformat() if hasattr(row[0], "isoformat") else str(row[0])
+            ),
+            "model": str(row[1] or ""),
+            "request_count": int(row[2] or 0),
+            "input_token": int(row[3] or 0),
+            "output_token": int(row[4] or 0),
+            "total_token": int(row[5] or 0),
         }
         for row in rows
     ]

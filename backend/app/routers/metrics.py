@@ -5,17 +5,21 @@
 
 from __future__ import annotations
 
+import csv
+import io
 from datetime import date, timedelta
 from enum import Enum
 from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from app.deps import get_current_user
 from app.services.clickhouse import (
     get_daily_request_count,
     get_daily_trend,
+    get_detail_records,
     get_monthly_active_days,
     get_monthly_request_count,
     get_monthly_token_usage,
@@ -89,3 +93,92 @@ def metrics_trend(
 
     rows = get_daily_trend(user_id, start_date, end_date)
     return [TrendItem(**row) for row in rows]
+
+
+class DetailItem(BaseModel):
+    date: str
+    model: str
+    request_count: int
+    input_token: int
+    output_token: int
+    total_token: int
+
+
+def _resolve_date_range(
+    start: str | None,
+    end: str | None,
+    days: int,
+) -> tuple[str, str]:
+    """Return (start_date, end_date) strings from query params."""
+    if start and end:
+        return start, end
+    today = date.today()
+    return (today - timedelta(days=days - 1)).isoformat(), today.isoformat()
+
+
+def _validate_export_range(start_date: str, end_date: str) -> None:
+    """Raise 400 if the range exceeds 3 months (~92 days)."""
+    s = date.fromisoformat(start_date)
+    e = date.fromisoformat(end_date)
+    if (e - s).days > 92:
+        raise HTTPException(
+            status_code=400,
+            detail="导出时间范围不能超过3个月",
+        )
+
+
+@router.get("/detail", response_model=list[DetailItem])
+def metrics_detail(
+    start: Optional[str] = Query(None),
+    end: Optional[str] = Query(None),
+    days: int = Query(30),
+    model: Optional[str] = Query(None),
+    ide_type: Optional[str] = Query(None),
+    sort_by: Optional[str] = Query(None),
+    sort_order: Optional[str] = Query("desc"),
+    user: dict[str, Any] = Depends(get_current_user),
+) -> list[DetailItem]:
+    user_id: str = user.get("userId") or user.get("sub", "")
+    start_date, end_date = _resolve_date_range(start, end, days)
+    rows = get_detail_records(user_id, start_date, end_date, model, ide_type)
+
+    # Client-side sorting
+    if sort_by and sort_by in {
+        "date", "model", "request_count", "input_token", "output_token", "total_token",
+    }:
+        reverse = sort_order != "asc"
+        rows.sort(key=lambda r: r.get(sort_by, 0), reverse=reverse)
+
+    return [DetailItem(**row) for row in rows]
+
+
+@router.get("/export.csv")
+def metrics_export_csv(
+    start: Optional[str] = Query(None),
+    end: Optional[str] = Query(None),
+    days: int = Query(30),
+    model: Optional[str] = Query(None),
+    ide_type: Optional[str] = Query(None),
+    user: dict[str, Any] = Depends(get_current_user),
+) -> StreamingResponse:
+    user_id: str = user.get("userId") or user.get("sub", "")
+    start_date, end_date = _resolve_date_range(start, end, days)
+    _validate_export_range(start_date, end_date)
+
+    rows = get_detail_records(user_id, start_date, end_date, model, ide_type)
+
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(["日期", "模型", "请求次数", "输入Token", "输出Token", "总Token"])
+    for r in rows:
+        writer.writerow([
+            r["date"], r["model"], r["request_count"],
+            r["input_token"], r["output_token"], r["total_token"],
+        ])
+
+    buf.seek(0)
+    return StreamingResponse(
+        buf,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=usage_detail.csv"},
+    )
