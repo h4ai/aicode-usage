@@ -35,6 +35,13 @@ CREATE TABLE IF NOT EXISTS quota_levels (
 INSERT INTO quota_levels (level, monthly_token, daily_requests)
 VALUES ('L1', 5000000, 500), ('L2', 10000000, 1000), ('L3', 20000000, 2000)
 ON CONFLICT (level) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS email_alerts (
+    user_id    TEXT NOT NULL,
+    month_key  TEXT NOT NULL,
+    sent_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (user_id, month_key)
+);
 """
 
 
@@ -188,5 +195,34 @@ def upsert_user(
             row = cur.fetchone()
         conn.commit()
         return dict(row) if row else {}
+    finally:
+        conn.close()
+
+
+def has_sent_alert(user_id: str, month_key: str) -> bool:
+    """Return True if a quota alert was already sent this month."""
+    conn = _get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT 1 FROM email_alerts WHERE user_id = %s AND month_key = %s",
+                (user_id, month_key),
+            )
+            return cur.fetchone() is not None
+    finally:
+        conn.close()
+
+
+def mark_alert_sent(user_id: str, month_key: str) -> None:
+    """Record that a quota alert was sent for this user this month."""
+    conn = _get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO email_alerts (user_id, month_key) VALUES (%s, %s)"
+                " ON CONFLICT DO NOTHING",
+                (user_id, month_key),
+            )
+        conn.commit()
     finally:
         conn.close()
