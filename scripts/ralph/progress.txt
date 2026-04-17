@@ -14,6 +14,10 @@ Started: Fri Apr 17 23:55:45 CST 2026
 - Frontend API calls: use `api` from `@/api` (axios instance with token interceptor + 401 auto-logout)
 - Auth store persists both token and role to localStorage
 - Route guard in router/index.ts: `meta.public` skips auth, `meta.requiresAdmin` requires admin role
+- ClickHouse queries via `app/services/clickhouse.py` with `cachetools.TTLCache` (5min, 1024 entries)
+- PostgreSQL quota_levels table: level (PK), monthly_token, daily_requests — seeded with L1/L2/L3 defaults
+- `get_quota_limits(level)` in database.py returns limits dict; no caching (per spec)
+- User's quota level from `users.quota_level`, limits from `quota_levels` table
 
 ---
 
@@ -61,4 +65,18 @@ Started: Fri Apr 17 23:55:45 CST 2026
   - Route meta: `public: true` to skip auth guard, `requiresAdmin: true` to restrict to admin role
   - Element Plus form validation: use `formRef.value?.validate().catch(() => false)` pattern
   - 401 interceptor uses `window.location.href` (not router.push) to ensure full state reset
+---
+
+## 2026-04-18 - US-005
+- Implemented GET /api/quota/usage returning monthly token and daily request quota bars
+- Created app/services/clickhouse.py: ClickHouse client + TTLCache (5min) for monthly tokens & daily requests
+- Extended database.py: added quota_levels table (L1/L2/L3 with defaults), get_quota_limits()
+- Created app/routers/quota.py: QuotaUsageResponse with used/limit/percent/color/message per bar
+- Registered quota router in main.py
+- Files: backend/app/services/clickhouse.py (new), backend/app/routers/quota.py (new), backend/app/services/database.py, backend/app/main.py
+- **Learnings for future iterations:**
+  - ClickHouse table is `events` in `otel` database; field names are snake_case (see data_schema.py)
+  - TTLCache key pattern: `"prefix:{user_id}:{date}"` for cache isolation
+  - Quota color thresholds: monthly 50/80/100%, daily 80/100%
+  - JWT payload has `userId` for regular users, `sub` for admins — use `user.get("userId") or user.get("sub")`
 ---
