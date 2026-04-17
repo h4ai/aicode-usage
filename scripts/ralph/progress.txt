@@ -8,3 +8,14 @@ Started: Fri Apr 17 23:55:45 CST 2026
 - **Learnings:** ClickHouse 字段名使用 camelCase（见 data_schema.py），data_schema.py 同时定义 snake_case 和 camelCase 常量
 - Passes: true
 ---
+
+## 2026-04-18 - US-002
+- 实现 POST /api/auth/login：bcrypt 验证 config.yaml admins[].password_hash，返回 JWT（8h，含 role=admin）
+- JWT payload 嵌入 cfg fingerprint（sha256(password_hash)[:16]），password_hash 变更后旧 token 自动失效
+- 新增 backend/app/deps.py：get_current_user / require_admin FastAPI 依赖，验证时对比当前 config fingerprint
+- Files: backend/app/main.py, backend/app/deps.py, backend/app/routers/auth.py, backend/app/services/auth.py
+- **Learnings for future iterations:**
+  - JWT fingerprint 机制：token 里的 cfg 字段 = sha256(当前 password_hash)[:16]，每次验证时重新计算对比
+  - 所有需要认证的路由用 Depends(get_current_user)，需要管理员权限用 Depends(require_admin)
+  - config 热加载（get_config()）保证每次请求都读最新 password_hash
+---
