@@ -38,5 +38,5 @@ def get_config() -> dict[str, Any]:
     """Return the current in-memory config (read-only snapshot)."""
     with _lock:
         if not _config:
-            load_config()
+            _config.update(_load())
         return dict(_config)
