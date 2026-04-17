@@ -43,7 +43,10 @@ Started: Fri Apr 17 23:55:45 CST 2026
   - config 热加载（get_config()）保证每次请求都读最新 password_hash
 ---
 
-## 2026-04-18 - US-003
+## 2026-04-18 - US-003 (TDD)
+- **Tests:** backend/tests/test_us_003.py（13个测试，全部通过）
+- 修复 config.py 死锁：get_config() 持锁后调 load_config() 形成嵌套 Lock 死锁，改为锁内直接调 _load()
+- conftest.py: patch app.main.init_db 避免测试时连接真实 PostgreSQL（必须 patch as-imported 的名称）
 - Implemented AD user login via LDAP bind in POST /api/auth/login (unified endpoint: admin first, then LDAP fallback)
 - Created app/services/ldap_service.py: LDAP authentication with sAMAccountName search + bind
 - Created app/services/database.py: PostgreSQL users table (auto-init on startup), upsert_user with L1 default
