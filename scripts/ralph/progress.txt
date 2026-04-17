@@ -107,3 +107,18 @@ Started: Fri Apr 17 23:55:45 CST 2026
   - Element Plus `el-progress` with `text-inside` + custom `:format` for showing "used/limit" text
   - Components fetch data on mount via `api.get()` from `@/api` — consistent pattern for dashboard widgets
 ---
+
+## 2026-04-18 - US-008
+- Implemented GET /api/metrics/trend?days=7|30&start=&end= returning daily input/output/total token breakdown
+- Added get_daily_trend() in clickhouse.py with TTLCache
+- Created TrendChart.vue: ECharts bar/line chart with stacked input/output tokens
+- Time filter: 7-day / 30-day presets + custom date range picker
+- Chart type toggle: bar (default) / line
+- Added TrendChart to DashboardView
+- Files: backend/app/services/clickhouse.py, backend/app/routers/metrics.py, frontend/src/components/TrendChart.vue, frontend/src/views/DashboardView.vue
+- **Learnings for future iterations:**
+  - ECharts init needs `nextTick()` after loading=false to ensure DOM element exists
+  - Use `echarts.init(ref)` + `dispose()` in `onBeforeUnmount` to prevent memory leaks
+  - ClickHouse `event_date` may return date object — use `hasattr(row, "isoformat")` for safe serialization
+  - Trend API reuses same /api/metrics prefix router — add new endpoints to existing metrics.py
+---
