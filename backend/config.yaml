@@ -13,7 +13,7 @@ ldap:
 
 clickhouse:
   host: host.docker.internal
-  port: 9000
+  port: 19000
   database: otel
   user: default
   password: ""
