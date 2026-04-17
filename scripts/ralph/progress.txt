@@ -11,6 +11,9 @@ Started: Fri Apr 17 23:55:45 CST 2026
 - All new Python files need SPDX header: `# SPDX-License-Identifier: Apache-2.0`
 - Backend quality checks: `mypy app/` (strict) + `ruff check app/` (line-length 100)
 - Frontend quality checks: `npx vue-tsc --build`
+- Frontend API calls: use `api` from `@/api` (axios instance with token interceptor + 401 auto-logout)
+- Auth store persists both token and role to localStorage
+- Route guard in router/index.ts: `meta.public` skips auth, `meta.requiresAdmin` requires admin role
 
 ---
 
@@ -45,4 +48,17 @@ Started: Fri Apr 17 23:55:45 CST 2026
   - init_db() called on FastAPI startup event to ensure users table exists
   - LDAP search uses ldap.filter.escape_filter_chars to prevent injection
   - deps.py (from US-002) provides get_current_user/require_admin for route auth
+---
+
+## 2026-04-18 - US-004
+- Implemented login page with Element Plus form (username/password + validation + error display)
+- Created `src/api.ts` axios instance with Bearer token interceptor and 401 auto-logout redirect
+- Added Vue Router `beforeEach` guard: unauthenticated users redirected to /login, non-admin blocked from /admin
+- Auth store now persists role to localStorage alongside token
+- Files: frontend/src/api.ts (new), frontend/src/stores/auth.ts, frontend/src/router/index.ts, frontend/src/views/LoginView.vue
+- **Learnings for future iterations:**
+  - Use `api` from `@/api` for all backend calls — handles auth header and 401 redirect automatically
+  - Route meta: `public: true` to skip auth guard, `requiresAdmin: true` to restrict to admin role
+  - Element Plus form validation: use `formRef.value?.validate().catch(() => false)` pattern
+  - 401 interceptor uses `window.location.href` (not router.push) to ensure full state reset
 ---
