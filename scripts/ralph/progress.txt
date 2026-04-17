@@ -18,6 +18,8 @@ Started: Fri Apr 17 23:55:45 CST 2026
 - PostgreSQL quota_levels table: level (PK), monthly_token, daily_requests — seeded with L1/L2/L3 defaults
 - `get_quota_limits(level)` in database.py returns limits dict; no caching (per spec)
 - User's quota level from `users.quota_level`, limits from `quota_levels` table
+- Vue template `v-else-if` doesn't narrow nullable refs — use `!` in callback props like `:format`
+- `formatWan(n)`: display numbers ≥10000 as "X.X万" — reuse pattern for token display
 
 ---
 
@@ -91,4 +93,17 @@ Started: Fri Apr 17 23:55:45 CST 2026
   - Metrics router at /api/metrics prefix — future metric endpoints (trend, detail, etc.) go here
   - Optional[int] = None in Pydantic model to omit fields from response when scope doesn't apply
   - Scope enum for query parameter validation (month|today)
+---
+
+## 2026-04-18 - US-007
+- Implemented quota progress bars and metric cards frontend components
+- QuotaProgressBar: calls GET /api/quota/usage, shows monthly token + daily request bars with color coding
+- MetricCards: calls GET /api/metrics/summary with scope toggle (month/today), shows 4 cards (month) or 2 cards (today)
+- DashboardView updated to compose both components
+- Files: frontend/src/components/QuotaProgressBar.vue (new), frontend/src/components/MetricCards.vue (new), frontend/src/views/DashboardView.vue
+- **Learnings for future iterations:**
+  - Vue template `v-else-if` doesn't narrow nullable refs for TS — use `!` assertion in `:format` callbacks
+  - `formatWan()` helper: display numbers ≥10000 as X.X万 — reuse in future components
+  - Element Plus `el-progress` with `text-inside` + custom `:format` for showing "used/limit" text
+  - Components fetch data on mount via `api.get()` from `@/api` — consistent pattern for dashboard widgets
 ---
