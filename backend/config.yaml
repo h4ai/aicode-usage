@@ -12,14 +12,14 @@ ldap:
   mail_attr: "mail"
 
 clickhouse:
-  host: localhost
+  host: host.docker.internal
   port: 9000
   database: otel
   user: default
   password: ""
 
 database:
-  url: "postgresql://postgres:postgres@localhost:5432/ai_usage"
+  url: "postgresql://postgres:postgres@postgres:5432/ai_usage"
 
 smtp:
   host: ""
