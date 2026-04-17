@@ -16,7 +16,7 @@
         "Typecheck passes"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "source": "requirements.md §九技术规范 + §三认证模块"
     },

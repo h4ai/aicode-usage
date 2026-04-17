@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2026 SubLang International <https://sublang.ai>
+
+admins:
+  - username: admin
+    password_hash: "$2b$12$LJ3m4ys3Lk0TSwHjlXVX4u7PjAFv5cVS0w7q5a0YkqFxPmBx6G0S2"
+
+ldap:
+  server: "ldap://localhost:389"
+  base_dn: "dc=company,dc=com"
+  user_attr: "sAMAccountName"
+  mail_attr: "mail"
+
+clickhouse:
+  host: localhost
+  port: 9000
+  database: otel
+  user: default
+  password: ""
+
+database:
+  url: "postgresql://postgres:postgres@localhost:5432/ai_usage"
+
+smtp:
+  host: ""
+  port: 587
+  username: ""
+  password: ""
+  from_name: "AI 使用助手"
+  from_email: ""

@@ -1,0 +1,10 @@
+# Ralph Progress Log
+Started: Fri Apr 17 23:55:45 CST 2026
+---
+
+## 2026-04-18 00:01 - US-001
+- 项目脚手架完成：FastAPI backend + Vue3 frontend + Docker Compose
+- Files: backend/app/{main,config,data_schema,routers/health}.py, frontend/src/{App,router,stores,views}*, docker-compose.yml
+- **Learnings:** ClickHouse 字段名使用 camelCase（见 data_schema.py），data_schema.py 同时定义 snake_case 和 camelCase 常量
+- Passes: true
+---
