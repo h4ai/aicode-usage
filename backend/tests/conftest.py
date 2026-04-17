@@ -5,14 +5,23 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
+import bcrypt
 import pytest
+
+# Fast bcrypt hash for test admin password
+_TEST_ADMIN_PASSWORD = "admin123"
+_TEST_ADMIN_HASH = bcrypt.hashpw(_TEST_ADMIN_PASSWORD.encode(), bcrypt.gensalt(rounds=4)).decode()
+
+MOCK_CONFIG = {
+    "admins": [{"username": "admin", "password_hash": _TEST_ADMIN_HASH}],
+    "ldap": {"server": "ldap://localhost:389", "base_dn": "dc=company,dc=com"},
+    "database": {"url": "postgresql://localhost/test"},
+}
 
 
 @pytest.fixture
 def client():
     """TestClient with DB startup patched out."""
-    # main.py does `from app.services.database import init_db`,
-    # so we must patch the name as imported in app.main, not the source module.
     with patch("app.main.init_db"):
         from fastapi.testclient import TestClient
         from app.main import app
@@ -21,9 +30,18 @@ def client():
 
 
 @pytest.fixture
-def admin_token(client):
-    """获取管理员 JWT token"""
-    resp = client.post("/api/auth/login", json={"username": "admin", "password": "admin123"})
-    if resp.status_code == 200:
-        return resp.json().get("token") or resp.json().get("access_token")
-    return None
+def admin_token():
+    """Return a pre-built admin JWT signed with the test hash — no HTTP call needed."""
+    from app.services.auth import create_token
+    return create_token(
+        username="admin",
+        role="admin",
+        password_hash=_TEST_ADMIN_HASH,
+    )
+
+
+@pytest.fixture
+def admin_config_patch():
+    """Patch app.deps.get_config so admin token fingerprint validation passes."""
+    with patch("app.deps.get_config", return_value=MOCK_CONFIG):
+        yield

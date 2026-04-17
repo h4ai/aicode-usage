@@ -14,6 +14,7 @@ from clickhouse_driver import Client as CHClient
 
 from app.config import get_config
 from app.data_schema import (
+    ENTERPRISE,
     EVENT_DATE,
     IDE_TYPE,
     INPUT_TOKEN,
@@ -235,6 +236,95 @@ def get_all_users_daily_requests() -> dict[str, int]:
         {"today": today},
     )
     result = {str(row[0]): int(row[1] or 0) for row in rows}
+    _cache[cache_key] = result
+    return result
+
+
+def get_global_trend(start_date: str, end_date: str) -> list[dict[str, Any]]:
+    """Return daily aggregated token trend across ALL users."""
+    cache_key = f"global_trend:{start_date}:{end_date}"
+    if cache_key in _cache:
+        return list(_cache[cache_key])
+
+    client = _get_client()
+    rows = client.execute(
+        f"SELECT {EVENT_DATE},"
+        f" sum({INPUT_TOKEN}), sum({OUTPUT_TOKEN}), sum({TOTAL_TOKEN})"
+        f" FROM events"
+        f" WHERE {EVENT_DATE} >= %(start)s AND {EVENT_DATE} <= %(end)s"
+        f" GROUP BY {EVENT_DATE} ORDER BY {EVENT_DATE}",
+        {"start": start_date, "end": end_date},
+    )
+    result: list[dict[str, Any]] = [
+        {
+            "date": row[0].isoformat() if hasattr(row[0], "isoformat") else str(row[0]),
+            "input_token": int(row[1] or 0),
+            "output_token": int(row[2] or 0),
+            "total_token": int(row[3] or 0),
+        }
+        for row in rows
+    ]
+    _cache[cache_key] = result
+    return result
+
+
+def get_global_trend_by_model(start_date: str, end_date: str) -> list[dict[str, Any]]:
+    """Return daily token trend grouped by model across ALL users."""
+    cache_key = f"global_trend_model:{start_date}:{end_date}"
+    if cache_key in _cache:
+        return list(_cache[cache_key])
+
+    client = _get_client()
+    rows = client.execute(
+        f"SELECT {EVENT_DATE}, {REQUEST_MODEL_NAME},"
+        f" sum({INPUT_TOKEN}), sum({OUTPUT_TOKEN}), sum({TOTAL_TOKEN})"
+        f" FROM events"
+        f" WHERE {EVENT_DATE} >= %(start)s AND {EVENT_DATE} <= %(end)s"
+        f" GROUP BY {EVENT_DATE}, {REQUEST_MODEL_NAME}"
+        f" ORDER BY {EVENT_DATE}, {REQUEST_MODEL_NAME}",
+        {"start": start_date, "end": end_date},
+    )
+    result: list[dict[str, Any]] = [
+        {
+            "date": row[0].isoformat() if hasattr(row[0], "isoformat") else str(row[0]),
+            "group": str(row[1] or "unknown"),
+            "input_token": int(row[2] or 0),
+            "output_token": int(row[3] or 0),
+            "total_token": int(row[4] or 0),
+        }
+        for row in rows
+    ]
+    _cache[cache_key] = result
+    return result
+
+
+def get_global_trend_by_dept(start_date: str, end_date: str) -> list[dict[str, Any]]:
+    """Return daily token trend grouped by enterprise/department across ALL users."""
+    cache_key = f"global_trend_dept:{start_date}:{end_date}"
+    if cache_key in _cache:
+        return list(_cache[cache_key])
+
+    client = _get_client()
+    rows = client.execute(
+        f"SELECT {EVENT_DATE},"
+        f" if({ENTERPRISE} = '' OR {ENTERPRISE} IS NULL, '未知', {ENTERPRISE}) AS dept,"
+        f" sum({INPUT_TOKEN}), sum({OUTPUT_TOKEN}), sum({TOTAL_TOKEN})"
+        f" FROM events"
+        f" WHERE {EVENT_DATE} >= %(start)s AND {EVENT_DATE} <= %(end)s"
+        f" GROUP BY {EVENT_DATE}, dept"
+        f" ORDER BY {EVENT_DATE}, dept",
+        {"start": start_date, "end": end_date},
+    )
+    result: list[dict[str, Any]] = [
+        {
+            "date": row[0].isoformat() if hasattr(row[0], "isoformat") else str(row[0]),
+            "group": str(row[1] or "未知"),
+            "input_token": int(row[2] or 0),
+            "output_token": int(row[3] or 0),
+            "total_token": int(row[4] or 0),
+        }
+        for row in rows
+    ]
     _cache[cache_key] = result
     return result
 

@@ -14,6 +14,9 @@ from app.deps import require_admin
 from app.services.clickhouse import (
     get_all_users_daily_requests,
     get_all_users_monthly_tokens,
+    get_global_trend,
+    get_global_trend_by_dept,
+    get_global_trend_by_model,
 )
 from app.services.database import (
     get_all_quota_levels,
@@ -126,3 +129,48 @@ def change_user_level(
         monthly_token=monthly_tokens.get(updated["user_id"], 0),
         daily_requests=daily_reqs.get(updated["user_id"], 0),
     )
+
+
+# ---- Global trend -----------------------------------------------------------
+
+from datetime import date, datetime, timedelta, timezone  # noqa: E402
+from typing import Literal  # noqa: E402
+
+from fastapi import Query  # noqa: E402
+
+
+class TrendItem(BaseModel):
+    date: str
+    input_token: int
+    output_token: int
+    total_token: int
+
+
+class GroupedTrendItem(BaseModel):
+    date: str
+    group: str
+    input_token: int
+    output_token: int
+    total_token: int
+
+
+def _default_date_range() -> tuple[str, str]:
+    now = datetime.now(tz=timezone.utc).date()
+    return (now - timedelta(days=29)).isoformat(), now.isoformat()
+
+
+@router.get("/trend")
+def global_trend(
+    start: str | None = Query(None),
+    end: str | None = Query(None),
+    group_by: str | None = Query(None),
+    _user: dict[str, Any] = Depends(require_admin),
+) -> list[dict[str, Any]]:
+    """Return global daily token trend, optionally grouped by model or department."""
+    if not start or not end:
+        start, end = _default_date_range()
+    if group_by == "model":
+        return get_global_trend_by_model(start, end)
+    if group_by == "department":
+        return get_global_trend_by_dept(start, end)
+    return get_global_trend(start, end)
