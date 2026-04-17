@@ -1,0 +1,270 @@
+{
+  "project": "ai-code-usage",
+  "branchName": "ralph/ai-code-usage-dashboard",
+  "description": "AI Code Usage 数据看板 — 企业内部 AI 编码工具用量统计与配额管理平台，包含认证模块、个人看板、管理员后台三大功能块。",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "项目脚手架",
+      "description": "As a developer, I need a working project skeleton so that subsequent stories have a base to build on.",
+      "acceptanceCriteria": [
+        "后端：FastAPI 项目结构（app/、routers/、models/、services/、data_schema.py）",
+        "前端：Vue3 + Element Plus + Vue Router + Pinia 项目结构（src/views/、src/components/、src/stores/）",
+        "Docker Compose 文件：frontend(3002) + backend(8002) + postgres",
+        "GET /health 返回 ClickHouse / PostgreSQL / LDAP 连接状态 JSON",
+        "data_schema.py 定义所有 ClickHouse 字段常量",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "",
+      "source": "requirements.md §九技术规范 + §三认证模块"
+    },
+    {
+      "id": "US-002",
+      "title": "管理员登录 API",
+      "description": "As an admin, I want to log in with username/password from config.yaml so that I can access the admin dashboard.",
+      "acceptanceCriteria": [
+        "POST /api/auth/login 接受 {username, password}",
+        "验证 bcrypt hash，成功返回 JWT（有效期8小时，含 role=admin）",
+        "失败返回 401 + '用户名或密码错误'",
+        "config.yaml 修改 password_hash 后，旧 JWT 立即失效",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "",
+      "source": "requirements.md §三认证模块"
+    },
+    {
+      "id": "US-003",
+      "title": "AD 用户登录 API",
+      "description": "As a regular user, I want to log in with my AD domain account or display name so that I can see my usage data.",
+      "acceptanceCriteria": [
+        "LDAP 连接企业 AD（参数从 config.yaml 读取）",
+        "支持 sAMAccountName 或 userNickname 匹配 ClickHouse userId 字段",
+        "首次登录自动在 PostgreSQL 创建用户记录，分配 L1 级别",
+        "成功返回 JWT（含 userId、role=user）",
+        "LDAP 不可用时返回友好错误提示",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "",
+      "source": "requirements.md §三认证模块"
+    },
+    {
+      "id": "US-004",
+      "title": "前端登录页 + 路由守卫",
+      "description": "As a user, I want a login page and automatic redirect so that I land on the right page after login.",
+      "acceptanceCriteria": [
+        "登录页：用户名/密码输入框 + 登录按钮",
+        "登录成功：普通用户跳转 /dashboard，管理员跳转 /admin",
+        "未登录访问受保护页面自动跳转登录页",
+        "JWT 存 localStorage，失效后自动清除并跳转登录页",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "",
+      "source": "requirements.md §三认证模块"
+    },
+    {
+      "id": "US-005",
+      "title": "配额进度条 API",
+      "description": "As a backend, I need quota usage API so that the frontend can display progress bars.",
+      "acceptanceCriteria": [
+        "GET /api/quota/usage 返回：月度Token用量/限额、今日请求次数/限额、颜色状态",
+        "从 ClickHouse 查询当前自然月 totalToken 之和（WHERE userId = current_user）",
+        "从 PostgreSQL 读取用户配额级别及对应限额",
+        "5分钟 TTLCache 缓存 ClickHouse 查询结果",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "",
+      "source": "requirements.md §四配额体系"
+    },
+    {
+      "id": "US-006",
+      "title": "指标卡片 API",
+      "description": "As a backend, I need metrics summary API for the dashboard header cards.",
+      "acceptanceCriteria": [
+        "GET /api/metrics/summary?scope=month|today 返回：累计Token / 请求次数 / 活跃天数 / 日均Token",
+        "today 视角返回：今日Token / 今日请求次数（不返回活跃天数/日均）",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "",
+      "source": "requirements.md §四配额体系"
+    },
+    {
+      "id": "US-007",
+      "title": "配额进度条 + 指标卡片前端",
+      "description": "As a user, I want to see my quota usage and key metrics at a glance on the dashboard.",
+      "acceptanceCriteria": [
+        "月度Token进度条：绿/黄/橙/红四色，显示'已用X万/限额Y万'",
+        "今日请求次数进度条：绿/橙/红三色",
+        "四个指标卡片，支持'本月/今日'切换",
+        "今日视角隐藏'活跃天数'，显示'今日Token'",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "",
+      "source": "requirements.md §六顶部进度条+指标卡片"
+    },
+    {
+      "id": "US-008",
+      "title": "趋势图 API + 前端",
+      "description": "As a user, I want to see my daily token trend chart.",
+      "acceptanceCriteria": [
+        "GET /api/metrics/trend?days=7|30&start=&end= 返回按日期分组的 inputToken/outputToken/totalToken",
+        "前端：ECharts 柱状图（默认）/ 折线图（切换），输入/输出分色叠加",
+        "时间筛选：最近7天 / 最近30天 / 自定义区间",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": "",
+      "source": "requirements.md §六Tab1趋势图"
+    },
+    {
+      "id": "US-009",
+      "title": "明细列表 API + 前端（含导出）",
+      "description": "As a user, I want to view detailed usage records and export them.",
+      "acceptanceCriteria": [
+        "GET /api/metrics/detail 支持时间范围/模型/IDE类型筛选，按日期+模型分组",
+        "字段：日期/模型/请求次数/输入Token/输出Token/总Token",
+        "支持按列排序",
+        "GET /api/metrics/export.csv 导出CSV，超过3个月返回400",
+        "前端：表格 + 筛选器 + 导出按钮",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": "",
+      "source": "requirements.md §六Tab2明细列表"
+    },
+    {
+      "id": "US-010",
+      "title": "模型分布图 API + 前端",
+      "description": "As a user, I want to see how my token usage is distributed across models.",
+      "acceptanceCriteria": [
+        "GET /api/metrics/model-distribution 返回各模型Token占比",
+        "前端：ECharts 环形图，支持时间范围筛选",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": "",
+      "source": "requirements.md §六Tab3模型分布"
+    },
+    {
+      "id": "US-011",
+      "title": "配额级别管理 API + 前端",
+      "description": "As an admin, I want to view and edit quota level limits.",
+      "acceptanceCriteria": [
+        "GET /api/admin/quota-levels 返回 L1/L2/L3 三级配置（名称/月Token限额/日请求上限/当前人数）",
+        "PUT /api/admin/quota-levels/{level} 修改额度，立即生效",
+        "固定三级，不支持新增/删除（API 拒绝此类请求）",
+        "前端：表格展示 + 行内编辑",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": "",
+      "source": "requirements.md §七7.2配额级别管理"
+    },
+    {
+      "id": "US-012",
+      "title": "用户管理 API + 前端",
+      "description": "As an admin, I want to view all users and change their quota levels.",
+      "acceptanceCriteria": [
+        "GET /api/admin/users 返回：显示名/userId/enterprise/当前级别/本月Token/今日请求次数",
+        "显示名：userNickname 优先，取不到用 username；enterprise 为空显示'未知'",
+        "PUT /api/admin/users/{userId}/level 修改用户级别",
+        "前端：表格 + 级别下拉修改",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": "",
+      "source": "requirements.md §七7.1用户管理"
+    },
+    {
+      "id": "US-013",
+      "title": "全局趋势 API + 前端",
+      "description": "As an admin, I want to see the overall token usage trend across all users.",
+      "acceptanceCriteria": [
+        "GET /api/admin/trend 返回所有用户汇总的每日 Token 趋势",
+        "支持按模型/部门分组参数",
+        "前端：ECharts 折线图/柱状图，支持分组切换",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": "",
+      "source": "requirements.md §七7.3全局趋势"
+    },
+    {
+      "id": "US-014",
+      "title": "部门汇总 API + 前端",
+      "description": "As an admin, I want to see usage breakdown by department.",
+      "acceptanceCriteria": [
+        "GET /api/admin/departments 按 enterprise 字段分组，NULL/空值归'未知'",
+        "返回：部门/人数/本月Token/本月请求次数/人均Token",
+        "前端：表格展示",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": "",
+      "source": "requirements.md §七7.4部门汇总"
+    },
+    {
+      "id": "US-015",
+      "title": "用量排行榜 API + 前端",
+      "description": "As an admin, I want to see a leaderboard of top users by token consumption.",
+      "acceptanceCriteria": [
+        "GET /api/admin/leaderboard?top=10|20|50 按本月Token排序",
+        "返回：排名/显示名/部门/级别/Token用量/请求次数/配额使用率",
+        "非管理员调用返回 403",
+        "前端：表格 + Top N 切换，管理员菜单中可见，普通用户不可见",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 15,
+      "passes": false,
+      "notes": "",
+      "source": "requirements.md §七7.5用量排行榜"
+    },
+    {
+      "id": "US-016",
+      "title": "邮件通知服务",
+      "description": "As a system, I need an automated email alert when users reach 80% of monthly quota.",
+      "acceptanceCriteria": [
+        "APScheduler 每小时轮询所有用户月度用量",
+        "首次达到80%时发送邮件（同月内只发一次，状态存 PostgreSQL）",
+        "邮件收件人从 AD mail 属性获取，取不到则跳过记录日志",
+        "SMTP 发送失败不标记已发送，下次重试",
+        "SMTP 配置从 config.yaml 热加载",
+        "Typecheck passes"
+      ],
+      "priority": 16,
+      "passes": false,
+      "notes": "",
+      "source": "requirements.md §五邮件通知"
+    }
+  ]
+}
