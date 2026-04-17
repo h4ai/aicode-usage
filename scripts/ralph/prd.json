@@ -179,7 +179,7 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "source": "requirements.md §七7.2配额级别管理"
     },

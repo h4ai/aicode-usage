@@ -20,6 +20,8 @@ Started: Fri Apr 17 23:55:45 CST 2026
 - User's quota level from `users.quota_level`, limits from `quota_levels` table
 - Vue template `v-else-if` doesn't narrow nullable refs — use `!` in callback props like `:format`
 - `formatWan(n)`: display numbers ≥10000 as "X.X万" — reuse pattern for token display
+- Admin router at `/api/admin` prefix; all admin endpoints use `Depends(require_admin)` from deps.py
+- Inline table editing pattern: `editingLevel` ref to track which row is being edited
 
 ---
 
@@ -148,4 +150,20 @@ Started: Fri Apr 17 23:55:45 CST 2026
   - Donut chart: `radius: ['40%', '70%']` for ring shape, `center: ['60%', '50%']` to leave room for legend
   - Percent calculation done server-side in the router for simplicity
   - Reuses _resolve_date_range() helper from US-009 for consistent date param handling
+---
+
+## 2026-04-18 - US-011
+- Implemented GET /api/admin/quota-levels returning L1/L2/L3 with monthly_token, daily_requests, user_count
+- Implemented PUT /api/admin/quota-levels/{level} for editing limits (rejects non-L1/L2/L3)
+- Created backend/app/routers/admin.py with require_admin dependency
+- Added get_all_quota_levels() and update_quota_level() to database.py
+- Created QuotaLevelManager.vue: el-table with inline editing (edit/save/cancel per row)
+- Updated AdminView.vue to include QuotaLevelManager component
+- Registered admin router in main.py
+- Files: backend/app/routers/admin.py (new), backend/app/services/database.py, backend/app/main.py, frontend/src/components/QuotaLevelManager.vue (new), frontend/src/views/AdminView.vue
+- **Learnings for future iterations:**
+  - Admin router at /api/admin prefix — future admin endpoints (users, trend, departments, leaderboard) go here
+  - require_admin dependency from deps.py handles 403 for non-admin users
+  - Inline editing pattern: editingLevel ref + editForm ref, startEdit copies row data, saveLevel PUTs then refetches
+  - quota_levels table has fixed L1/L2/L3 rows — no add/delete supported
 ---

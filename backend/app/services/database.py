@@ -83,6 +83,51 @@ def get_quota_limits(level: str) -> dict[str, Any]:
         conn.close()
 
 
+def get_all_quota_levels() -> list[dict[str, Any]]:
+    """Return all quota levels with current user counts."""
+    conn = _get_conn()
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT ql.level, ql.monthly_token, ql.daily_requests,
+                       COUNT(u.user_id)::int AS user_count
+                FROM quota_levels ql
+                LEFT JOIN users u ON u.quota_level = ql.level
+                GROUP BY ql.level, ql.monthly_token, ql.daily_requests
+                ORDER BY ql.level
+                """,
+            )
+            return [dict(row) for row in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+def update_quota_level(
+    level: str, monthly_token: int, daily_requests: int,
+) -> dict[str, Any] | None:
+    """Update limits for an existing quota level. Returns updated row or None."""
+    if level not in ("L1", "L2", "L3"):
+        return None
+    conn = _get_conn()
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                """
+                UPDATE quota_levels
+                SET monthly_token = %s, daily_requests = %s
+                WHERE level = %s
+                RETURNING *
+                """,
+                (monthly_token, daily_requests, level),
+            )
+            row = cur.fetchone()
+        conn.commit()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
 def upsert_user(
     *,
     user_id: str,
