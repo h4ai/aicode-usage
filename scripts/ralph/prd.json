@@ -96,7 +96,7 @@
         "Typecheck passes"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "source": "requirements.md §四配额体系"
     },

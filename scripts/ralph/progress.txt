@@ -80,3 +80,15 @@ Started: Fri Apr 17 23:55:45 CST 2026
   - Quota color thresholds: monthly 50/80/100%, daily 80/100%
   - JWT payload has `userId` for regular users, `sub` for admins — use `user.get("userId") or user.get("sub")`
 ---
+
+## 2026-04-18 - US-006
+- Implemented GET /api/metrics/summary?scope=month|today
+- Month scope: total_token, request_count, active_days, daily_avg_token
+- Today scope: total_token, request_count (active_days/daily_avg_token omitted as null)
+- Added ClickHouse helpers: get_monthly_request_count, get_monthly_active_days, get_today_token_usage
+- Created backend/app/routers/metrics.py, updated clickhouse.py and main.py
+- **Learnings for future iterations:**
+  - Metrics router at /api/metrics prefix — future metric endpoints (trend, detail, etc.) go here
+  - Optional[int] = None in Pydantic model to omit fields from response when scope doesn't apply
+  - Scope enum for query parameter validation (month|today)
+---
