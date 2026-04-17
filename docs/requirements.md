@@ -1,6 +1,7 @@
-# AI Code Usage 需求文档 v0.6（定稿）
+# AI Code Usage 需求文档 v0.7（定稿）
 
 > 状态：✅ 全部确认，可开发 | 作者：OPS | 日期：2026-04-17
+> 变更：v0.6 → v0.7：修正部门字段来源（ClickHouse `enterprise`，非 AD）、明确姓名显示逻辑
 
 ---
 
@@ -36,10 +37,10 @@
 
 ### 4.1 配额级别
 
-- 初始预设 **L1 / L2 / L3** 三个级别，管理员可在界面中灵活调整
+- 初始预设 **L1 / L2 / L3** 三个级别，管理员可在界面中修改各级别额度
 - 用户未分配级别时，默认使用 **L1**
 - 用户首次 AD 登录后自动创建用户记录，默认分配 L1
-- **配额级别固定三级（L1/L2/L3），不支持删除**，管理员只能修改各级别的额度数值
+- **配额级别固定三级（L1/L2/L3），不支持新增/删除**，管理员只能修改额度数值
 
 ### 4.2 双重控制
 
@@ -73,7 +74,7 @@
 
 - **触发机制**：APScheduler 定时任务，每小时轮询一次所有用户月度使用量
 - **触发条件**：月度 Token 首次达到 80% 时发送（同一自然月内只发一次，状态存 PostgreSQL）
-- **收件人**：用户本人（邮箱从 AD `mail` 属性获取）
+- **收件人**：用户本人（邮箱从 AD `mail` 属性获取；取不到则跳过，记录日志）
 - **SMTP 配置**：写入 config.yaml，支持热加载（watchdog 监听文件变化）
 - **失败处理**：SMTP 发送失败时记录日志，不标记为已发送（下次轮询会重试）
 
@@ -106,7 +107,7 @@
 - 字段：日期 / 模型 / 请求次数 / 输入Token / 输出Token / 总Token
 - 筛选：时间范围 / 模型（多选）/ IDE类型（多选）
 - 支持按列排序
-- 导出 CSV：限制最近 **3 个月**（约90天），超出提示用户缩短时间范围
+- 导出 CSV：限制最近 **3 个月**，超出时提示用户缩短时间范围
 
 ### Tab 3：模型分布
 - 环形图：各模型 Token 占比
@@ -120,48 +121,72 @@
 ```
 管理员后台
 ├── 用户管理        ← 用户列表 + 级别分配
-├── 配额级别管理    ← 新增/编辑/删除级别（有用户时禁止删除）
+├── 配额级别管理    ← 修改 L1/L2/L3 三级额度（不可新增/删除）
 ├── 全局趋势        ← 所有用户汇总趋势图
-├── 部门汇总        ← 按 AD department 属性汇总（取不到时显示"未知"）
+├── 部门汇总        ← 按 enterprise 字段汇总
 └── 用量排行榜      ← 仅管理员可见，Top N（10/20/50）
 ```
 
 ### 7.1 用户管理
-- 展示：姓名 / 域账号 / 部门（AD属性，取不到显示"未知"）/ 当前级别 / 本月Token / 今日请求次数
+- 展示：显示名（`userNickname` 优先，取不到用 `username`）/ 域账号（`userId`）/ 部门（`enterprise` 字段，无则显示"未知"）/ 当前级别 / 本月Token / 今日请求次数
 - 操作：修改用户所属级别
 
 ### 7.2 配额级别管理
 - 展示：级别名称 / 月Token限额 / 日请求上限 / 当前人数
-- 操作：**修改**各级别额度（固定 L1/L2/L3 三级，不支持新增/删除）
+- 操作：**修改**各级别额度（固定 L1/L2/L3，不支持新增/删除）
 
 ### 7.3 全局趋势
 - 所有用户汇总每日 Token 趋势图，可按模型 / 部门分组
 
 ### 7.4 部门汇总
-- 按 AD `department` 属性分组（取不到归入"未知"分组）
+- 按 ClickHouse `enterprise` 字段分组（`NULL` 或空值归入"未知"分组）
 - 展示：部门 / 人数 / 本月Token / 本月请求次数 / 人均Token
 
 ### 7.5 用量排行榜（仅管理员）
 - 按本月 Token 排序，Top N（10/20/50）
-- 展示：排名 / 姓名 / 部门 / 级别 / Token用量 / 请求次数 / 配额使用率
+- 展示：排名 / 显示名 / 部门 / 级别 / Token用量 / 请求次数 / 配额使用率
+- **普通用户登录后不可见此菜单**
 
 ---
 
-> ⚠️ 排行榜为管理员专属功能，普通用户登录后不可见
+## 八、数据字段映射 ✅
+
+> ⚠️ 部门字段来源说明：`enterprise` 字段已存在于 ClickHouse `otel.events` 表中（如"技术部"、"产品部"），**无需从 AD 获取**，直接使用 ClickHouse 数据。
+
+| 业务含义 | ClickHouse 字段 | 类型 | 备注 |
+|---------|----------------|------|------|
+| 用户标识 | `userId` | Nullable(String) | 域账号，如 `zhangsan` |
+| 显示名 | `userNickname` | Nullable(String) | 优先，取不到用 `username` |
+| 域账号名 | `username` | Nullable(String) | fallback 显示名 |
+| 部门 | `enterprise` | Nullable(String) | 直接用 ClickHouse 数据 |
+| 模型名称 | `requestModelName` | Nullable(String) | 趋势/分布图使用 |
+| IDE类型 | `ideType` | LowCardinality(String) | 列表筛选使用 |
+| 输入Token | `inputToken` | Nullable(Int64) | Token统计 |
+| 输出Token | `outputToken` | Nullable(Int64) | Token统计 |
+| 总Token | `totalToken` | Nullable(Int64) | Token统计 |
+| 请求时间 | `event_date` | Date | 按天分组 |
+| 成功标志 | `isSuccessful` | Nullable(Bool) | 失败请求过滤 |
 
 ---
 
-## 八、技术规范 ✅
+## 九、技术规范 ✅
 
 ### 技术栈
 | 层 | 方案 |
 |----|------|
 | 前端 | Vue3 + Element Plus + ECharts + Vue Router + Pinia |
-| 后端 | Python FastAPI + clickhouse-driver + python-ldap + PyJWT + APScheduler + watchdog |
+| 后端 | Python FastAPI + clickhouse-driver + python-ldap + PyJWT + APScheduler + watchdog + bcrypt |
 | 配置数据 | PostgreSQL（配额级别、用户分配、邮件发送状态） |
 | 使用数据 | ClickHouse `otel.events`（只读） |
 | 部署 | Docker Compose，前端 3002 / 后端 8002 |
 | 访问 | 支持内网 IP 直接访问 + 域名（Nginx 反向代理） |
+
+### 现有可复用基础设施
+| 服务 | 地址 | 备注 |
+|------|------|------|
+| ClickHouse | localhost:8123 | 无密码，`otel` 库，已有 1082 条测试数据 |
+| PostgreSQL | localhost:5432 | skillhub-postgres，或新起 5434 端口隔离 |
+| OpenLDAP | localhost:389 | skillhub-openldap，用于 LDAP 单测 mock |
 
 ### 缓存策略
 - ClickHouse 查询结果：5分钟 TTL（应用内存，`cachetools.TTLCache`）
@@ -175,11 +200,11 @@
 ### API 规范
 - `GET /health` — 返回 ClickHouse / PostgreSQL / LDAP 连接状态
 - 管理员操作写入后端日志（不需要前端展示页面）
-- CSV 导出限制 3 个月，超出返回 400
+- CSV 导出时间范围超 3 个月返回 400
 
 ---
 
-## 九、配置文件结构
+## 十、配置文件结构
 
 ```yaml
 # config.yaml
@@ -191,11 +216,10 @@ admins:
     password_hash: "$2b$12$..."
 
 ldap:
-  server: "ldap://192.168.1.x:389"
-  base_dn: "dc=company,dc=com"
-  user_attr: "sAMAccountName"
-  mail_attr: "mail"
-  dept_attr: "department"
+  server: "ldap://192.168.1.x:389"   # 企业 AD 地址（待填写）
+  base_dn: "dc=company,dc=com"        # 待填写
+  user_attr: "sAMAccountName"         # 域账号属性
+  mail_attr: "mail"                   # 邮箱属性（用于发通知）
 
 clickhouse:
   host: localhost
@@ -205,13 +229,23 @@ clickhouse:
   password: ""
 
 database:
-  url: "postgresql://user:pass@localhost:5433/ai_usage"
+  url: "postgresql://user:pass@localhost:5432/ai_usage"
 
 smtp:
-  host: ""
+  host: ""          # 待填写
   port: 587
-  username: ""
-  password: ""
+  username: ""      # 待填写
+  password: ""      # 待填写
   from_name: "AI 使用助手"
-  from_email: ""
+  from_email: ""    # 待填写
 ```
+
+---
+
+## 十一、未完成配置项（待沈老板补充）
+
+| 配置项 | 说明 | 影响功能 |
+|--------|------|---------|
+| `ldap.server` | 企业 AD 服务器地址 | 登录认证 |
+| `ldap.base_dn` | AD 基础 DN | 登录认证 |
+| `smtp.*` | 邮件服务器全部配置 | 80% 告警邮件 |
