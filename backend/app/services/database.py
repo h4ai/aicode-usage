@@ -25,6 +25,16 @@ CREATE TABLE IF NOT EXISTS users (
     quota_level  TEXT NOT NULL DEFAULT 'L1',
     created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE TABLE IF NOT EXISTS quota_levels (
+    level            TEXT PRIMARY KEY,
+    monthly_token    BIGINT NOT NULL DEFAULT 0,
+    daily_requests   INT    NOT NULL DEFAULT 0
+);
+
+INSERT INTO quota_levels (level, monthly_token, daily_requests)
+VALUES ('L1', 5000000, 500), ('L2', 10000000, 1000), ('L3', 20000000, 2000)
+ON CONFLICT (level) DO NOTHING;
 """
 
 
@@ -53,6 +63,22 @@ def get_user(user_id: str) -> dict[str, Any] | None:
             cur.execute("SELECT * FROM users WHERE user_id = %s", (user_id,))
             row = cur.fetchone()
             return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def get_quota_limits(level: str) -> dict[str, Any]:
+    """Return monthly_token and daily_requests limits for a quota level."""
+    conn = _get_conn()
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                "SELECT monthly_token, daily_requests FROM quota_levels"
+                " WHERE level = %s",
+                (level,),
+            )
+            row = cur.fetchone()
+            return dict(row) if row else {"monthly_token": 0, "daily_requests": 0}
     finally:
         conn.close()
 
