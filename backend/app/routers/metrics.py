@@ -1,10 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: 2026 SubLang International <https://sublang.ai>
 
-"""Metrics summary router — GET /api/metrics/summary."""
+"""Metrics router — summary + trend endpoints."""
 
 from __future__ import annotations
 
+from datetime import date, timedelta
 from enum import Enum
 from typing import Any, Optional
 
@@ -14,6 +15,7 @@ from pydantic import BaseModel
 from app.deps import get_current_user
 from app.services.clickhouse import (
     get_daily_request_count,
+    get_daily_trend,
     get_monthly_active_days,
     get_monthly_request_count,
     get_monthly_token_usage,
@@ -59,3 +61,31 @@ def metrics_summary(
         active_days=active_days,
         daily_avg_token=daily_avg,
     )
+
+
+class TrendItem(BaseModel):
+    date: str
+    input_token: int
+    output_token: int
+    total_token: int
+
+
+@router.get("/trend", response_model=list[TrendItem])
+def metrics_trend(
+    days: int = Query(7),
+    start: Optional[str] = Query(None),
+    end: Optional[str] = Query(None),
+    user: dict[str, Any] = Depends(get_current_user),
+) -> list[TrendItem]:
+    user_id: str = user.get("userId") or user.get("sub", "")
+
+    if start and end:
+        start_date = start
+        end_date = end
+    else:
+        today = date.today()
+        end_date = today.isoformat()
+        start_date = (today - timedelta(days=days - 1)).isoformat()
+
+    rows = get_daily_trend(user_id, start_date, end_date)
+    return [TrendItem(**row) for row in rows]

@@ -13,7 +13,7 @@ from cachetools import TTLCache
 from clickhouse_driver import Client as CHClient
 
 from app.config import get_config
-from app.data_schema import EVENT_DATE, TOTAL_TOKEN, USER_ID
+from app.data_schema import EVENT_DATE, INPUT_TOKEN, OUTPUT_TOKEN, TOTAL_TOKEN, USER_ID
 
 logger = logging.getLogger(__name__)
 
@@ -128,3 +128,36 @@ def get_daily_request_count(user_id: str) -> int:
     count = int(result[0][0]) if result and result[0][0] else 0
     _cache[cache_key] = count
     return count
+
+
+def get_daily_trend(
+    user_id: str, start_date: str, end_date: str
+) -> list[dict[str, Any]]:
+    """Return daily input/output/total token breakdown for a date range."""
+    cache_key = f"trend:{user_id}:{start_date}:{end_date}"
+    if cache_key in _cache:
+        return list(_cache[cache_key])
+
+    client = _get_client()
+    rows = client.execute(
+        f"SELECT {EVENT_DATE},"
+        f" sum({INPUT_TOKEN}), sum({OUTPUT_TOKEN}), sum({TOTAL_TOKEN})"
+        f" FROM events"
+        f" WHERE {USER_ID} = %(uid)s"
+        f" AND {EVENT_DATE} >= %(start)s AND {EVENT_DATE} <= %(end)s"
+        f" GROUP BY {EVENT_DATE} ORDER BY {EVENT_DATE}",
+        {"uid": user_id, "start": start_date, "end": end_date},
+    )
+    result: list[dict[str, Any]] = [
+        {
+            "date": (
+                row[0].isoformat() if hasattr(row[0], "isoformat") else str(row[0])
+            ),
+            "input_token": int(row[1] or 0),
+            "output_token": int(row[2] or 0),
+            "total_token": int(row[3] or 0),
+        }
+        for row in rows
+    ]
+    _cache[cache_key] = result
+    return result

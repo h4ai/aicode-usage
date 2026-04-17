@@ -6,12 +6,14 @@
     <h1>个人看板</h1>
     <QuotaProgressBar />
     <MetricCards />
+    <TrendChart />
   </div>
 </template>
 
 <script setup lang="ts">
 import QuotaProgressBar from '@/components/QuotaProgressBar.vue'
 import MetricCards from '@/components/MetricCards.vue'
+import TrendChart from '@/components/TrendChart.vue'
 </script>
 
 <style scoped>
