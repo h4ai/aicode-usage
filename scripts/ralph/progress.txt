@@ -1,5 +1,17 @@
 # Ralph Progress Log
 Started: Fri Apr 17 23:55:45 CST 2026
+
+## Codebase Patterns
+- Use `get_config()` from app.config for all config.yaml access (hot-reloadable)
+- PostgreSQL users table: user_id PK, quota_level defaults to 'L1'
+- `upsert_user()` in app/services/database.py for creating/updating users
+- JWT tokens created via `create_token()` in app/services/auth.py (8h TTL, cfg fingerprint for admin invalidation)
+- Auth dependencies: `get_current_user` / `require_admin` from app/deps.py
+- ClickHouse field constants in app/data_schema.py (snake_case + camelCase map)
+- All new Python files need SPDX header: `# SPDX-License-Identifier: Apache-2.0`
+- Backend quality checks: `mypy app/` (strict) + `ruff check app/` (line-length 100)
+- Frontend quality checks: `npx vue-tsc --build`
+
 ---
 
 ## 2026-04-18 00:01 - US-001
@@ -18,4 +30,19 @@ Started: Fri Apr 17 23:55:45 CST 2026
   - JWT fingerprint 机制：token 里的 cfg 字段 = sha256(当前 password_hash)[:16]，每次验证时重新计算对比
   - 所有需要认证的路由用 Depends(get_current_user)，需要管理员权限用 Depends(require_admin)
   - config 热加载（get_config()）保证每次请求都读最新 password_hash
+---
+
+## 2026-04-18 - US-003
+- Implemented AD user login via LDAP bind in POST /api/auth/login (unified endpoint: admin first, then LDAP fallback)
+- Created app/services/ldap_service.py: LDAP authentication with sAMAccountName search + bind
+- Created app/services/database.py: PostgreSQL users table (auto-init on startup), upsert_user with L1 default
+- Updated auth router: non-admin usernames trigger LDAP flow, auto-create user in PG, return JWT with userId+role=user
+- LDAP unavailable returns 503 with friendly Chinese message
+- Files: backend/app/routers/auth.py, backend/app/services/ldap_service.py, backend/app/services/database.py, backend/app/main.py
+- **Learnings for future iterations:**
+  - Users table schema: user_id (PK), username, nickname, enterprise, mail, quota_level (default L1), created_at
+  - upsert_user uses ON CONFLICT DO UPDATE to refresh AD attributes on each login
+  - init_db() called on FastAPI startup event to ensure users table exists
+  - LDAP search uses ldap.filter.escape_filter_chars to prevent injection
+  - deps.py (from US-002) provides get_current_user/require_admin for route auth
 ---
