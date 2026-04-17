@@ -224,3 +224,59 @@ def list_departments(
     """Return token usage summary grouped by enterprise/department."""
     rows = get_department_summary()
     return [DeptSummaryItem(**row) for row in rows]
+
+
+# ---- Leaderboard ------------------------------------------------------------
+
+
+class LeaderboardItem(BaseModel):
+    rank: int
+    user_id: str
+    display_name: str
+    enterprise: str
+    quota_level: str
+    monthly_token: int
+    monthly_requests: int
+    quota_usage_pct: float
+
+
+def get_leaderboard(top: int = 10) -> list[dict[str, Any]]:
+    """Return top N users sorted by monthly token consumption."""
+    users = get_all_users()
+    monthly_tokens = get_all_users_monthly_tokens()
+    monthly_reqs = get_all_users_monthly_requests()
+    quota_levels_data = get_all_quota_levels()
+    level_limits = {lv["level"]: lv["monthly_token"] for lv in quota_levels_data}
+
+    ranked = sorted(
+        users,
+        key=lambda u: monthly_tokens.get(u["user_id"], 0),
+        reverse=True,
+    )[:top]
+
+    result: list[dict[str, Any]] = []
+    for i, u in enumerate(ranked, start=1):
+        mt = monthly_tokens.get(u["user_id"], 0)
+        limit = level_limits.get(u.get("quota_level", "L1"), 1) or 1
+        pct = round(mt / limit * 100, 1)
+        result.append({
+            "rank": i,
+            "user_id": u["user_id"],
+            "display_name": u.get("nickname") or u.get("username") or u["user_id"],
+            "enterprise": u.get("enterprise") or "未知",
+            "quota_level": u.get("quota_level", "L1"),
+            "monthly_token": mt,
+            "monthly_requests": monthly_reqs.get(u["user_id"], 0),
+            "quota_usage_pct": pct,
+        })
+    return result
+
+
+@router.get("/leaderboard", response_model=list[LeaderboardItem])
+def list_leaderboard(
+    top: int = Query(10, ge=1, le=100),
+    _user: dict[str, Any] = Depends(require_admin),
+) -> list[LeaderboardItem]:
+    """Return top N users by monthly token usage."""
+    rows = get_leaderboard(top=top)
+    return [LeaderboardItem(**row) for row in rows]
