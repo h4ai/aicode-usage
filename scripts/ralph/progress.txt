@@ -122,3 +122,18 @@ Started: Fri Apr 17 23:55:45 CST 2026
   - ClickHouse `event_date` may return date object — use `hasattr(row, "isoformat")` for safe serialization
   - Trend API reuses same /api/metrics prefix router — add new endpoints to existing metrics.py
 ---
+
+## 2026-04-18 - US-009
+- Implemented GET /api/metrics/detail with time range, model, IDE type filters; grouped by date+model
+- Implemented GET /api/metrics/export.csv with 3-month limit validation (returns 400 if exceeded)
+- Added get_detail_records() in clickhouse.py with TTLCache and parameterized WHERE clauses
+- Created DetailTable.vue: el-table with sortable columns, filter inputs, date range picker, CSV export button
+- CSV export uses fetch() with auth header to download blob
+- Files: backend/app/services/clickhouse.py, backend/app/routers/metrics.py, frontend/src/components/DetailTable.vue, frontend/src/views/DashboardView.vue
+- **Learnings for future iterations:**
+  - Detail endpoint reuses metrics router at /api/metrics prefix
+  - Server-side sorting via sort_by/sort_order query params with whitelist validation
+  - CSV export uses StreamingResponse with io.StringIO buffer
+  - Export range validation: (end - start).days > 92 → 400
+  - Frontend CSV download: fetch with Bearer token → blob → object URL → click
+---
