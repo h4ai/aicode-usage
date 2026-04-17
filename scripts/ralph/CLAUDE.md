@@ -70,9 +70,64 @@ Before committing, check if any edited files have learnings worth preserving in 
 
 Only update CLAUDE.md if you have **genuinely reusable knowledge** that would help future work in that directory.
 
+## TDD Workflow (MANDATORY)
+
+**每个 User Story 必须严格按 TDD 流程执行，不得跳过：**
+
+### Step 1: 先写测试（Red）
+1. 在 `backend/tests/` 创建 `test_us_XXX.py`（XXX = story ID，如 `test_us_003.py`）
+2. 根据验收标准写测试用例（每条 AC 至少一个测试）
+3. 运行 `cd /data/workspaces/ai-code-usage/backend && python3 -m pytest tests/test_us_XXX.py -v`
+4. **确认测试失败**（Red）——如果测试通过说明写错了
+
+### Step 2: 实现代码（Green）
+5. 实现最小可用代码让测试通过
+6. 运行 pytest，**确认所有测试通过**（Green）
+
+### Step 3: 整理提交（Refactor + Commit）
+7. 必要时重构，确保测试仍通过
+8. 运行全量测试：`cd /data/workspaces/ai-code-usage/backend && python3 -m pytest tests/ -v`
+9. **全部通过后**才能 commit
+
+### 测试文件规范
+```python
+# backend/tests/test_us_XXX.py
+"""
+US-XXX: [故事标题]
+AC 验收标准测试
+"""
+import pytest
+from fastapi.testclient import TestClient
+from app.main import app
+
+client = TestClient(app)
+
+def test_ac_1_xxx():
+    """AC-1: [验收标准描述]"""
+    # 测试代码
+
+def test_ac_2_xxx():
+    """AC-2: [验收标准描述]"""
+    # 测试代码
+```
+
+### pytest 配置
+- 已有 `backend/pyproject.toml`，直接运行 `python3 -m pytest`
+- 如 `conftest.py` 不存在，创建 `backend/tests/conftest.py` 放公共 fixture
+- 如 `backend/tests/__init__.py` 不存在，创建空文件
+
+### Progress 记录要求
+在 progress.txt 的 Story 记录里加一段：
+```
+- **Tests:** backend/tests/test_us_XXX.py（N个测试，全部通过）
+```
+
+---
+
 ## Quality Requirements
 
-- ALL commits must pass your project's quality checks (typecheck, lint, test)
+- **TDD 是硬性要求：先测试后实现，无测试不提交**
+- ALL commits must pass `python3 -m pytest tests/ -v`（全量测试）
 - Do NOT commit broken code
 - Keep changes focused and minimal
 - Follow existing code patterns
