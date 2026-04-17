@@ -384,3 +384,24 @@ def get_detail_records(
     ]
     _cache[cache_key] = result
     return result
+
+
+def get_all_users_monthly_requests() -> dict[str, int]:
+    """Return {user_id: request_count} for all users in current month."""
+    now = datetime.now(tz=timezone.utc)
+    month_start = date(now.year, now.month, 1).isoformat()
+    cache_key = f"all_monthly_requests:{month_start}"
+    if cache_key in _cache:
+        return dict(_cache[cache_key])
+
+    client = _get_client()
+    rows = client.execute(
+        f"SELECT {USER_ID}, count() AS req_count"
+        f" FROM events"
+        f" WHERE {EVENT_DATE} >= %(start)s"
+        f" GROUP BY {USER_ID}",
+        {"start": month_start},
+    )
+    result: dict[str, int] = {str(row[0]): int(row[1] or 0) for row in rows}
+    _cache[cache_key] = result
+    return result

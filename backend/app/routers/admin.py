@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from app.deps import require_admin
 from app.services.clickhouse import (
     get_all_users_daily_requests,
+    get_all_users_monthly_requests,
     get_all_users_monthly_tokens,
     get_global_trend,
     get_global_trend_by_dept,
@@ -174,3 +175,52 @@ def global_trend(
     if group_by == "department":
         return get_global_trend_by_dept(start, end)
     return get_global_trend(start, end)
+
+
+# ---- Department summary -----------------------------------------------------
+
+
+class DeptSummaryItem(BaseModel):
+    enterprise: str
+    user_count: int
+    monthly_token: int
+    monthly_requests: int
+    avg_token_per_user: int
+
+
+def get_department_summary() -> list[dict[str, Any]]:
+    """Compute department summary by merging PostgreSQL users with ClickHouse token data."""
+    users = get_all_users()
+    monthly_tokens = get_all_users_monthly_tokens()
+    monthly_requests = get_all_users_monthly_requests()
+
+    # Group users by enterprise
+    dept_users: dict[str, list[str]] = {}
+    for u in users:
+        dept = u.get("enterprise") or "未知"
+        if not dept.strip():
+            dept = "未知"
+        dept_users.setdefault(dept, []).append(u["user_id"])
+
+    result: list[dict[str, Any]] = []
+    for dept, user_ids in sorted(dept_users.items()):
+        total_tokens = sum(monthly_tokens.get(uid, 0) for uid in user_ids)
+        total_requests = sum(monthly_requests.get(uid, 0) for uid in user_ids)
+        count = len(user_ids)
+        result.append({
+            "enterprise": dept,
+            "user_count": count,
+            "monthly_token": total_tokens,
+            "monthly_requests": total_requests,
+            "avg_token_per_user": total_tokens // count if count > 0 else 0,
+        })
+    return result
+
+
+@router.get("/departments", response_model=list[DeptSummaryItem])
+def list_departments(
+    _user: dict[str, Any] = Depends(require_admin),
+) -> list[DeptSummaryItem]:
+    """Return token usage summary grouped by enterprise/department."""
+    rows = get_department_summary()
+    return [DeptSummaryItem(**row) for row in rows]
