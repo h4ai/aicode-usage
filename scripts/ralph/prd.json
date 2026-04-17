@@ -212,7 +212,7 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "source": "requirements.md §七7.3全局趋势"
     },
@@ -228,7 +228,7 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 14,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "source": "requirements.md §七7.4部门汇总"
     },
@@ -245,7 +245,7 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 15,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "source": "requirements.md §七7.5用量排行榜"
     },
@@ -262,7 +262,7 @@
         "Typecheck passes"
       ],
       "priority": 16,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "source": "requirements.md §五邮件通知"
     }

@@ -184,3 +184,39 @@ Started: Fri Apr 17 23:55:45 CST 2026
   - Bulk ClickHouse queries (no WHERE user_id) return dict keyed by user_id — more efficient than N+1 queries
   - el-select with @change + :model-value pattern for immediate save without edit/save buttons
 ---
+
+## 2026-04-18 - US-013 (TDD)
+- **Tests:** backend/tests/test_us_013.py（6个测试，全部通过）
+- GET /api/admin/trend: 全局每日 Token 趋势，支持 group_by=model|department
+- 新增 clickhouse.py: get_global_trend / get_global_trend_by_model / get_global_trend_by_dept
+- conftest.py: 重构 admin_token fixture 直接用 create_token()，新增 admin_config_patch 解决 fingerprint 验证
+- **Learnings:** admin token 在测试中必须同时 patch app.deps.get_config，否则 fingerprint 不匹配 → 401
+---
+
+## 2026-04-18 - US-014 (TDD)
+- **Tests:** backend/tests/test_us_014.py（5个测试，全部通过）
+- GET /api/admin/departments: 按 enterprise 分组，NULL/空值归"未知"，返回部门/人数/月Token/月请求/人均Token
+- 新增 get_all_users_monthly_requests() + get_department_summary() Python 层聚合
+- Files: backend/app/routers/admin.py, backend/app/services/clickhouse.py
+---
+
+## 2026-04-18 - US-015 (TDD)
+- **Tests:** backend/tests/test_us_015.py（5个测试，全部通过）
+- GET /api/admin/leaderboard?top=N: 按月Token降序，返回排名/显示名/部门/级别/Token/请求/配额使用率
+- get_leaderboard() 聚合 PG users + ClickHouse 数据，计算 quota_usage_pct
+- Files: backend/app/routers/admin.py
+---
+
+## 2026-04-18 - US-016 (TDD)
+- **Tests:** backend/tests/test_us_016.py（7个测试，全部通过）
+- APScheduler 每小时调用 check_quota_alerts()，首次达 80% 发邮件
+- email_alerts PG 表防止同月重复发送；SMTP 失败不标记已发送
+- send_quota_email() 每次从 get_config() 读 SMTP 配置（热加载）
+- Files: backend/app/services/notification.py (new), backend/app/services/database.py, backend/app/main.py
+- **Learnings:** patch notification 模块时需要 patch 模块内部 import 的名称（如 app.services.notification.get_config）
+---
+
+## 总结：所有 US-001~US-016 全部完成 (16/16 passes=true)
+- TDD 覆盖：36个后端测试，全部通过
+- mypy: 18个文件，0 issues
+- 关键 bug 修复：config.py threading.Lock 死锁（US-003）
