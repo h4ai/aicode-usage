@@ -128,6 +128,38 @@ def update_quota_level(
         conn.close()
 
 
+def get_all_users() -> list[dict[str, Any]]:
+    """Return all users from PostgreSQL."""
+    conn = _get_conn()
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                "SELECT user_id, username, nickname, enterprise, quota_level"
+                " FROM users ORDER BY user_id",
+            )
+            return [dict(row) for row in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+def update_user_level(user_id: str, level: str) -> dict[str, Any] | None:
+    """Update a user's quota level. Returns updated row or None."""
+    if level not in ("L1", "L2", "L3"):
+        return None
+    conn = _get_conn()
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                "UPDATE users SET quota_level = %s WHERE user_id = %s RETURNING *",
+                (level, user_id),
+            )
+            row = cur.fetchone()
+        conn.commit()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
 def upsert_user(
     *,
     user_id: str,

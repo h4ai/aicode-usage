@@ -200,6 +200,45 @@ def get_model_distribution(
     return result
 
 
+def get_all_users_monthly_tokens() -> dict[str, int]:
+    """Return {user_id: total_token} for all users in current month."""
+    now = datetime.now(tz=timezone.utc)
+    month_start = date(now.year, now.month, 1).isoformat()
+    cache_key = f"all_monthly_token:{month_start}"
+    if cache_key in _cache:
+        return dict(_cache[cache_key])
+
+    client = _get_client()
+    rows = client.execute(
+        f"SELECT {USER_ID}, sum({TOTAL_TOKEN})"
+        f" FROM events WHERE {EVENT_DATE} >= %(start)s"
+        f" GROUP BY {USER_ID}",
+        {"start": month_start},
+    )
+    result = {str(row[0]): int(row[1] or 0) for row in rows}
+    _cache[cache_key] = result
+    return result
+
+
+def get_all_users_daily_requests() -> dict[str, int]:
+    """Return {user_id: request_count} for all users today."""
+    today = date.today().isoformat()
+    cache_key = f"all_daily_req:{today}"
+    if cache_key in _cache:
+        return dict(_cache[cache_key])
+
+    client = _get_client()
+    rows = client.execute(
+        f"SELECT {USER_ID}, count()"
+        f" FROM events WHERE {EVENT_DATE} = %(today)s"
+        f" GROUP BY {USER_ID}",
+        {"today": today},
+    )
+    result = {str(row[0]): int(row[1] or 0) for row in rows}
+    _cache[cache_key] = result
+    return result
+
+
 def get_detail_records(
     user_id: str,
     start_date: str,

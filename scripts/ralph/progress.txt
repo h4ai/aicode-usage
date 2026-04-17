@@ -167,3 +167,17 @@ Started: Fri Apr 17 23:55:45 CST 2026
   - Inline editing pattern: editingLevel ref + editForm ref, startEdit copies row data, saveLevel PUTs then refetches
   - quota_levels table has fixed L1/L2/L3 rows — no add/delete supported
 ---
+
+## 2026-04-18 - US-012
+- Implemented GET /api/admin/users returning all users with display_name, enterprise, quota_level, monthly token, daily requests
+- Implemented PUT /api/admin/users/{userId}/level for changing user quota level
+- Added get_all_users() and update_user_level() to database.py
+- Added get_all_users_monthly_tokens() and get_all_users_daily_requests() bulk queries to clickhouse.py
+- Created UserManager.vue with el-table and el-select dropdown for level changes
+- Updated AdminView.vue to include UserManager component
+- Files: backend/app/routers/admin.py, backend/app/services/database.py, backend/app/services/clickhouse.py, frontend/src/components/UserManager.vue (new), frontend/src/views/AdminView.vue
+- **Learnings for future iterations:**
+  - display_name logic: nickname > username > user_id; enterprise empty → "未知"
+  - Bulk ClickHouse queries (no WHERE user_id) return dict keyed by user_id — more efficient than N+1 queries
+  - el-select with @change + :model-value pattern for immediate save without edit/save buttons
+---
