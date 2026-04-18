@@ -1,0 +1,54 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<template>
+  <div class="leaderboard">
+    <el-card>
+      <template #header>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span>用量排行榜</span>
+          <el-select v-model="top" style="width:100px" @change="fetchData">
+            <el-option label="Top 10" :value="10" />
+            <el-option label="Top 20" :value="20" />
+            <el-option label="Top 50" :value="50" />
+          </el-select>
+        </div>
+      </template>
+      <el-table :data="rows" v-loading="loading" stripe>
+        <el-table-column label="排名" width="70">
+          <template #default="{ $index }">{{ $index + 1 }}</template>
+        </el-table-column>
+        <el-table-column prop="display_name" label="姓名" />
+        <el-table-column prop="enterprise" label="部门" />
+        <el-table-column label="月 Token" prop="monthly_token" sortable>
+          <template #default="{ row }">
+            {{ (row.monthly_token / 1000).toFixed(1) }}K
+          </template>
+        </el-table-column>
+        <el-table-column prop="request_count" label="请求数" sortable width="100" />
+      </el-table>
+    </el-card>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
+const rows = ref<any[]>([])
+const loading = ref(false)
+const top = ref(10)
+
+async function fetchData() {
+  loading.value = true
+  try {
+    const res = await fetch(`/api/admin/leaderboard?top=${top.value}`, {
+      headers: { Authorization: `Bearer ${auth.token}` }
+    })
+    rows.value = await res.json()
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(fetchData)
+</script>
