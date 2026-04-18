@@ -250,7 +250,8 @@ def get_global_trend(start_date: str, end_date: str) -> list[dict[str, Any]]:
     client = _get_client()
     rows = client.execute(
         f"SELECT {EVENT_DATE},"
-        f" sum({INPUT_TOKEN}), sum({OUTPUT_TOKEN}), sum({TOTAL_TOKEN})"
+        f" sum({INPUT_TOKEN}), sum({OUTPUT_TOKEN}), sum({TOTAL_TOKEN}),"
+        f" countIf({EVENT_CODE} = 'chat_request_response') AS chat_count"
         f" FROM events"
         f" WHERE {EVENT_DATE} >= %(start)s AND {EVENT_DATE} <= %(end)s"
         f" GROUP BY {EVENT_DATE} ORDER BY {EVENT_DATE}",
@@ -262,6 +263,7 @@ def get_global_trend(start_date: str, end_date: str) -> list[dict[str, Any]]:
             "input_token": int(row[1] or 0),
             "output_token": int(row[2] or 0),
             "total_token": int(row[3] or 0),
+            "chat_count": int(row[4] or 0),
         }
         for row in rows
     ]
@@ -278,7 +280,8 @@ def get_global_trend_by_model(start_date: str, end_date: str) -> list[dict[str, 
     client = _get_client()
     rows = client.execute(
         f"SELECT {EVENT_DATE}, {REQUEST_MODEL_NAME},"
-        f" sum({INPUT_TOKEN}), sum({OUTPUT_TOKEN}), sum({TOTAL_TOKEN})"
+        f" sum({INPUT_TOKEN}), sum({OUTPUT_TOKEN}), sum({TOTAL_TOKEN}),"
+        f" countIf({EVENT_CODE} = 'chat_request_response') AS chat_count"
         f" FROM events"
         f" WHERE {EVENT_DATE} >= %(start)s AND {EVENT_DATE} <= %(end)s"
         f" GROUP BY {EVENT_DATE}, {REQUEST_MODEL_NAME}"
@@ -292,6 +295,7 @@ def get_global_trend_by_model(start_date: str, end_date: str) -> list[dict[str, 
             "input_token": int(row[2] or 0),
             "output_token": int(row[3] or 0),
             "total_token": int(row[4] or 0),
+            "chat_count": int(row[5] or 0),
         }
         for row in rows
     ]
@@ -309,7 +313,8 @@ def get_global_trend_by_dept(start_date: str, end_date: str) -> list[dict[str, A
     rows = client.execute(
         f"SELECT {EVENT_DATE},"
         f" if({ENTERPRISE} = '' OR {ENTERPRISE} IS NULL, '未知', {ENTERPRISE}) AS dept,"
-        f" sum({INPUT_TOKEN}), sum({OUTPUT_TOKEN}), sum({TOTAL_TOKEN})"
+        f" sum({INPUT_TOKEN}), sum({OUTPUT_TOKEN}), sum({TOTAL_TOKEN}),"
+        f" countIf({EVENT_CODE} = 'chat_request_response') AS chat_count"
         f" FROM events"
         f" WHERE {EVENT_DATE} >= %(start)s AND {EVENT_DATE} <= %(end)s"
         f" GROUP BY {EVENT_DATE}, dept"
@@ -323,6 +328,7 @@ def get_global_trend_by_dept(start_date: str, end_date: str) -> list[dict[str, A
             "input_token": int(row[2] or 0),
             "output_token": int(row[3] or 0),
             "total_token": int(row[4] or 0),
+            "chat_count": int(row[5] or 0),
         }
         for row in rows
     ]
