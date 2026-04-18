@@ -91,7 +91,7 @@ function formatNum(n: number): string {
 async function fetchDetail() {
   loading.value = true
   try {
-    const params: Record<string, string> = {}
+    const params: Record<string, string> = { time_filter: props.timeFilter }
     if (dateRange.value) {
       params.start = dateRange.value[0]
       params.end = dateRange.value[1]

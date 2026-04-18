@@ -216,10 +216,10 @@ def get_daily_trend(
 
 
 def get_model_distribution(
-    user_id: str, start_date: str, end_date: str
+    user_id: str, start_date: str, end_date: str, time_filter: str = "all"
 ) -> list[dict[str, Any]]:
     """Return token usage grouped by model for the given date range."""
-    cache_key = f"model_dist:{user_id}:{start_date}:{end_date}"
+    cache_key = f"model_dist:{user_id}:{start_date}:{end_date}:{time_filter}"
     if cache_key in _cache:
         return list(_cache[cache_key])
 
@@ -229,7 +229,8 @@ def get_model_distribution(
         f" FROM events"
         f" WHERE {USER_ID} = %(uid)s"
         f" AND {EVENT_DATE} >= %(start)s AND {EVENT_DATE} <= %(end)s"
-        f" GROUP BY {REQUEST_MODEL_NAME}"
+        + _working_hours_filter(time_filter)
+        + f" GROUP BY {REQUEST_MODEL_NAME}"
         f" ORDER BY total DESC",
         {"uid": user_id, "start": start_date, "end": end_date},
     )
@@ -386,9 +387,10 @@ def get_detail_records(
     end_date: str,
     model: str | None = None,
     ide_type: str | None = None,
+    time_filter: str = "all",
 ) -> list[dict[str, Any]]:
     """Return usage records grouped by date + model, with optional filters."""
-    cache_key = f"detail:{user_id}:{start_date}:{end_date}:{model}:{ide_type}"
+    cache_key = f"detail:{user_id}:{start_date}:{end_date}:{model}:{ide_type}:{time_filter}"
     if cache_key in _cache:
         return list(_cache[cache_key])
 
@@ -410,6 +412,9 @@ def get_detail_records(
         params["ide_type"] = ide_type
 
     where = " AND ".join(conditions)
+    tf_clause = _working_hours_filter(time_filter).lstrip(" AND").strip()
+    if tf_clause:
+        where = where + " AND " + tf_clause
     client = _get_client()
     rows = client.execute(
         f"SELECT {EVENT_DATE}, {REQUEST_MODEL_NAME},"

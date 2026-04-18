@@ -116,12 +116,13 @@ def metrics_model_distribution(
     start: Optional[str] = Query(None),
     end: Optional[str] = Query(None),
     days: int = Query(30),
+    time_filter: str = Query("all"),
     user_id: Optional[str] = Query(None),
     user: dict[str, Any] = Depends(get_current_user),
 ) -> list[ModelDistributionItem]:
     effective_user_id: str = user_id if (user.get("role") == "admin" and user_id) else user.get("sub", "")
     start_date, end_date = _resolve_date_range(start, end, days)
-    rows = get_model_distribution(effective_user_id, start_date, end_date)
+    rows = get_model_distribution(effective_user_id, start_date, end_date, time_filter)
     grand_total = sum(r["total_token"] for r in rows)
     return [
         ModelDistributionItem(
@@ -174,12 +175,13 @@ def metrics_detail(
     ide_type: Optional[str] = Query(None),
     sort_by: Optional[str] = Query(None),
     sort_order: Optional[str] = Query("desc"),
+    time_filter: str = Query("all"),
     user_id: Optional[str] = Query(None),
     user: dict[str, Any] = Depends(get_current_user),
 ) -> list[DetailItem]:
     effective_user_id: str = user_id if (user.get("role") == "admin" and user_id) else user.get("sub", "")
     start_date, end_date = _resolve_date_range(start, end, days)
-    rows = get_detail_records(effective_user_id, start_date, end_date, model, ide_type)
+    rows = get_detail_records(effective_user_id, start_date, end_date, model, ide_type, time_filter)
 
     # Client-side sorting
     if sort_by and sort_by in {

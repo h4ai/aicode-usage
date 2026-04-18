@@ -98,7 +98,7 @@ async function fetchData() {
   }
   loading.value = true
   try {
-    const params: Record<string, string> = {}
+    const params: Record<string, string> = { time_filter: props.timeFilter }
     if (rangeMode.value === 'custom' && customRange.value) {
       params.start = customRange.value[0]
       params.end = customRange.value[1]
