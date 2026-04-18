@@ -58,10 +58,15 @@ def _working_hours_filter(time_filter: str = "auto") -> str:
     if effective == "auto":
         effective = "work" if cfg.get("enabled", False) else "all"
 
+    # toDayOfWeek: 1=Mon, 2=Tue, ..., 5=Fri, 6=Sat, 7=Sun
+    dow_expr = f"toDayOfWeek(toDateTime(timestamp / 1000, 'Asia/Shanghai'))"
+    weekday_filter = f" AND {dow_expr} BETWEEN 1 AND 5"
+
     if effective == "work":
-        return f" AND {time_expr} >= {start_sec} AND {time_expr} < {end_sec}"
+        return f"{weekday_filter} AND {time_expr} >= {start_sec} AND {time_expr} < {end_sec}"
     elif effective == "non_work":
-        return f" AND ({time_expr} < {start_sec} OR {time_expr} >= {end_sec})"
+        # 非工作时段 = 工作日的非工作时间 OR 周末全天
+        return f" AND ({dow_expr} > 5 OR {time_expr} < {start_sec} OR {time_expr} >= {end_sec})"
     else:
         return ""
 

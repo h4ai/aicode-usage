@@ -4,7 +4,7 @@
     <template #header>
       <div style="display:flex;align-items:center;gap:8px">
         <span>工作时段配置</span>
-        <el-tooltip content="仅统计该时段内的今日对话轮次和今日Token，月度Token不受影响" placement="top">
+        <el-tooltip content="工作时段 = 周一至周五 start~end；周六日全天视为非工作时段；月度Token不受影响" placement="top">
           <el-icon style="color:#909399;cursor:pointer"><QuestionFilled /></el-icon>
         </el-tooltip>
       </div>
@@ -16,8 +16,8 @@
         <el-form-item label="启用时段限制">
           <el-switch
             v-model="form.enabled"
-            active-text="仅统计工作时段"
-            inactive-text="统计全天 00:00~23:59"
+            active-text="仅统计工作时段（周一至周五）"
+            inactive-text="统计全天（含周末）"
           />
         </el-form-item>
         <template v-if="form.enabled">
