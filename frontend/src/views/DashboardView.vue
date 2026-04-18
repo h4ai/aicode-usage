@@ -5,7 +5,7 @@
   <div class="dashboard-view">
     <div class="page-header">
       <h1>个人看板</h1>
-      <el-radio-group v-model="tf.timeFilter" size="small" @change="tf.setFilter" class="time-filter-bar">
+      <el-radio-group v-model="tf.timeFilter" size="small" class="time-filter-bar">
         <el-radio-button value="all">全天</el-radio-button>
         <el-radio-button value="work">工作时段</el-radio-button>
         <el-radio-button value="non_work">非工作时段</el-radio-button>

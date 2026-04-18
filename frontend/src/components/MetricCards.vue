@@ -71,8 +71,8 @@
 </template>
 
 <script setup lang="ts">
-const props = withDefaults(defineProps<{ timeFilter?: string }>(), { timeFilter: 'all' })
 import { ref, onMounted, watch } from 'vue'
+const props = withDefaults(defineProps<{ timeFilter?: string }>(), { timeFilter: 'all' })
 import { QuestionFilled } from '@element-plus/icons-vue'
 import api from '@/api'
 

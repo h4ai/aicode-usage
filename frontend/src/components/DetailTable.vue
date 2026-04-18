@@ -63,8 +63,8 @@
 </template>
 
 <script setup lang="ts">
-const props = withDefaults(defineProps<{ timeFilter?: string }>(), { timeFilter: 'all' })
 import { ref, onMounted, watch } from 'vue'
+const props = withDefaults(defineProps<{ timeFilter?: string }>(), { timeFilter: 'all' })
 import api from '@/api'
 
 interface DetailItem {

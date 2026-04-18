@@ -31,8 +31,8 @@
 </template>
 
 <script setup lang="ts">
-const props = withDefaults(defineProps<{ timeFilter?: string }>(), { timeFilter: 'all' })
 import { ref, onMounted, nextTick, onBeforeUnmount, watch } from 'vue'
+const props = withDefaults(defineProps<{ timeFilter?: string }>(), { timeFilter: 'all' })
 import * as echarts from 'echarts'
 import api from '@/api'
 
