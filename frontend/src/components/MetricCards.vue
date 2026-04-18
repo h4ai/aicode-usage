@@ -25,17 +25,7 @@
           </div>
         </div>
       </el-col>
-      <el-col :span="scope === 'today' ? 12 : 6">
-        <div class="metric-item">
-          <div class="metric-value">{{ metrics.request_count }}</div>
-          <div class="metric-label">
-            请求次数
-            <el-tooltip content="所有类型 AI 请求的总次数，包含代码补全、聊天对话、内联建议等全部交互" placement="top">
-              <el-icon class="tip-icon"><QuestionFilled /></el-icon>
-            </el-tooltip>
-          </div>
-        </div>
-      </el-col>
+
       <el-col :span="6">
         <div class="metric-item">
           <div class="metric-value">{{ metrics.chat_count ?? 0 }}</div>
@@ -87,7 +77,6 @@ import api from '@/api'
 
 interface MetricsSummary {
   total_token: number
-  request_count: number
   chat_count: number | null
   active_days: number | null
   daily_avg_token: number | null
@@ -97,7 +86,6 @@ const scope = ref<'month' | 'today'>('month')
 const loading = ref(true)
 const metrics = ref<MetricsSummary>({
   total_token: 0,
-  request_count: 0,
   chat_count: null,
   active_days: null,
   daily_avg_token: null,

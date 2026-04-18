@@ -38,21 +38,7 @@
           </el-tag>
         </el-tooltip>
       </div>
-      <div class="quota-bar-row">
-        <span class="quota-label">今日请求</span>
-        <el-progress
-          :percentage="Math.min(quota.daily_requests.percent, 100)"
-          :color="colorMap[quota.daily_requests.color]"
-          :stroke-width="18"
-          :text-inside="true"
-          :format="() => quota!.daily_requests.used + ' / ' + quota!.daily_requests.limit"
-        />
-        <el-tooltip :content="quota.daily_requests.message" placement="top">
-          <el-tag :type="tagType(quota.daily_requests.color)" size="small">
-            {{ quota.daily_requests.message }}
-          </el-tag>
-        </el-tooltip>
-      </div>
+
     </template>
   </el-card>
 </template>
