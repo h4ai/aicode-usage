@@ -18,3 +18,6 @@ package-lock.json
 package.json
 playwright.config.ts
 frontend/tsconfig.tsbuildinfo
+node_modules
+test-results
+.env
