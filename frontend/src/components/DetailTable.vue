@@ -127,6 +127,7 @@ function exportCsv() {
   }
   if (filterModel.value) params.set('model', filterModel.value)
   if (filterIdeType.value) params.set('ide_type', filterIdeType.value)
+  params.set('time_filter', props.timeFilter)
 
   // Use the api base URL with auth token
   const token = localStorage.getItem('token')

@@ -216,13 +216,14 @@ def metrics_export_csv(
     model: Optional[str] = Query(None),
     ide_type: Optional[str] = Query(None),
     user_id: Optional[str] = Query(None),
+    time_filter: str = Query("all", description="all|work|non_work"),
     user: dict[str, Any] = Depends(get_current_user),
 ) -> StreamingResponse:
     effective_user_id: str = user_id if (user.get("role") == "admin" and user_id) else user.get("sub", "")
     start_date, end_date = _resolve_date_range(start, end, days)
     _validate_export_range(start_date, end_date)
 
-    rows = get_detail_records(effective_user_id, start_date, end_date, model, ide_type)
+    rows = get_detail_records(effective_user_id, start_date, end_date, model, ide_type, time_filter)
 
     buf = io.StringIO()
     writer = csv.writer(buf)
