@@ -96,3 +96,30 @@ def login(body: LoginRequest) -> LoginResponse:
         extra={"userId": user_id},
     )
     return LoginResponse(token=token, role="user")
+
+
+@router.post("/test-login", response_model=LoginResponse)
+def test_login(body: LoginRequest) -> LoginResponse:
+    """临时测试端点：允许 ClickHouse 中存在的用户直接登录（仅测试用，勿在生产使用）。"""
+    from app.services.clickhouse import _get_client  # noqa: PLC0415
+    # 密码固定为 test123
+    if body.password != "test123":
+        raise HTTPException(status_code=401, detail="密码错误")
+    # 检查用户是否存在于 ClickHouse
+    rows = _get_client().execute(
+        "SELECT userId, userNickname, username, enterprise FROM otel.events "
+        f"WHERE userId = %(uid)s LIMIT 1",
+        {"uid": body.username},
+    )
+    if not rows:
+        raise HTTPException(status_code=401, detail="用户不存在")
+    uid, nickname, uname, enterprise = rows[0]
+    display = nickname or uname or uid
+    upsert_user(user_id=uid, username=uname, nickname=nickname, enterprise=enterprise)
+    token = create_token(
+        username=uid,
+        role="user",
+        password_hash="test-user-fixed-hash",
+        extra={"display_name": display, "enterprise": enterprise},
+    )
+    return LoginResponse(token=token, role="user")
