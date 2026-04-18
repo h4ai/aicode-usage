@@ -62,13 +62,13 @@ def metrics_summary(
         )
 
     # month scope
-    monthly_token = get_monthly_token_usage(effective_user_id)
+    monthly_token = get_monthly_token_usage(effective_user_id, time_filter)
     active_days = get_monthly_active_days(effective_user_id)
     daily_avg = monthly_token // active_days if active_days else 0
 
     return MetricsSummaryResponse(
         total_token=monthly_token,
-        request_count=get_monthly_request_count(effective_user_id),
+        request_count=get_monthly_request_count(effective_user_id, time_filter),
         active_days=active_days,
         daily_avg_token=daily_avg,
         chat_count=get_chat_session_count(effective_user_id, "month", time_filter),
