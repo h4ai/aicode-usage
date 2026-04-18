@@ -3,7 +3,14 @@
 
 <template>
   <div class="admin-view">
-    <h1>管理员后台</h1>
+    <div class="page-header">
+      <h1>管理员后台</h1>
+      <el-radio-group v-model="tf.timeFilter" size="small" class="time-filter-bar">
+        <el-radio-button value="all">全天</el-radio-button>
+        <el-radio-button value="work">工作时段</el-radio-button>
+        <el-radio-button value="non_work">非工作时段</el-radio-button>
+      </el-radio-group>
+    </div>
     <el-tabs v-model="activeTab" @tab-click="onTabChange">
       <el-tab-pane label="配额级别" name="quota">
         <QuotaLevelManager />
