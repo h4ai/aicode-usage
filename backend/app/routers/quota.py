@@ -27,7 +27,7 @@ class QuotaBar(BaseModel):
 
 class QuotaUsageResponse(BaseModel):
     monthly_token: QuotaBar
-    monthly_chats: QuotaBar
+    daily_chats: QuotaBar
     daily_requests: QuotaBar
 
 
@@ -51,10 +51,10 @@ def _daily_color(pct: float) -> tuple[str, str]:
 
 def _chat_color(pct: float) -> tuple[str, str]:
     if pct >= 100:
-        return "red", "本月对话轮次已超出限额"
+        return "red", "今日对话轮次已超出限额"
     if pct >= 80:
-        return "orange", f"对话轮次已使用 {pct:.0f}%，即将达到上限"
-    return "green", "对话使用正常"
+        return "orange", f"今日对话轮次已使用 {pct:.0f}%，即将达到上限"
+    return "green", "今日对话使用正常"
 
 
 @router.get("/usage", response_model=QuotaUsageResponse)
@@ -70,12 +70,12 @@ def quota_usage(
     limits = get_quota_limits(level)
 
     monthly_limit = int(limits["monthly_token"])
-    chats_limit = int(limits.get("monthly_chats", 0))
+    chats_limit = int(limits.get("daily_chats", 0))
     daily_limit = int(limits["daily_requests"])
 
     # Query ClickHouse for current usage
     monthly_used = get_monthly_token_usage(effective_user_id)
-    chats_used = get_chat_session_count(effective_user_id, "month")
+    chats_used = get_chat_session_count(effective_user_id, "today")
     daily_used = get_daily_request_count(effective_user_id)
 
     monthly_pct = (monthly_used / monthly_limit * 100) if monthly_limit else 0
@@ -94,7 +94,7 @@ def quota_usage(
             color=m_color,
             message=m_msg,
         ),
-        monthly_chats=QuotaBar(
+        daily_chats=QuotaBar(
             used=chats_used,
             limit=chats_limit,
             percent=round(chats_pct, 1),
