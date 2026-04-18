@@ -64,7 +64,7 @@
       </el-table-column>
 
       <!-- 本月 Token -->
-      <el-table-column label="本月 Token" min-width="130" sortable :sort-method="(a: UserItem, b: UserItem) => a.monthly_token - b.monthly_token">
+      <el-table-column label="本月限额Token" min-width="130" sortable :sort-method="(a: UserItem, b: UserItem) => a.monthly_token - b.monthly_token">
         <template #default="{ row }">
           <span :class="'text-' + row.status_token">
             {{ formatWan(row.monthly_token) }}
@@ -82,7 +82,7 @@
       </el-table-column>
 
       <!-- 今日对话轮次 -->
-      <el-table-column label="今日对话" width="110" sortable :sort-method="(a: UserItem, b: UserItem) => a.today_chats - b.today_chats">
+      <el-table-column label="今日限额对话" width="110" sortable :sort-method="(a: UserItem, b: UserItem) => a.today_chats - b.today_chats">
         <template #default="{ row }">
           <span :class="'text-' + row.status_chat">{{ row.today_chats }}</span>
           <el-tag v-if="row.status_chat === 'red'" type="danger" size="small" style="margin-left:4px">超限</el-tag>
@@ -94,6 +94,18 @@
       <el-table-column label="本月对话" width="100" sortable :sort-method="(a: UserItem, b: UserItem) => a.monthly_chats - b.monthly_chats">
         <template #default="{ row }">
           <span>{{ row.monthly_chats }}</span>
+        </template>
+      </el-table-column>
+      <!-- 本月总Token（全天，不受时段过滤） -->
+      <el-table-column label="本月总Token" min-width="120" sortable :sort-method="(a: UserItem, b: UserItem) => a.monthly_token_all - b.monthly_token_all">
+        <template #default="{ row }">
+          <span>{{ formatWan(row.monthly_token_all ?? row.monthly_token) }}</span>
+        </template>
+      </el-table-column>
+      <!-- 今日总对话（全天，不受时段过滤） -->
+      <el-table-column label="今日总对话" width="110" sortable :sort-method="(a: UserItem, b: UserItem) => (a.today_chats_all ?? a.today_chats) - (b.today_chats_all ?? b.today_chats)">
+        <template #default="{ row }">
+          <span>{{ row.today_chats_all ?? row.today_chats }}</span>
         </template>
       </el-table-column>
     </el-table>
@@ -123,9 +135,11 @@ interface UserItem {
   display_name: string
   enterprise: string
   quota_level: string
-  monthly_token: number
+  monthly_token: number       // 限额统计用（受time_filter影响）
+  monthly_token_all: number   // 全天本月总量
   today_token: number
-  today_chats: number
+  today_chats: number         // 限额统计用（受time_filter影响）
+  today_chats_all: number     // 全天今日总对话
   monthly_chats: number
   daily_requests: number
   status_token: string

@@ -87,6 +87,8 @@ class UserItem(BaseModel):
     today_token: int = 0
     today_chats: int = 0
     monthly_chats: int = 0
+    monthly_token_all: int = 0   # 全天本月Token（不受time_filter影响）
+    today_chats_all: int = 0   # 全天今日对话（不受time_filter影响）
     daily_requests: int
     status_token: str = "gray"   # green/yellow/red/gray
     status_chat: str = "gray"
@@ -129,6 +131,9 @@ def list_users(
     today_chats = get_all_users_today_chats(time_filter)
     monthly_chats = get_all_users_monthly_chats()
     daily_reqs = get_all_users_daily_requests()
+    # 全天数据（不受 time_filter 影响，用于"总量"列展示）
+    monthly_tokens_all = get_all_users_monthly_tokens("all") if time_filter != "all" else monthly_tokens
+    today_chats_all = get_all_users_today_chats("all") if time_filter != "all" else today_chats
     quota_cache: dict[str, dict] = {}
     result: list[UserItem] = []
     for u in users:
@@ -149,6 +154,8 @@ def list_users(
             today_token=today_tokens.get(uid, 0),
             today_chats=tc,
             monthly_chats=monthly_chats.get(uid, 0),
+            monthly_token_all=monthly_tokens_all.get(uid, 0),
+            today_chats_all=today_chats_all.get(uid, 0),
             daily_requests=daily_reqs.get(uid, 0),
             status_token=_token_status(mt, int(limits.get("monthly_token", 0))),
             status_chat=_chat_status(tc, int(limits.get("daily_chats", 0))),
