@@ -230,7 +230,7 @@ async function changeLevel(userId: string, level: string) {
 async function exportCsv() {
   exporting.value = true
   try {
-    const { data } = await api.get('/admin/users/export-csv', { responseType: 'blob' })
+    const { data } = await api.get(`/admin/users/export-csv?time_filter=${timeFilter.value}`, { responseType: 'blob' })
     const url = URL.createObjectURL(data as Blob)
     const a = document.createElement('a')
     a.href = url

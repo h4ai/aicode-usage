@@ -352,21 +352,24 @@ import csv, io  # noqa: E402
 
 @router.get("/users/export-csv")
 def export_users_csv(
+    time_filter: str = Query("all", description="all|work|non_work"),
     _user: dict[str, Any] = Depends(require_admin),
 ) -> StreamingResponse:
     """Export user list as CSV."""
-    users_data = list_users(_user)
+    users_data = list_users(time_filter=time_filter, _user=_user)
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow([
         "userId", "显示名", "部门", "配额级别",
-        "本月Token", "今日Token", "今日对话轮次", "本月对话轮次",
+        "本月限额Token", "本月总Token(全天)", "今日Token",
+        "今日限额对话", "今日总对话(全天)", "本月对话轮次",
         "今日请求次数", "Token状态", "对话状态"
     ])
     for u in users_data:
         writer.writerow([
             u.user_id, u.display_name, u.enterprise, u.quota_level,
-            u.monthly_token, u.today_token, u.today_chats, u.monthly_chats,
+            u.monthly_token, u.monthly_token_all, u.today_token,
+            u.today_chats, u.today_chats_all, u.monthly_chats,
             u.daily_requests, u.status_token, u.status_chat
         ])
     output.seek(0)
