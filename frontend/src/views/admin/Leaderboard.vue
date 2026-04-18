@@ -23,7 +23,7 @@
             {{ (row.monthly_token / 1000).toFixed(1) }}K
           </template>
         </el-table-column>
-        <el-table-column prop="request_count" label="请求数" sortable width="100" />
+        <el-table-column prop="monthly_requests" label="月请求数" sortable width="110" />
       </el-table>
     </el-card>
   </div>
