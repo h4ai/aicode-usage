@@ -132,7 +132,7 @@ interface UserItem {
   status_chat: string
 }
 
-const props = withDefaults(defineProps<{ timeFilter?: string }>(), { timeFilter: 'all' })
+const timeFilter = ref('all')
 const users = ref<UserItem[]>([])
 const loading = ref(false)
 const exporting = ref(false)
@@ -187,7 +187,7 @@ const pagedUsers = computed(() => {
 async function fetchUsers() {
   loading.value = true
   try {
-    const { data } = await api.get<UserItem[]>(`/admin/users?time_filter=${props.timeFilter}`)
+    const { data } = await api.get<UserItem[]>(`/admin/users?time_filter=${timeFilter.value}`)
     // 默认按状态+月 Token 排序
     const order = { red: 0, yellow: 1, green: 2, gray: 3 }
     data.sort((a, b) => {
@@ -231,7 +231,6 @@ async function exportCsv() {
 }
 
 onMounted(fetchUsers)
-watch(() => props.timeFilter, fetchUsers)
 </script>
 
 <style scoped>

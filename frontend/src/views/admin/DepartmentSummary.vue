@@ -1,7 +1,17 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 <template>
   <div class="dept-summary">
-    <el-card header="部门用量汇总">
+    <el-card>
+      <template #header>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span>部门用量汇总</span>
+          <el-radio-group v-model="timeFilter" size="small" @change="fetchData">
+            <el-radio-button value="all">全天</el-radio-button>
+            <el-radio-button value="work">工作时段</el-radio-button>
+            <el-radio-button value="non_work">非工作时段</el-radio-button>
+          </el-radio-group>
+        </div>
+      </template>
       <el-table :data="rows" v-loading="loading" stripe>
         <el-table-column prop="enterprise" label="部门" />
         <el-table-column prop="user_count" label="用户数" sortable width="100" />
@@ -17,23 +27,30 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
-const props = withDefaults(defineProps<{ timeFilter?: string }>(), { timeFilter: 'all' })
-import { useAuthStore } from '@/stores/auth'
+import { ref, onMounted } from 'vue'
+import api from '@/api'
 
-const auth = useAuthStore()
-const rows = ref<any[]>([])
+interface DeptRow {
+  enterprise: string
+  user_count: number
+  monthly_token: number
+  monthly_requests: number
+  avg_token_per_user: number
+}
+
+const timeFilter = ref('all')
+const rows = ref<DeptRow[]>([])
 const loading = ref(false)
 
-onMounted(async () => {
+async function fetchData() {
   loading.value = true
   try {
-    const res = await fetch('/api/admin/departments', {
-      headers: { Authorization: `Bearer ${auth.token}` }
-    })
-    rows.value = await res.json()
+    const { data } = await api.get<DeptRow[]>(`/admin/departments?time_filter=${timeFilter.value}`)
+    rows.value = data
   } finally {
     loading.value = false
   }
-})
+}
+
+onMounted(fetchData)
 </script>

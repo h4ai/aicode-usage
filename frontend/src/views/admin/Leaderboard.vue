@@ -5,6 +5,11 @@
       <template #header>
         <div style="display:flex;justify-content:space-between;align-items:center">
           <span>用量排行榜</span>
+          <el-radio-group v-model="timeFilter" size="small" @change="fetchData" style="margin-right:8px">
+            <el-radio-button value="all">全天</el-radio-button>
+            <el-radio-button value="work">工作时段</el-radio-button>
+            <el-radio-button value="non_work">非工作时段</el-radio-button>
+          </el-radio-group>
           <el-select v-model="top" style="width:100px" @change="fetchData">
             <el-option label="Top 10" :value="10" />
             <el-option label="Top 20" :value="20" />
@@ -31,12 +36,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
-const props = withDefaults(defineProps<{ timeFilter?: string }>(), { timeFilter: 'all' })
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
 const rows = ref<any[]>([])
 const loading = ref(false)
+const timeFilter = ref('all')
 const top = ref(10)
 
 async function fetchData() {
@@ -52,5 +57,4 @@ async function fetchData() {
 }
 
 onMounted(fetchData)
-watch(() => props.timeFilter, fetchData)
 </script>
