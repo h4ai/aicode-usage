@@ -4,7 +4,7 @@
 <template>
   <div class="admin-view">
     <h1>管理员后台</h1>
-    <el-tabs v-model="activeTab">
+    <el-tabs v-model="activeTab" @tab-click="onTabChange">
       <el-tab-pane label="配额级别" name="quota">
         <QuotaLevelManager />
       </el-tab-pane>
@@ -33,4 +33,11 @@ import DepartmentSummary from '@/views/admin/DepartmentSummary.vue'
 import Leaderboard from '@/views/admin/Leaderboard.vue'
 
 const activeTab = ref('quota')
+
+function onTabChange() {
+  // Tab 切换后容器宽度可能还未更新，延迟触发 resize
+  setTimeout(() => {
+    window.dispatchEvent(new Event('resize'))
+  }, 50)
+}
 </script>

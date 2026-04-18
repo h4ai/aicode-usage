@@ -18,7 +18,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import { useAuthStore } from '@/stores/auth'
 
@@ -27,14 +27,20 @@ const chartEl = ref<HTMLElement>()
 const groupBy = ref('')
 let chart: echarts.ECharts | null = null
 
+function handleResize() {
+  chart?.resize()
+}
+
 async function fetchData() {
-  // 等 DOM 渲染完
+  // 销毁旧实例，避免 Tab 切换时容器宽度为 0 导致图表压缩
+  if (chart) {
+    chart.dispose()
+    chart = null
+  }
   await nextTick()
   if (!chartEl.value) return
 
-  if (!chart) {
-    chart = echarts.init(chartEl.value)
-  }
+  chart = echarts.init(chartEl.value)
 
   const url = groupBy.value
     ? `/api/admin/trend?group_by=${groupBy.value}`
@@ -70,5 +76,14 @@ async function fetchData() {
   }
 }
 
-onMounted(fetchData)
+onMounted(() => {
+  fetchData()
+  window.addEventListener('resize', handleResize)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+  chart?.dispose()
+  chart = null
+})
 </script>
