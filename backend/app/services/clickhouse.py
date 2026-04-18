@@ -14,6 +14,7 @@ from clickhouse_driver import Client as CHClient
 
 from app.config import get_config
 from app.data_schema import (
+    EVENT_CODE,
     ENTERPRISE,
     EVENT_DATE,
     IDE_TYPE,
@@ -405,3 +406,30 @@ def get_all_users_monthly_requests() -> dict[str, int]:
     result: dict[str, int] = {str(row[0]): int(row[1] or 0) for row in rows}
     _cache[cache_key] = result
     return result
+
+
+def get_chat_session_count(user_id: str, scope: str = "month") -> int:
+    """Return chat session (conversation) count for the user.
+    Uses chat_request_response event count as proxy since conversationId is empty.
+    """
+    cache_key = f"chat_sessions:{user_id}:{scope}"
+    if cache_key in _cache:
+        return int(_cache[cache_key])
+
+    client = _get_client()
+    if scope == "today":
+        result = client.execute(
+            f"SELECT count() FROM events WHERE {USER_ID} = %(uid)s"
+            f" AND {EVENT_DATE} = today() AND {EVENT_CODE} = 'chat_request_response'",
+            {"uid": user_id},
+        )
+    else:
+        result = client.execute(
+            f"SELECT count() FROM events WHERE {USER_ID} = %(uid)s"
+            f" AND toYYYYMM({EVENT_DATE}) = toYYYYMM(today())"
+            f" AND {EVENT_CODE} = 'chat_request_response'",
+            {"uid": user_id},
+        )
+    count = int(result[0][0]) if result else 0
+    _cache[cache_key] = count
+    return count

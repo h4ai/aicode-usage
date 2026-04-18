@@ -17,6 +17,7 @@ from pydantic import BaseModel
 
 from app.deps import get_current_user
 from app.services.clickhouse import (
+    get_chat_session_count,
     get_daily_request_count,
     get_daily_trend,
     get_detail_records,
@@ -40,6 +41,7 @@ class MetricsSummaryResponse(BaseModel):
     request_count: int
     active_days: Optional[int] = None
     daily_avg_token: Optional[int] = None
+    chat_count: Optional[int] = None
 
 
 @router.get("/summary", response_model=MetricsSummaryResponse)
@@ -55,6 +57,7 @@ def metrics_summary(
         return MetricsSummaryResponse(
             total_token=get_today_token_usage(effective_user_id),
             request_count=get_daily_request_count(effective_user_id),
+            chat_count=get_chat_session_count(effective_user_id, "today"),
         )
 
     # month scope
@@ -67,6 +70,7 @@ def metrics_summary(
         request_count=get_monthly_request_count(effective_user_id),
         active_days=active_days,
         daily_avg_token=daily_avg,
+        chat_count=get_chat_session_count(effective_user_id, "month"),
     )
 
 

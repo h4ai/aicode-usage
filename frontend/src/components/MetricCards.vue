@@ -26,6 +26,12 @@
           <div class="metric-label">请求次数</div>
         </div>
       </el-col>
+      <el-col :span="6">
+        <div class="metric-item">
+          <div class="metric-value">{{ metrics.chat_count ?? 0 }}</div>
+          <div class="metric-label">对话次数</div>
+        </div>
+      </el-col>
       <template v-if="scope === 'month'">
         <el-col :span="6">
           <div class="metric-item">
@@ -51,6 +57,7 @@ import api from '@/api'
 interface MetricsSummary {
   total_token: number
   request_count: number
+  chat_count: number | null
   active_days: number | null
   daily_avg_token: number | null
 }
@@ -60,6 +67,7 @@ const loading = ref(true)
 const metrics = ref<MetricsSummary>({
   total_token: 0,
   request_count: 0,
+  chat_count: null,
   active_days: null,
   daily_avg_token: null,
 })
