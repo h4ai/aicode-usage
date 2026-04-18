@@ -9,3 +9,12 @@ tsconfig.tsbuildinfo
 tsconfig.node.tsbuildinfo
 vite.config.d.ts
 vite.config.js
+# Test artifacts
+test-results/
+playwright-report/
+qa/playwright-report/
+qa/test-results/
+package-lock.json
+package.json
+playwright.config.ts
+frontend/tsconfig.tsbuildinfo
