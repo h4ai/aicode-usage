@@ -31,12 +31,31 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to) => {
+// 验证 token 是否仍然有效
+async function isTokenValid(token: string): Promise<boolean> {
+  try {
+    const res = await fetch('/api/metrics/summary', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    return res.status !== 401
+  } catch {
+    return false
+  }
+}
+
+router.beforeEach(async (to) => {
   const auth = useAuthStore()
 
   if (to.meta.public) return true
 
   if (!auth.token) {
+    return { name: 'login' }
+  }
+
+  // 验证 token 有效性
+  const valid = await isTokenValid(auth.token)
+  if (!valid) {
+    auth.logout()
     return { name: 'login' }
   }
 
