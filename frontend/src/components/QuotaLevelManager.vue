@@ -24,6 +24,22 @@
           </template>
         </template>
       </el-table-column>
+      <el-table-column label="月对话上限" min-width="150">
+        <template #default="{ row }">
+          <template v-if="editingLevel === row.level">
+            <el-input-number
+              v-model="editForm.monthly_chats"
+              :min="0"
+              :step="500"
+              controls-position="right"
+              style="width: 100%"
+            />
+          </template>
+          <template v-else>
+            {{ row.monthly_chats }}
+          </template>
+        </template>
+      </el-table-column>
       <el-table-column label="日请求上限" min-width="150">
         <template #default="{ row }">
           <template v-if="editingLevel === row.level">
@@ -68,6 +84,7 @@ import api from '@/api'
 interface QuotaLevel {
   level: string
   monthly_token: number
+  monthly_chats: number
   daily_requests: number
   user_count: number
 }
@@ -75,7 +92,7 @@ interface QuotaLevel {
 const levels = ref<QuotaLevel[]>([])
 const loading = ref(false)
 const editingLevel = ref<string | null>(null)
-const editForm = ref({ monthly_token: 0, daily_requests: 0 })
+const editForm = ref({ monthly_token: 0, monthly_chats: 0, daily_requests: 0 })
 
 function formatNumber(n: number): string {
   return n.toLocaleString()
@@ -95,6 +112,7 @@ function startEdit(row: QuotaLevel) {
   editingLevel.value = row.level
   editForm.value = {
     monthly_token: row.monthly_token,
+    monthly_chats: row.monthly_chats,
     daily_requests: row.daily_requests,
   }
 }

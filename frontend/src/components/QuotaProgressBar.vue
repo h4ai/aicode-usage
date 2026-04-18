@@ -24,6 +24,21 @@
         </el-tooltip>
       </div>
       <div class="quota-bar-row">
+        <span class="quota-label">月度对话</span>
+        <el-progress
+          :percentage="Math.min(quota.monthly_chats.percent, 100)"
+          :color="colorMap[quota.monthly_chats.color]"
+          :stroke-width="18"
+          :text-inside="true"
+          :format="() => quota!.monthly_chats.used + ' / ' + quota!.monthly_chats.limit + ' 轮'"
+        />
+        <el-tooltip :content="quota.monthly_chats.message" placement="top">
+          <el-tag :type="tagType(quota.monthly_chats.color)" size="small">
+            {{ quota.monthly_chats.message }}
+          </el-tag>
+        </el-tooltip>
+      </div>
+      <div class="quota-bar-row">
         <span class="quota-label">今日请求</span>
         <el-progress
           :percentage="Math.min(quota.daily_requests.percent, 100)"
@@ -56,6 +71,7 @@ interface QuotaBar {
 
 interface QuotaUsage {
   monthly_token: QuotaBar
+  monthly_chats: QuotaBar
   daily_requests: QuotaBar
 }
 

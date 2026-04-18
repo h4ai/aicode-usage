@@ -32,6 +32,7 @@ router = APIRouter(prefix="/api/admin")
 class QuotaLevelItem(BaseModel):
     level: str
     monthly_token: int
+    monthly_chats: int
     daily_requests: int
     user_count: int
 
@@ -46,6 +47,7 @@ def list_quota_levels(
 
 class QuotaLevelUpdate(BaseModel):
     monthly_token: int
+    monthly_chats: int
     daily_requests: int
 
 
@@ -57,7 +59,7 @@ def edit_quota_level(
 ) -> QuotaLevelItem:
     if level not in ("L1", "L2", "L3"):
         raise HTTPException(status_code=400, detail="仅支持 L1/L2/L3 级别")
-    row = update_quota_level(level, body.monthly_token, body.daily_requests)
+    row = update_quota_level(level, body.monthly_token, body.monthly_chats, body.daily_requests)
     if row is None:
         raise HTTPException(status_code=404, detail="级别不存在")
     # Fetch user count separately since UPDATE RETURNING doesn't include it
@@ -66,7 +68,7 @@ def edit_quota_level(
         if lv["level"] == level:
             return QuotaLevelItem(**lv)
     return QuotaLevelItem(level=level, monthly_token=body.monthly_token,
-                          daily_requests=body.daily_requests, user_count=0)
+                          monthly_chats=body.monthly_chats, daily_requests=body.daily_requests, user_count=0)
 
 
 # ---- User management --------------------------------------------------------

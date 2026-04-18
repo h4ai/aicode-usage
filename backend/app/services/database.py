@@ -29,12 +29,13 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS quota_levels (
     level            TEXT PRIMARY KEY,
     monthly_token    BIGINT NOT NULL DEFAULT 0,
+    monthly_chats    INT    NOT NULL DEFAULT 0,
     daily_requests   INT    NOT NULL DEFAULT 0
 );
 
-INSERT INTO quota_levels (level, monthly_token, daily_requests)
-VALUES ('L1', 25000000, 500), ('L2', 50000000, 1000), ('L3', 100000000, 2000)
-ON CONFLICT (level) DO UPDATE SET monthly_token = EXCLUDED.monthly_token;
+INSERT INTO quota_levels (level, monthly_token, monthly_chats, daily_requests)
+VALUES ('L1', 25000000, 3000, 500), ('L2', 50000000, 6000, 1000), ('L3', 100000000, 15000, 2000)
+ON CONFLICT (level) DO UPDATE SET monthly_token = EXCLUDED.monthly_token, monthly_chats = EXCLUDED.monthly_chats;
 
 CREATE TABLE IF NOT EXISTS email_alerts (
     user_id    TEXT NOT NULL,
@@ -80,7 +81,7 @@ def get_quota_limits(level: str) -> dict[str, Any]:
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
-                "SELECT monthly_token, daily_requests FROM quota_levels"
+                "SELECT monthly_token, monthly_chats, daily_requests FROM quota_levels"
                 " WHERE level = %s",
                 (level,),
             )
@@ -111,7 +112,7 @@ def get_all_quota_levels() -> list[dict[str, Any]]:
 
 
 def update_quota_level(
-    level: str, monthly_token: int, daily_requests: int,
+    level: str, monthly_token: int, monthly_chats: int, daily_requests: int,
 ) -> dict[str, Any] | None:
     """Update limits for an existing quota level. Returns updated row or None."""
     if level not in ("L1", "L2", "L3"):
@@ -122,11 +123,11 @@ def update_quota_level(
             cur.execute(
                 """
                 UPDATE quota_levels
-                SET monthly_token = %s, daily_requests = %s
+                SET monthly_token = %s, monthly_chats = %s, daily_requests = %s
                 WHERE level = %s
                 RETURNING *
                 """,
-                (monthly_token, daily_requests, level),
+                (monthly_token, monthly_chats, daily_requests, level),
             )
             row = cur.fetchone()
         conn.commit()
