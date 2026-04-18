@@ -98,11 +98,11 @@ def get_all_quota_levels() -> list[dict[str, Any]]:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
                 """
-                SELECT ql.level, ql.monthly_token, ql.daily_requests,
+                SELECT ql.level, ql.monthly_token, ql.monthly_chats, ql.daily_requests,
                        COUNT(u.user_id)::int AS user_count
                 FROM quota_levels ql
                 LEFT JOIN users u ON u.quota_level = ql.level
-                GROUP BY ql.level, ql.monthly_token, ql.daily_requests
+                GROUP BY ql.level, ql.monthly_token, ql.monthly_chats, ql.daily_requests
                 ORDER BY ql.level
                 """,
             )
