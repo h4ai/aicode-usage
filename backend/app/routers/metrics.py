@@ -173,7 +173,7 @@ def metrics_detail(
 ) -> list[DetailItem]:
     effective_user_id: str = user_id if (user.get("role") == "admin" and user_id) else user.get("sub", "")
     start_date, end_date = _resolve_date_range(start, end, days)
-    rows = get_detail_records(user_id, start_date, end_date, model, ide_type)
+    rows = get_detail_records(effective_user_id, start_date, end_date, model, ide_type)
 
     # Client-side sorting
     if sort_by and sort_by in {
