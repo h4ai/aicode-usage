@@ -12,6 +12,9 @@ from pydantic import BaseModel
 
 from app.deps import require_admin
 from app.services.clickhouse import (
+    get_all_users_monthly_chats,
+    get_all_users_today_chats,
+    get_all_users_today_tokens,
     get_all_users_daily_requests,
     get_all_users_monthly_requests,
     get_all_users_monthly_tokens,
@@ -22,6 +25,7 @@ from app.services.clickhouse import (
 from app.services.database import (
     get_all_quota_levels,
     get_all_users,
+    get_quota_limits,
     update_quota_level,
     update_user_level,
 )
@@ -80,7 +84,38 @@ class UserItem(BaseModel):
     enterprise: str
     quota_level: str
     monthly_token: int
+    today_token: int = 0
+    today_chats: int = 0
+    monthly_chats: int = 0
     daily_requests: int
+    status_token: str = "gray"   # green/yellow/red/gray
+    status_chat: str = "gray"
+
+
+def _token_status(used: int, limit: int) -> str:
+    if limit == 0:
+        return "gray"
+    pct = used / limit * 100
+    if pct >= 100:
+        return "red"
+    if pct >= 80:
+        return "yellow"
+    if pct > 0:
+        return "green"
+    return "gray"
+
+
+def _chat_status(used: int, limit: int) -> str:
+    if limit == 0:
+        return "gray"
+    pct = used / limit * 100
+    if pct >= 100:
+        return "red"
+    if pct >= 80:
+        return "yellow"
+    if pct > 0:
+        return "green"
+    return "gray"
 
 
 @router.get("/users", response_model=list[UserItem])
@@ -89,17 +124,33 @@ def list_users(
 ) -> list[UserItem]:
     users = get_all_users()
     monthly_tokens = get_all_users_monthly_tokens()
+    today_tokens = get_all_users_today_tokens()
+    today_chats = get_all_users_today_chats()
+    monthly_chats = get_all_users_monthly_chats()
     daily_reqs = get_all_users_daily_requests()
+    quota_cache: dict[str, dict] = {}
     result: list[UserItem] = []
     for u in users:
-        display_name = u.get("nickname") or u.get("username") or u["user_id"]
+        uid = u["user_id"]
+        display_name = u.get("nickname") or u.get("username") or uid
+        level = u.get("quota_level", "L1")
+        if level not in quota_cache:
+            quota_cache[level] = get_quota_limits(level)
+        limits = quota_cache[level]
+        mt = monthly_tokens.get(uid, 0)
+        tc = today_chats.get(uid, 0)
         result.append(UserItem(
-            user_id=u["user_id"],
+            user_id=uid,
             display_name=display_name,
             enterprise=u.get("enterprise") or "未知",
-            quota_level=u.get("quota_level", "L1"),
-            monthly_token=monthly_tokens.get(u["user_id"], 0),
-            daily_requests=daily_reqs.get(u["user_id"], 0),
+            quota_level=level,
+            monthly_token=mt,
+            today_token=today_tokens.get(uid, 0),
+            today_chats=tc,
+            monthly_chats=monthly_chats.get(uid, 0),
+            daily_requests=daily_reqs.get(uid, 0),
+            status_token=_token_status(mt, int(limits.get("monthly_token", 0))),
+            status_chat=_chat_status(tc, int(limits.get("daily_chats", 0))),
         ))
     return result
 
@@ -282,3 +333,36 @@ def list_leaderboard(
     """Return top N users by monthly token usage."""
     rows = get_leaderboard(top=top)
     return [LeaderboardItem(**row) for row in rows]
+
+
+# ---- CSV export -------------------------------------------------------------
+
+from fastapi.responses import StreamingResponse  # noqa: E402
+import csv, io  # noqa: E402
+
+
+@router.get("/users/export-csv")
+def export_users_csv(
+    _user: dict[str, Any] = Depends(require_admin),
+) -> StreamingResponse:
+    """Export user list as CSV."""
+    users_data = list_users(_user)
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "userId", "显示名", "部门", "配额级别",
+        "本月Token", "今日Token", "今日对话轮次", "本月对话轮次",
+        "今日请求次数", "Token状态", "对话状态"
+    ])
+    for u in users_data:
+        writer.writerow([
+            u.user_id, u.display_name, u.enterprise, u.quota_level,
+            u.monthly_token, u.today_token, u.today_chats, u.monthly_chats,
+            u.daily_requests, u.status_token, u.status_chat
+        ])
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv; charset=utf-8-sig",
+        headers={"Content-Disposition": "attachment; filename=users_export.csv"}
+    )

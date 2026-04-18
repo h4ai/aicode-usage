@@ -439,3 +439,56 @@ def get_chat_session_count(user_id: str, scope: str = "month") -> int:
     count = int(result[0][0]) if result else 0
     _cache[cache_key] = count
     return count
+
+
+def get_all_users_today_tokens() -> dict[str, int]:
+    """Return {user_id: today_token} for all users."""
+    from datetime import date
+    cache_key = f"all_today_token:{date.today().isoformat()}"
+    if cache_key in _cache:
+        return dict(_cache[cache_key])
+    client = _get_client()
+    rows = client.execute(
+        f"SELECT {USER_ID}, sum({TOTAL_TOKEN}) FROM events"
+        f" WHERE {EVENT_DATE} = today() GROUP BY {USER_ID}"
+    )
+    result = {str(r[0]): int(r[1] or 0) for r in rows if r[0]}
+    _cache[cache_key] = result
+    return result
+
+
+def get_all_users_today_chats() -> dict[str, int]:
+    """Return {user_id: today_chat_count} for all users."""
+    from datetime import date
+    cache_key = f"all_today_chat:{date.today().isoformat()}"
+    if cache_key in _cache:
+        return dict(_cache[cache_key])
+    client = _get_client()
+    rows = client.execute(
+        f"SELECT {USER_ID}, count() FROM events"
+        f" WHERE {EVENT_DATE} = today() AND {EVENT_CODE} = 'chat_request_response'"
+        f" GROUP BY {USER_ID}"
+    )
+    result = {str(r[0]): int(r[1] or 0) for r in rows if r[0]}
+    _cache[cache_key] = result
+    return result
+
+
+def get_all_users_monthly_chats() -> dict[str, int]:
+    """Return {user_id: monthly_chat_count} for all users in current month."""
+    from datetime import timezone
+    now = datetime.now(tz=timezone.utc)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).date().isoformat()
+    cache_key = f"all_monthly_chat:{month_start}"
+    if cache_key in _cache:
+        return dict(_cache[cache_key])
+    client = _get_client()
+    rows = client.execute(
+        f"SELECT {USER_ID}, count() FROM events"
+        f" WHERE toYYYYMM({EVENT_DATE}) = toYYYYMM(today())"
+        f" AND {EVENT_CODE} = 'chat_request_response'"
+        f" GROUP BY {USER_ID}"
+    )
+    result = {str(r[0]): int(r[1] or 0) for r in rows if r[0]}
+    _cache[cache_key] = result
+    return result
