@@ -12,16 +12,16 @@
         <WorkingHoursConfig />
       </el-tab-pane>
       <el-tab-pane label="用户管理" name="users">
-        <UserManager />
+        <UserManager :time-filter="tf.timeFilter" />
       </el-tab-pane>
       <el-tab-pane label="全局趋势" name="trend">
         <GlobalTrend />
       </el-tab-pane>
       <el-tab-pane label="部门汇总" name="dept">
-        <DepartmentSummary />
+        <DepartmentSummary :time-filter="tf.timeFilter" />
       </el-tab-pane>
       <el-tab-pane label="用量排行" name="leaderboard">
-        <Leaderboard />
+        <Leaderboard :time-filter="tf.timeFilter" />
       </el-tab-pane>
     </el-tabs>
   </div>
@@ -29,6 +29,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useTimeFilterStore } from '@/stores/timeFilter'
+const tf = useTimeFilterStore()
 import QuotaLevelManager from '@/components/QuotaLevelManager.vue'
 import WorkingHoursConfig from '@/components/WorkingHoursConfig.vue'
 import UserManager from '@/components/UserManager.vue'

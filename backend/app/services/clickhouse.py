@@ -242,11 +242,11 @@ def get_model_distribution(
     return result
 
 
-def get_all_users_monthly_tokens() -> dict[str, int]:
+def get_all_users_monthly_tokens(time_filter: str = "all") -> dict[str, int]:
     """Return {user_id: total_token} for all users in current month."""
     now = datetime.now(tz=timezone.utc)
     month_start = date(now.year, now.month, 1).isoformat()
-    cache_key = f"all_monthly_token:{month_start}"
+    cache_key = f"all_monthly_token:{month_start}:{time_filter}"
     if cache_key in _cache:
         return dict(_cache[cache_key])
 
@@ -254,7 +254,8 @@ def get_all_users_monthly_tokens() -> dict[str, int]:
     rows = client.execute(
         f"SELECT {USER_ID}, sum({TOTAL_TOKEN})"
         f" FROM events WHERE {EVENT_DATE} >= %(start)s"
-        f" GROUP BY {USER_ID}",
+        + _working_hours_filter(time_filter)
+        + f" GROUP BY {USER_ID}",
         {"start": month_start},
     )
     result = {str(row[0]): int(row[1] or 0) for row in rows}
@@ -434,11 +435,11 @@ def get_detail_records(
     return result
 
 
-def get_all_users_monthly_requests() -> dict[str, int]:
+def get_all_users_monthly_requests(time_filter: str = "all") -> dict[str, int]:
     """Return {user_id: request_count} for all users in current month."""
     now = datetime.now(tz=timezone.utc)
     month_start = date(now.year, now.month, 1).isoformat()
-    cache_key = f"all_monthly_requests:{month_start}"
+    cache_key = f"all_monthly_requests:{month_start}:{time_filter}"
     if cache_key in _cache:
         return dict(_cache[cache_key])
 
@@ -447,7 +448,8 @@ def get_all_users_monthly_requests() -> dict[str, int]:
         f"SELECT {USER_ID}, count() AS req_count"
         f" FROM events"
         f" WHERE {EVENT_DATE} >= %(start)s"
-        f" GROUP BY {USER_ID}",
+        + _working_hours_filter(time_filter)
+        + f" GROUP BY {USER_ID}",
         {"start": month_start},
     )
     result: dict[str, int] = {str(row[0]): int(row[1] or 0) for row in rows}

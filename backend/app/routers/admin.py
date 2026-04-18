@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
 from app.deps import require_admin
@@ -120,12 +120,13 @@ def _chat_status(used: int, limit: int) -> str:
 
 @router.get("/users", response_model=list[UserItem])
 def list_users(
+    time_filter: str = Query("all", description="all|work|non_work"),
     _user: dict[str, Any] = Depends(require_admin),
 ) -> list[UserItem]:
     users = get_all_users()
-    monthly_tokens = get_all_users_monthly_tokens()
-    today_tokens = get_all_users_today_tokens()
-    today_chats = get_all_users_today_chats()
+    monthly_tokens = get_all_users_monthly_tokens(time_filter)
+    today_tokens = get_all_users_today_tokens(time_filter)
+    today_chats = get_all_users_today_chats(time_filter)
     monthly_chats = get_all_users_monthly_chats()
     daily_reqs = get_all_users_daily_requests()
     quota_cache: dict[str, dict] = {}
@@ -190,7 +191,6 @@ def change_user_level(
 from datetime import date, datetime, timedelta, timezone  # noqa: E402
 from typing import Literal  # noqa: E402
 
-from fastapi import Query  # noqa: E402
 
 
 class TrendItem(BaseModel):
@@ -241,11 +241,11 @@ class DeptSummaryItem(BaseModel):
     avg_token_per_user: int
 
 
-def get_department_summary() -> list[dict[str, Any]]:
+def get_department_summary(time_filter: str = "all") -> list[dict[str, Any]]:
     """Compute department summary by merging PostgreSQL users with ClickHouse token data."""
     users = get_all_users()
-    monthly_tokens = get_all_users_monthly_tokens()
-    monthly_requests = get_all_users_monthly_requests()
+    monthly_tokens = get_all_users_monthly_tokens(time_filter)
+    monthly_requests = get_all_users_monthly_requests(time_filter)
 
     # Group users by enterprise
     dept_users: dict[str, list[str]] = {}
@@ -272,10 +272,11 @@ def get_department_summary() -> list[dict[str, Any]]:
 
 @router.get("/departments", response_model=list[DeptSummaryItem])
 def list_departments(
+    time_filter: str = Query("all", description="all|work|non_work"),
     _user: dict[str, Any] = Depends(require_admin),
 ) -> list[DeptSummaryItem]:
     """Return token usage summary grouped by enterprise/department."""
-    rows = get_department_summary()
+    rows = get_department_summary(time_filter)
     return [DeptSummaryItem(**row) for row in rows]
 
 
@@ -293,11 +294,11 @@ class LeaderboardItem(BaseModel):
     quota_usage_pct: float
 
 
-def get_leaderboard(top: int = 10) -> list[dict[str, Any]]:
+def get_leaderboard(top: int = 10, time_filter: str = "all") -> list[dict[str, Any]]:
     """Return top N users sorted by monthly token consumption."""
     users = get_all_users()
-    monthly_tokens = get_all_users_monthly_tokens()
-    monthly_reqs = get_all_users_monthly_requests()
+    monthly_tokens = get_all_users_monthly_tokens(time_filter)
+    monthly_reqs = get_all_users_monthly_requests(time_filter)
     quota_levels_data = get_all_quota_levels()
     level_limits = {lv["level"]: lv["monthly_token"] for lv in quota_levels_data}
 
@@ -328,10 +329,11 @@ def get_leaderboard(top: int = 10) -> list[dict[str, Any]]:
 @router.get("/leaderboard", response_model=list[LeaderboardItem])
 def list_leaderboard(
     top: int = Query(10, ge=1, le=100),
+    time_filter: str = Query("all", description="all|work|non_work"),
     _user: dict[str, Any] = Depends(require_admin),
 ) -> list[LeaderboardItem]:
     """Return top N users by monthly token usage."""
-    rows = get_leaderboard(top=top)
+    rows = get_leaderboard(top=top, time_filter=time_filter)
     return [LeaderboardItem(**row) for row in rows]
 
 

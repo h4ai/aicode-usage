@@ -17,7 +17,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+const props = withDefaults(defineProps<{ timeFilter?: string }>(), { timeFilter: 'all' })
+import { ref, onMounted, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
