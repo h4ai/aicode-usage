@@ -91,6 +91,10 @@ function renderChart() {
 }
 
 async function fetchData() {
+  if (chartInstance) {
+    chartInstance.dispose()
+    chartInstance = null
+  }
   loading.value = true
   try {
     const params: Record<string, string> = {}

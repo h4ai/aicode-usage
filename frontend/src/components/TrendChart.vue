@@ -92,6 +92,11 @@ function renderChart() {
 }
 
 async function fetchTrend() {
+  // 销毁旧实例，避免 v-if 切换后 DOM 引用失效
+  if (chartInstance) {
+    chartInstance.dispose()
+    chartInstance = null
+  }
   loading.value = true
   try {
     const params: Record<string, string> = {}
