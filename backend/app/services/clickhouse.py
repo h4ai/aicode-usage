@@ -124,6 +124,50 @@ def get_monthly_request_count(user_id: str, time_filter: str = "all") -> int:
     return count
 
 
+
+def get_weekly_token_usage(user_id: str, time_filter: str = "all") -> int:
+    """Return total tokens used by *user_id* in the current ISO week (Mon~today)."""
+    from datetime import date, timedelta
+    today = date.today()
+    week_start = (today - timedelta(days=today.weekday())).isoformat()  # 本周一
+    cache_key = f"weekly_token:{user_id}:{week_start}:{time_filter}"
+    if cache_key in _cache:
+        return int(_cache[cache_key])
+
+    client = _get_client()
+    result = client.execute(
+        f"SELECT sum({TOTAL_TOKEN}) FROM events"
+        f" WHERE {USER_ID} = %(uid)s"
+        f" AND {EVENT_DATE} >= %(start)s AND {EVENT_DATE} <= %(today)s"
+        + _working_hours_filter(time_filter),
+        {"uid": user_id, "start": week_start, "today": today.isoformat()},
+    )
+    total = int(result[0][0]) if result and result[0][0] else 0
+    _cache[cache_key] = total
+    return total
+
+
+def get_weekly_request_count(user_id: str, time_filter: str = "all") -> int:
+    """Return total request count by *user_id* in the current ISO week."""
+    from datetime import date, timedelta
+    today = date.today()
+    week_start = (today - timedelta(days=today.weekday())).isoformat()
+    cache_key = f"weekly_req:{user_id}:{week_start}:{time_filter}"
+    if cache_key in _cache:
+        return int(_cache[cache_key])
+
+    client = _get_client()
+    result = client.execute(
+        f"SELECT count() FROM events"
+        f" WHERE {USER_ID} = %(uid)s"
+        f" AND {EVENT_DATE} >= %(start)s AND {EVENT_DATE} <= %(today)s"
+        + _working_hours_filter(time_filter),
+        {"uid": user_id, "start": week_start, "today": today.isoformat()},
+    )
+    count = int(result[0][0]) if result and result[0][0] else 0
+    _cache[cache_key] = count
+    return count
+
 def get_monthly_active_days(user_id: str) -> int:
     """Return number of distinct days with activity in the current month."""
     now = datetime.now(tz=timezone.utc)
@@ -472,12 +516,22 @@ def get_chat_session_count(user_id: str, scope: str = "month", time_filter: str 
     if cache_key in _cache:
         return int(_cache[cache_key])
 
+    from datetime import date, timedelta
     client = _get_client()
     if scope == "today":
         result = client.execute(
             f"SELECT count() FROM events WHERE {USER_ID} = %(uid)s"
             f" AND {EVENT_DATE} = today() AND {EVENT_CODE} = 'chat_request_response'" + _working_hours_filter(time_filter),
             {"uid": user_id},
+        )
+    elif scope == "week":
+        today = date.today()
+        week_start = (today - timedelta(days=today.weekday())).isoformat()
+        result = client.execute(
+            f"SELECT count() FROM events WHERE {USER_ID} = %(uid)s"
+            f" AND {EVENT_DATE} >= %(start)s AND {EVENT_DATE} <= %(today)s"
+            f" AND {EVENT_CODE} = 'chat_request_response'" + _working_hours_filter(time_filter),
+            {"uid": user_id, "start": week_start, "today": today.isoformat()},
         )
     else:
         result = client.execute(

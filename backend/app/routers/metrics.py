@@ -26,6 +26,8 @@ from app.services.clickhouse import (
     get_monthly_request_count,
     get_monthly_token_usage,
     get_today_token_usage,
+    get_weekly_token_usage,
+    get_weekly_request_count,
 )
 
 router = APIRouter(prefix="/api/metrics")
@@ -33,6 +35,7 @@ router = APIRouter(prefix="/api/metrics")
 
 class Scope(str, Enum):
     month = "month"
+    week = "week"
     today = "today"
 
 
@@ -59,6 +62,18 @@ def metrics_summary(
             total_token=get_today_token_usage(effective_user_id, time_filter),
             request_count=get_daily_request_count(effective_user_id, time_filter),
             chat_count=get_chat_session_count(effective_user_id, "today", time_filter),
+        )
+
+    if scope == Scope.week:
+        weekly_token = get_weekly_token_usage(effective_user_id, time_filter)
+        weekly_req = get_weekly_request_count(effective_user_id, time_filter)
+        weekly_chat = get_chat_session_count(effective_user_id, "week", time_filter)
+        return MetricsSummaryResponse(
+            total_token=weekly_token,
+            request_count=weekly_req,
+            active_days=None,
+            daily_avg_token=weekly_token // 5 if weekly_token else 0,
+            chat_count=weekly_chat,
         )
 
     # month scope

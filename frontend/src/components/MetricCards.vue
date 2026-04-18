@@ -8,6 +8,7 @@
         <span>关键指标</span>
         <el-radio-group v-model="scope" size="small" @change="fetchMetrics">
           <el-radio-button value="month">本月</el-radio-button>
+          <el-radio-button value="week">本周</el-radio-button>
           <el-radio-button value="today">今日</el-radio-button>
         </el-radio-group>
       </div>
@@ -18,7 +19,7 @@
         <div class="metric-item">
           <div class="metric-value">{{ formatWan(metrics.total_token) }}</div>
           <div class="metric-label">
-            {{ scope === 'today' ? '今日 Token' : '累计 Token' }}
+            {{ scope === 'today' ? '今日 Token' : scope === 'week' ? '本周 Token' : '累计 Token' }}
             <el-tooltip content="本月所有 AI 请求消耗的 Token 总量（输入 + 输出）" placement="top">
               <el-icon class="tip-icon"><QuestionFilled /></el-icon>
             </el-tooltip>
@@ -42,12 +43,12 @@
           </div>
         </div>
       </el-col>
-      <template v-if="scope === 'month'">
+      <template v-if="scope === 'month' || scope === 'week'">
         <el-col :span="6">
           <div class="metric-item">
-            <div class="metric-value">{{ metrics.active_days ?? 0 }}</div>
+            <div class="metric-value">{{ scope === 'week' ? weekDaysElapsed : (metrics.active_days ?? 0) }}</div>
             <div class="metric-label">
-              活跃天数
+              {{ scope === 'week' ? '本周天数' : '活跃天数' }}
               <el-tooltip content="本月有 AI 使用记录的自然日天数" placement="top">
                 <el-icon class="tip-icon"><QuestionFilled /></el-icon>
               </el-tooltip>
@@ -71,7 +72,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 const props = withDefaults(defineProps<{ timeFilter?: string }>(), { timeFilter: 'all' })
 import { QuestionFilled } from '@element-plus/icons-vue'
 import api from '@/api'
@@ -83,7 +84,11 @@ interface MetricsSummary {
   daily_avg_token: number | null
 }
 
-const scope = ref<'month' | 'today'>('month')
+const scope = ref<'month' | 'week' | 'today'>('month')
+const weekDaysElapsed = computed(() => {
+  const d = new Date().getDay() // 0=Sun
+  return d === 0 ? 5 : Math.min(d, 5) // 周一=1 → 1天，周五=5 → 5天，周六/日=5
+})
 const loading = ref(true)
 const metrics = ref<MetricsSummary>({
   total_token: 0,
