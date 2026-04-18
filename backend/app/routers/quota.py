@@ -5,9 +5,9 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 
 from app.deps import get_current_user
@@ -50,12 +50,13 @@ def _daily_color(pct: float) -> tuple[str, str]:
 
 @router.get("/usage", response_model=QuotaUsageResponse)
 def quota_usage(
+    user_id: Optional[str] = Query(None),
     user: dict[str, Any] = Depends(get_current_user),
 ) -> QuotaUsageResponse:
-    user_id: str = user.get("userId") or user.get("sub", "")
+    effective_user_id: str = user_id if (user.get("role") == "admin" and user_id) else user.get("sub", "")
 
     # Get user's quota level from PostgreSQL
-    db_user = get_user(user_id)
+    db_user = get_user(effective_user_id)
     level = db_user["quota_level"] if db_user else "L1"
     limits = get_quota_limits(level)
 
@@ -63,8 +64,8 @@ def quota_usage(
     daily_limit = int(limits["daily_requests"])
 
     # Query ClickHouse for current usage
-    monthly_used = get_monthly_token_usage(user_id)
-    daily_used = get_daily_request_count(user_id)
+    monthly_used = get_monthly_token_usage(effective_user_id)
+    daily_used = get_daily_request_count(effective_user_id)
 
     monthly_pct = (monthly_used / monthly_limit * 100) if monthly_limit else 0
     daily_pct = (daily_used / daily_limit * 100) if daily_limit else 0

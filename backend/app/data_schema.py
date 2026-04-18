@@ -9,10 +9,11 @@ forms so that the rest of the application can import a single source of truth.
 """
 
 # -- User / identity ----------------------------------------------------------
-USER_ID = "user_id"
+# NOTE: ClickHouse otel.events table uses camelCase column names
+USER_ID = "userId"
 USERNAME = "username"
-USER_NICKNAME = "user_nickname"
-ENTERPRISE_ID = "enterprise_id"
+USER_NICKNAME = "userNickname"
+ENTERPRISE_ID = "enterpriseId"
 ENTERPRISE = "enterprise"
 
 # -- Timing / date ------------------------------------------------------------
@@ -21,24 +22,24 @@ TIMESTAMP = "timestamp"
 
 # -- Product / version --------------------------------------------------------
 PRODUCT = "product"
-EVENT_CODE = "event_code"
+EVENT_CODE = "eventCode"
 
 # -- Client environment -------------------------------------------------------
-IDE_TYPE = "ide_type"
-IDE_NAME = "ide_name"
-EXT_NAME = "ext_name"
+IDE_TYPE = "ideType"
+IDE_NAME = "ideName"
+EXT_NAME = "extName"
 
 # -- Model --------------------------------------------------------------------
-REQUEST_MODEL_NAME = "request_model_name"
-REQUEST_MODEL_ID = "request_model_id"
+REQUEST_MODEL_NAME = "requestModelName"
+REQUEST_MODEL_ID = "requestModelId"
 
 # -- Token metrics ------------------------------------------------------------
-INPUT_TOKEN = "input_token"
-OUTPUT_TOKEN = "output_token"
-TOTAL_TOKEN = "total_token"
+INPUT_TOKEN = "inputToken"
+OUTPUT_TOKEN = "outputToken"
+TOTAL_TOKEN = "totalToken"
 
 # -- Request success ----------------------------------------------------------
-IS_SUCCESSFUL = "is_successful"
+IS_SUCCESSFUL = "isSuccessful"
 
 # -- camelCase aliases (used in requirements / API responses) ------------------
 CAMEL_MAP: dict[str, str] = {

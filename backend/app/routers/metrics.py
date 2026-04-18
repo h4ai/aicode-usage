@@ -45,24 +45,26 @@ class MetricsSummaryResponse(BaseModel):
 @router.get("/summary", response_model=MetricsSummaryResponse)
 def metrics_summary(
     scope: Scope = Query(Scope.month),
+    user_id: Optional[str] = Query(None, description="Admin can specify any user_id"),
     user: dict[str, Any] = Depends(get_current_user),
 ) -> MetricsSummaryResponse:
-    user_id: str = user.get("userId") or user.get("sub", "")
+    # Admin可指定user_id；普通用户只能查自己
+    effective_user_id: str = user_id if (user.get("role") == "admin" and user_id) else (user.get("sub", ""))
 
     if scope == Scope.today:
         return MetricsSummaryResponse(
-            total_token=get_today_token_usage(user_id),
-            request_count=get_daily_request_count(user_id),
+            total_token=get_today_token_usage(effective_user_id),
+            request_count=get_daily_request_count(effective_user_id),
         )
 
     # month scope
-    monthly_token = get_monthly_token_usage(user_id)
-    active_days = get_monthly_active_days(user_id)
+    monthly_token = get_monthly_token_usage(effective_user_id)
+    active_days = get_monthly_active_days(effective_user_id)
     daily_avg = monthly_token // active_days if active_days else 0
 
     return MetricsSummaryResponse(
         total_token=monthly_token,
-        request_count=get_monthly_request_count(user_id),
+        request_count=get_monthly_request_count(effective_user_id),
         active_days=active_days,
         daily_avg_token=daily_avg,
     )
@@ -80,9 +82,10 @@ def metrics_trend(
     days: int = Query(7),
     start: Optional[str] = Query(None),
     end: Optional[str] = Query(None),
+    user_id: Optional[str] = Query(None),
     user: dict[str, Any] = Depends(get_current_user),
 ) -> list[TrendItem]:
-    user_id: str = user.get("userId") or user.get("sub", "")
+    effective_user_id: str = user_id if (user.get("role") == "admin" and user_id) else user.get("sub", "")
 
     if start and end:
         start_date = start
@@ -92,7 +95,7 @@ def metrics_trend(
         end_date = today.isoformat()
         start_date = (today - timedelta(days=days - 1)).isoformat()
 
-    rows = get_daily_trend(user_id, start_date, end_date)
+    rows = get_daily_trend(effective_user_id, start_date, end_date)
     return [TrendItem(**row) for row in rows]
 
 
@@ -107,11 +110,12 @@ def metrics_model_distribution(
     start: Optional[str] = Query(None),
     end: Optional[str] = Query(None),
     days: int = Query(30),
+    user_id: Optional[str] = Query(None),
     user: dict[str, Any] = Depends(get_current_user),
 ) -> list[ModelDistributionItem]:
-    user_id: str = user.get("userId") or user.get("sub", "")
+    effective_user_id: str = user_id if (user.get("role") == "admin" and user_id) else user.get("sub", "")
     start_date, end_date = _resolve_date_range(start, end, days)
-    rows = get_model_distribution(user_id, start_date, end_date)
+    rows = get_model_distribution(effective_user_id, start_date, end_date)
     grand_total = sum(r["total_token"] for r in rows)
     return [
         ModelDistributionItem(
@@ -164,9 +168,10 @@ def metrics_detail(
     ide_type: Optional[str] = Query(None),
     sort_by: Optional[str] = Query(None),
     sort_order: Optional[str] = Query("desc"),
+    user_id: Optional[str] = Query(None),
     user: dict[str, Any] = Depends(get_current_user),
 ) -> list[DetailItem]:
-    user_id: str = user.get("userId") or user.get("sub", "")
+    effective_user_id: str = user_id if (user.get("role") == "admin" and user_id) else user.get("sub", "")
     start_date, end_date = _resolve_date_range(start, end, days)
     rows = get_detail_records(user_id, start_date, end_date, model, ide_type)
 
@@ -187,13 +192,14 @@ def metrics_export_csv(
     days: int = Query(30),
     model: Optional[str] = Query(None),
     ide_type: Optional[str] = Query(None),
+    user_id: Optional[str] = Query(None),
     user: dict[str, Any] = Depends(get_current_user),
 ) -> StreamingResponse:
-    user_id: str = user.get("userId") or user.get("sub", "")
+    effective_user_id: str = user_id if (user.get("role") == "admin" and user_id) else user.get("sub", "")
     start_date, end_date = _resolve_date_range(start, end, days)
     _validate_export_range(start_date, end_date)
 
-    rows = get_detail_records(user_id, start_date, end_date, model, ide_type)
+    rows = get_detail_records(effective_user_id, start_date, end_date, model, ide_type)
 
     buf = io.StringIO()
     writer = csv.writer(buf)
