@@ -17,32 +17,62 @@
       <el-col :span="scope === 'today' ? 12 : 6">
         <div class="metric-item">
           <div class="metric-value">{{ formatWan(metrics.total_token) }}</div>
-          <div class="metric-label">{{ scope === 'today' ? '今日 Token' : '累计 Token' }}</div>
+          <div class="metric-label">
+            {{ scope === 'today' ? '今日 Token' : '累计 Token' }}
+            <el-tooltip content="本月所有 AI 请求消耗的 Token 总量（输入 + 输出）" placement="top">
+              <el-icon class="tip-icon"><QuestionFilled /></el-icon>
+            </el-tooltip>
+          </div>
         </div>
       </el-col>
       <el-col :span="scope === 'today' ? 12 : 6">
         <div class="metric-item">
           <div class="metric-value">{{ metrics.request_count }}</div>
-          <div class="metric-label">请求次数</div>
+          <div class="metric-label">
+            请求次数
+            <el-tooltip content="所有类型 AI 请求的总次数，包含代码补全、聊天对话、内联建议等全部交互" placement="top">
+              <el-icon class="tip-icon"><QuestionFilled /></el-icon>
+            </el-tooltip>
+          </div>
         </div>
       </el-col>
       <el-col :span="6">
         <div class="metric-item">
           <div class="metric-value">{{ metrics.chat_count ?? 0 }}</div>
-          <div class="metric-label">对话次数</div>
+          <div class="metric-label">
+            对话轮次
+            <el-tooltip placement="top">
+              <template #content>
+                聊天对话的响应次数（一问一答算 1 轮）<br/>
+                不含代码补全等非对话请求<br/>
+                <span style="color:#faad14">注：当前为轮次统计，非独立会话数</span>
+              </template>
+              <el-icon class="tip-icon"><QuestionFilled /></el-icon>
+            </el-tooltip>
+          </div>
         </div>
       </el-col>
       <template v-if="scope === 'month'">
         <el-col :span="6">
           <div class="metric-item">
             <div class="metric-value">{{ metrics.active_days ?? 0 }}</div>
-            <div class="metric-label">活跃天数</div>
+            <div class="metric-label">
+              活跃天数
+              <el-tooltip content="本月有 AI 使用记录的自然日天数" placement="top">
+                <el-icon class="tip-icon"><QuestionFilled /></el-icon>
+              </el-tooltip>
+            </div>
           </div>
         </el-col>
         <el-col :span="6">
           <div class="metric-item">
             <div class="metric-value">{{ formatWan(metrics.daily_avg_token ?? 0) }}</div>
-            <div class="metric-label">日均 Token</div>
+            <div class="metric-label">
+              日均 Token
+              <el-tooltip content="累计 Token ÷ 活跃天数，反映每个活跃日的平均消耗量" placement="top">
+                <el-icon class="tip-icon"><QuestionFilled /></el-icon>
+              </el-tooltip>
+            </div>
           </div>
         </el-col>
       </template>
@@ -52,6 +82,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { QuestionFilled } from '@element-plus/icons-vue'
 import api from '@/api'
 
 interface MetricsSummary {
@@ -120,5 +151,20 @@ onMounted(fetchMetrics)
   font-size: 13px;
   color: #909399;
   margin-top: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+}
+
+.tip-icon {
+  font-size: 13px;
+  color: #c0c4cc;
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.tip-icon:hover {
+  color: #409eff;
 }
 </style>
