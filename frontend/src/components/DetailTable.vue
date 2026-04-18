@@ -63,7 +63,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+const props = withDefaults(defineProps<{ timeFilter?: string }>(), { timeFilter: 'all' })
+import { ref, onMounted, watch } from 'vue'
 import api from '@/api'
 
 interface DetailItem {
@@ -154,6 +155,7 @@ function exportCsv() {
 }
 
 onMounted(fetchDetail)
+watch(() => props.timeFilter, fetchDetail)
 </script>
 
 <style scoped>

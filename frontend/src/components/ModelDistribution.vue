@@ -31,7 +31,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick, onBeforeUnmount } from 'vue'
+const props = withDefaults(defineProps<{ timeFilter?: string }>(), { timeFilter: 'all' })
+import { ref, onMounted, nextTick, onBeforeUnmount, watch } from 'vue'
 import * as echarts from 'echarts'
 import api from '@/api'
 
@@ -120,6 +121,7 @@ function onRangeChange() {
 }
 
 onMounted(fetchData)
+watch(() => props.timeFilter, fetchData)
 
 onBeforeUnmount(() => {
   chartInstance?.dispose()

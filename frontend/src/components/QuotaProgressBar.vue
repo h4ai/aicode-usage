@@ -48,6 +48,7 @@
 </template>
 
 <script setup lang="ts">
+const props = withDefaults(defineProps<{ timeFilter?: string }>(), { timeFilter: 'all' })
 import { ref, onMounted } from 'vue'
 import api from '@/api'
 
@@ -90,7 +91,7 @@ function formatWan(n: number): string {
 
 onMounted(async () => {
   try {
-    const { data } = await api.get<QuotaUsage>('/quota/usage')
+    const { data } = await api.get<QuotaUsage>(`/quota/usage?time_filter=${props.timeFilter}`)
     quota.value = data
   } finally {
     loading.value = false

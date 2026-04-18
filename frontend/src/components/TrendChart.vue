@@ -35,6 +35,7 @@
 </template>
 
 <script setup lang="ts">
+const props = withDefaults(defineProps<{ timeFilter?: string }>(), { timeFilter: 'all' })
 import { ref, onMounted, watch, nextTick, onBeforeUnmount } from 'vue'
 import * as echarts from 'echarts'
 import api from '@/api'
@@ -99,7 +100,7 @@ async function fetchTrend() {
   }
   loading.value = true
   try {
-    const params: Record<string, string> = {}
+    const params: Record<string, string> = { time_filter: props.timeFilter }
     if (rangeMode.value === 'custom' && customRange.value) {
       params.start = customRange.value[0]
       params.end = customRange.value[1]
@@ -126,6 +127,7 @@ watch(chartType, () => {
 })
 
 onMounted(fetchTrend)
+watch(() => props.timeFilter, fetchTrend)
 
 onBeforeUnmount(() => {
   chartInstance?.dispose()

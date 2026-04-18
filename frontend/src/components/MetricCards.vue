@@ -71,7 +71,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+const props = withDefaults(defineProps<{ timeFilter?: string }>(), { timeFilter: 'all' })
+import { ref, onMounted, watch } from 'vue'
 import { QuestionFilled } from '@element-plus/icons-vue'
 import api from '@/api'
 
@@ -102,7 +103,7 @@ async function fetchMetrics() {
   loading.value = true
   try {
     const { data } = await api.get<MetricsSummary>('/metrics/summary', {
-      params: { scope: scope.value },
+      params: { scope: scope.value, time_filter: props.timeFilter },
     })
     metrics.value = data
   } finally {
@@ -111,6 +112,7 @@ async function fetchMetrics() {
 }
 
 onMounted(fetchMetrics)
+watch(() => props.timeFilter, fetchMetrics)
 </script>
 
 <style scoped>

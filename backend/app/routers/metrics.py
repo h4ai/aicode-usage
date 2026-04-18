@@ -47,6 +47,7 @@ class MetricsSummaryResponse(BaseModel):
 @router.get("/summary", response_model=MetricsSummaryResponse)
 def metrics_summary(
     scope: Scope = Query(Scope.month),
+    time_filter: str = Query("all", description="all|work|non_work"),
     user_id: Optional[str] = Query(None, description="Admin can specify any user_id"),
     user: dict[str, Any] = Depends(get_current_user),
 ) -> MetricsSummaryResponse:
@@ -55,9 +56,9 @@ def metrics_summary(
 
     if scope == Scope.today:
         return MetricsSummaryResponse(
-            total_token=get_today_token_usage(effective_user_id),
-            request_count=get_daily_request_count(effective_user_id),
-            chat_count=get_chat_session_count(effective_user_id, "today"),
+            total_token=get_today_token_usage(effective_user_id, time_filter),
+            request_count=get_daily_request_count(effective_user_id, time_filter),
+            chat_count=get_chat_session_count(effective_user_id, "today", time_filter),
         )
 
     # month scope
@@ -70,7 +71,7 @@ def metrics_summary(
         request_count=get_monthly_request_count(effective_user_id),
         active_days=active_days,
         daily_avg_token=daily_avg,
-        chat_count=get_chat_session_count(effective_user_id, "month"),
+        chat_count=get_chat_session_count(effective_user_id, "month", time_filter),
     )
 
 
@@ -86,6 +87,7 @@ def metrics_trend(
     days: int = Query(7),
     start: Optional[str] = Query(None),
     end: Optional[str] = Query(None),
+    time_filter: str = Query("all", description="all|work|non_work"),
     user_id: Optional[str] = Query(None),
     user: dict[str, Any] = Depends(get_current_user),
 ) -> list[TrendItem]:
@@ -99,7 +101,7 @@ def metrics_trend(
         end_date = today.isoformat()
         start_date = (today - timedelta(days=days - 1)).isoformat()
 
-    rows = get_daily_trend(effective_user_id, start_date, end_date)
+    rows = get_daily_trend(effective_user_id, start_date, end_date, time_filter)
     return [TrendItem(**row) for row in rows]
 
 
