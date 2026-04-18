@@ -8,6 +8,9 @@
       <el-tab-pane label="配额级别" name="quota">
         <QuotaLevelManager />
       </el-tab-pane>
+      <el-tab-pane label="工作时段" name="workhours">
+        <WorkingHoursConfig />
+      </el-tab-pane>
       <el-tab-pane label="用户管理" name="users">
         <UserManager />
       </el-tab-pane>
@@ -27,6 +30,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import QuotaLevelManager from '@/components/QuotaLevelManager.vue'
+import WorkingHoursConfig from '@/components/WorkingHoursConfig.vue'
 import UserManager from '@/components/UserManager.vue'
 import GlobalTrend from '@/views/admin/GlobalTrend.vue'
 import DepartmentSummary from '@/views/admin/DepartmentSummary.vue'

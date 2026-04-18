@@ -24,7 +24,11 @@
         </el-tooltip>
       </div>
       <div class="quota-bar-row">
-        <span class="quota-label">今日对话</span>
+        <span class="quota-label">今日对话
+        <el-tooltip content="仅统计工作时段内的对话轮次（时段由管理员配置）" placement="top">
+          <el-icon style="font-size:12px;color:#c0c4cc;margin-left:2px;vertical-align:middle"><QuestionFilled /></el-icon>
+        </el-tooltip>
+      </span>
         <el-progress
           :percentage="Math.min(quota.daily_chats.percent, 100)"
           :color="colorMap[quota.daily_chats.color]"

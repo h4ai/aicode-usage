@@ -366,3 +366,56 @@ def export_users_csv(
         media_type="text/csv; charset=utf-8-sig",
         headers={"Content-Disposition": "attachment; filename=users_export.csv"}
     )
+
+
+# ---- Working Hours Config ---------------------------------------------------
+
+class WorkingHoursConfig(BaseModel):
+    enabled: bool
+    start: str   # "HH:MM"
+    end: str     # "HH:MM"
+
+
+@router.get("/working-hours", response_model=WorkingHoursConfig)
+def get_working_hours(
+    _user: dict[str, Any] = Depends(require_admin),
+) -> WorkingHoursConfig:
+    """Return current working hours configuration."""
+    from app.config import get_config
+    cfg = get_config().get("working_hours", {})
+    return WorkingHoursConfig(
+        enabled=cfg.get("enabled", False),
+        start=cfg.get("start", "08:30"),
+        end=cfg.get("end", "18:00"),
+    )
+
+
+@router.put("/working-hours", response_model=WorkingHoursConfig)
+def update_working_hours(
+    body: WorkingHoursConfig,
+    _user: dict[str, Any] = Depends(require_admin),
+) -> WorkingHoursConfig:
+    """Update working hours config (writes back to config.yaml)."""
+    import re, yaml
+    from pathlib import Path
+    from app.config import load_config
+
+    # validate HH:MM format
+    pat = re.compile(r"^\d{2}:\d{2}$")
+    if not pat.match(body.start) or not pat.match(body.end):
+        raise HTTPException(status_code=400, detail="时间格式必须为 HH:MM")
+
+    config_path = Path(__file__).resolve().parent.parent.parent / "config.yaml"
+    with open(config_path) as f:
+        cfg = yaml.safe_load(f) or {}
+
+    cfg["working_hours"] = {
+        "enabled": body.enabled,
+        "start": body.start,
+        "end": body.end,
+    }
+    with open(config_path, "w") as f:
+        yaml.dump(cfg, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+
+    load_config()  # hot-reload
+    return body

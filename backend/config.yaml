@@ -28,3 +28,8 @@ smtp:
   password: ""
   from_name: "AI 使用助手"
   from_email: ""
+
+working_hours:
+  start: "08:30"   # 工作时段开始（24h格式，服务器本地时区）
+  end: "18:00"     # 工作时段结束
+  enabled: true    # false = 统计全天（00:00~23:59），不限时段

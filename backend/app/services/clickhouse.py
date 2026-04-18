@@ -31,6 +31,28 @@ logger = logging.getLogger(__name__)
 _cache: TTLCache[str, Any] = TTLCache(maxsize=1024, ttl=300)
 
 
+
+def _working_hours_filter() -> str:
+    """Return ClickHouse WHERE clause fragment for working hours filter.
+    Returns empty string when disabled (full day)."""
+    cfg = get_config().get("working_hours", {})
+    if not cfg.get("enabled", False):
+        return ""
+    start = cfg.get("start", "08:30")
+    end = cfg.get("end", "18:00")
+    # convert "HH:MM" to seconds since midnight for ClickHouse
+    sh, sm = map(int, start.split(":"))
+    eh, em = map(int, end.split(":"))
+    start_sec = sh * 3600 + sm * 60
+    end_sec = eh * 3600 + em * 60
+    return (
+        f" AND toHour(toDateTime(timestamp / 1000, 'Asia/Shanghai')) * 3600 +"
+        f" toMinute(toDateTime(timestamp / 1000, 'Asia/Shanghai')) * 60 >= {start_sec}"
+        f" AND toHour(toDateTime(timestamp / 1000, 'Asia/Shanghai')) * 3600 +"
+        f" toMinute(toDateTime(timestamp / 1000, 'Asia/Shanghai')) * 60 < {end_sec}"
+    )
+
+
 def _get_client() -> CHClient:
     cfg = get_config().get("clickhouse", {})
     return CHClient(
@@ -426,7 +448,7 @@ def get_chat_session_count(user_id: str, scope: str = "month") -> int:
     if scope == "today":
         result = client.execute(
             f"SELECT count() FROM events WHERE {USER_ID} = %(uid)s"
-            f" AND {EVENT_DATE} = today() AND {EVENT_CODE} = 'chat_request_response'",
+            f" AND {EVENT_DATE} = today() AND {EVENT_CODE} = 'chat_request_response'" + _working_hours_filter(),
             {"uid": user_id},
         )
     else:
@@ -450,7 +472,7 @@ def get_all_users_today_tokens() -> dict[str, int]:
     client = _get_client()
     rows = client.execute(
         f"SELECT {USER_ID}, sum({TOTAL_TOKEN}) FROM events"
-        f" WHERE {EVENT_DATE} = today() GROUP BY {USER_ID}"
+        f" WHERE {EVENT_DATE} = today()" + _working_hours_filter() + f" GROUP BY {USER_ID}"
     )
     result = {str(r[0]): int(r[1] or 0) for r in rows if r[0]}
     _cache[cache_key] = result
@@ -467,7 +489,7 @@ def get_all_users_today_chats() -> dict[str, int]:
     rows = client.execute(
         f"SELECT {USER_ID}, count() FROM events"
         f" WHERE {EVENT_DATE} = today() AND {EVENT_CODE} = 'chat_request_response'"
-        f" GROUP BY {USER_ID}"
+        + _working_hours_filter() + f" GROUP BY {USER_ID}"
     )
     result = {str(r[0]): int(r[1] or 0) for r in rows if r[0]}
     _cache[cache_key] = result
