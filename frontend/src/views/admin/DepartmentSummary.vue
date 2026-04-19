@@ -4,7 +4,7 @@
     <el-card>
       <template #header>
         <div style="display:flex;justify-content:space-between;align-items:center">
-          <span>部门用量汇总</span>
+          <span>分组用量汇总</span>
           <template v-if="workingHoursEnabled">
             <el-radio-group v-model="timeFilter" data-testid="dept-time-filter" size="small" @change="fetchData">
             <el-radio-button value="all">全天</el-radio-button>
@@ -16,7 +16,7 @@
         </div>
       </template>
       <el-table :data="rows" v-loading="loading" stripe>
-        <el-table-column prop="enterprise" label="部门" />
+        <el-table-column prop="enterprise" label="分组" />
         <el-table-column prop="user_count" label="用户数" sortable width="100" />
         <el-table-column label="月 Token" sortable prop="monthly_token">
           <template #default="{ row }">

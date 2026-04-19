@@ -21,7 +21,7 @@
             <el-select v-model="groupBy" style="width:140px" size="small" @change="fetchData">
               <el-option label="按总量" value="" />
               <el-option label="按模型" value="model" />
-              <el-option label="按部门" value="department" />
+              <el-option label="按分组" value="department" />
             </el-select>
           </div>
         </div>

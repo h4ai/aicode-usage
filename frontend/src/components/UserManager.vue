@@ -9,7 +9,7 @@
         <div style="display:flex;gap:8px;align-items:center">
           <el-input
             v-model="searchText"
-            placeholder="搜索姓名/部门"
+            placeholder="搜索姓名/分组"
             clearable
             size="small"
             style="width:160px"
@@ -46,7 +46,7 @@
 
       <el-table-column prop="display_name" label="姓名" min-width="90" />
       <el-table-column prop="user_id" label="userId" min-width="100" />
-      <el-table-column prop="enterprise" label="部门" min-width="90" />
+      <el-table-column prop="enterprise" label="分组" min-width="90" />
 
       <!-- 配额级别 -->
       <el-table-column label="级别" width="110" align="center">

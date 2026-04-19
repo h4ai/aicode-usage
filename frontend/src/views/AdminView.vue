@@ -11,7 +11,7 @@
       <el-tab-pane label="全局趋势" name="trend">
         <GlobalTrend />
       </el-tab-pane>
-      <el-tab-pane label="部门汇总" name="dept">
+      <el-tab-pane label="分组汇总" name="dept">
         <DepartmentSummary />
       </el-tab-pane>
       <el-tab-pane label="用量排行" name="leaderboard">

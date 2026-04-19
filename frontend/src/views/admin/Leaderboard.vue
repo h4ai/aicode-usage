@@ -27,7 +27,7 @@
           <template #default="{ $index }">{{ $index + 1 }}</template>
         </el-table-column>
         <el-table-column prop="display_name" label="姓名" />
-        <el-table-column prop="enterprise" label="部门" />
+        <el-table-column prop="enterprise" label="分组" />
         <el-table-column label="月 Token" prop="monthly_token" sortable>
           <template #default="{ row }">
             {{ (row.monthly_token / 1000).toFixed(1) }}K
