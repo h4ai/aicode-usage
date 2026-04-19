@@ -3,10 +3,10 @@
 
 <template>
   <div class="dashboard-view">
-    <NavBar />
     <div class="page-header">
       <h1 class="page-title">个人看板</h1>
-      <div class="time-filter-wrapper">
+      <div class="header-right">
+        <div class="time-filter-wrapper">
         <el-tooltip placement="bottom-end" effect="light" :width="320">
           <template #content>
             <div class="filter-tooltip">
@@ -27,6 +27,21 @@
           <el-radio-button value="work" data-testid="time-filter-work">工作时段</el-radio-button>
           <el-radio-button value="non_work" data-testid="time-filter-non-work">非工作时段</el-radio-button>
         </el-radio-group>
+        </div>
+        <div class="header-divider"></div>
+        <el-dropdown trigger="click" @command="handleLogout">
+          <span class="user-badge">
+            <el-avatar :size="26" :style="{ background: '#409eff', fontSize: '12px' }">{{ avatarText }}</el-avatar>
+            <span class="username-text">{{ auth.username || '用户' }}</span>
+            <el-icon style="font-size:11px;color:#909399"><ArrowDown /></el-icon>
+          </span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item disabled style="font-size:12px;color:#999">已登录：{{ auth.username || '—' }}</el-dropdown-item>
+              <el-dropdown-item divided command="logout"><el-icon><SwitchButton /></el-icon> 退出登录</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </div>
     </div>
     <QuotaProgressBar :time-filter="tf.timeFilter" />
@@ -38,12 +53,19 @@
 </template>
 
 <script setup lang="ts">
-import NavBar from '@/components/NavBar.vue'
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useTimeFilterStore } from '@/stores/timeFilter'
-import { QuestionFilled } from '@element-plus/icons-vue'
+import { useAuthStore } from '@/stores/auth'
+import { QuestionFilled, ArrowDown, SwitchButton } from '@element-plus/icons-vue'
 import api from '@/api'
 const tf = useTimeFilterStore()
+const auth = useAuthStore()
+const router = useRouter()
+const avatarText = computed(() => (auth.username || '').slice(-2) || 'U')
+function handleLogout(cmd: string) {
+  if (cmd === 'logout') { auth.logout(); router.push('/login') }
+}
 
 const workStart = ref('08:30')
 const workEnd = ref('18:00')
@@ -77,6 +99,42 @@ import DetailTable from '@/components/DetailTable.vue'
   margin-bottom: 16px;
 }
 .page-title { margin: 0; font-size: 22px; font-weight: 700; color: #303133; }
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-divider {
+  width: 1px;
+  height: 24px;
+  background: #dcdfe6;
+  flex-shrink: 0;
+}
+
+.user-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #303133;
+  white-space: nowrap;
+}
+
+.user-badge:hover {
+  background: #f5f7fa;
+}
+
+.username-text {
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .time-filter-wrapper {
   display: flex;
