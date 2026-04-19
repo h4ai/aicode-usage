@@ -1,36 +1,28 @@
-# SPDX-License-Identifier: Apache-2.0
-# SPDX-FileCopyrightText: 2026 SubLang International <https://sublang.ai>
-
 admins:
-  - username: admin
-    password_hash: "$2b$12$6o8L9wXKEWXino6JEx55/.QvqAkWhTYnnztELmM/9eV53Qls8XEBi"
-
+- username: admin
+  password_hash: $2b$12$6o8L9wXKEWXino6JEx55/.QvqAkWhTYnnztELmM/9eV53Qls8XEBi
 ldap:
-  server: "ldap://localhost:389"
-  base_dn: "dc=company,dc=com"
-  user_attr: "sAMAccountName"
-  mail_attr: "mail"
-
+  server: ldap://localhost:389
+  base_dn: dc=company,dc=com
+  user_attr: sAMAccountName
+  mail_attr: mail
 clickhouse:
   host: host.docker.internal
   port: 19000
   database: otel
   user: default
-  password: ""
-
+  password: ''
 database:
-  url: "postgresql://postgres:postgres@postgres:5432/ai_usage"
-
+  url: postgresql://postgres:postgres@postgres:5432/ai_usage
 smtp:
-  host: ""
+  host: ''
   port: 587
-  username: ""
-  password: ""
-  from_name: "AI 使用助手"
-  from_email: ""
-
+  username: ''
+  password: ''
+  from_name: AI 使用助手
+  from_email: ''
 working_hours:
-  start: "08:30"   # 工作时段开始（24h格式，服务器本地时区）
-  end: "18:00"     # 工作时段结束
-  enabled: true    # false = 统计全天（00:00~23:59），不限时段
-  # 工作时段 = 周一至周五 start~end，周六日全天视为非工作时段
+  enabled: true
+  start: 08:00
+  end: '17:00'
+  weekday_only: true
