@@ -7,6 +7,7 @@ AC-2: 邮件收件人从 AD mail 属性；取不到则跳过记录日志
 AC-3: SMTP 失败不标记已发送，下次重试
 AC-4: SMTP 配置从 config.yaml 热加载
 """
+
 from __future__ import annotations
 from unittest.mock import MagicMock, patch, call
 import pytest
@@ -16,10 +17,13 @@ import pytest
 # AC-1: 80% threshold detection and one-per-month guard
 # ---------------------------------------------------------------------------
 
+
 def test_ac1_check_function_exists():
     """AC-1: check_quota_alerts function exists and is callable."""
     from app.services.notification import check_quota_alerts
+
     assert callable(check_quota_alerts)
+
 
 def test_ac1_sends_email_when_above_80_pct(client):
     """AC-1: Email is sent when monthly token usage >= 80% of limit."""
@@ -39,6 +43,7 @@ def test_ac1_sends_email_when_above_80_pct(client):
     mock_send.assert_called_once()
     mock_mark.assert_called_once()
 
+
 def test_ac1_no_email_when_below_80_pct(client):
     """AC-1: No email when usage < 80%."""
     from app.services.notification import check_quota_alerts
@@ -54,6 +59,7 @@ def test_ac1_no_email_when_below_80_pct(client):
                         check_quota_alerts()
 
     mock_send.assert_not_called()
+
 
 def test_ac1_no_duplicate_alert_same_month(client):
     """AC-1: If alert already sent this month, skip."""
@@ -76,6 +82,7 @@ def test_ac1_no_duplicate_alert_same_month(client):
 # AC-2: Missing mail → skip with log
 # ---------------------------------------------------------------------------
 
+
 def test_ac2_skip_user_without_mail(client):
     """AC-2: User with no mail address is skipped without error."""
     from app.services.notification import check_quota_alerts
@@ -96,6 +103,7 @@ def test_ac2_skip_user_without_mail(client):
 # ---------------------------------------------------------------------------
 # AC-3: SMTP failure → do NOT mark as sent
 # ---------------------------------------------------------------------------
+
 
 def test_ac3_smtp_failure_does_not_mark_sent(client):
     """AC-3: If send_quota_email raises, mark_alert_sent is NOT called."""
@@ -119,15 +127,19 @@ def test_ac3_smtp_failure_does_not_mark_sent(client):
 # AC-4: send_quota_email reads SMTP config from get_config()
 # ---------------------------------------------------------------------------
 
+
 def test_ac4_smtp_config_read_from_config():
     """AC-4: send_quota_email reads SMTP settings via get_config()."""
     from app.services.notification import send_quota_email
 
     smtp_cfg = {
         "smtp": {
-            "host": "smtp.test.com", "port": 587,
-            "username": "test", "password": "pass",
-            "from_name": "AI助手", "from_email": "ai@test.com",
+            "host": "smtp.test.com",
+            "port": 587,
+            "username": "test",
+            "password": "pass",
+            "from_name": "AI助手",
+            "from_email": "ai@test.com",
         }
     }
     with patch("app.services.notification.get_config", return_value=smtp_cfg) as mock_cfg:
