@@ -50,7 +50,7 @@ const top = ref(10)
 async function fetchData() {
   loading.value = true
   try {
-    const res = await fetch(`/api/admin/leaderboard?top=${top.value}`, {
+    const res = await fetch(`/api/admin/leaderboard?top=${top.value}&time_filter=${timeFilter.value}`, {
       headers: { Authorization: `Bearer ${auth.token}` }
     })
     rows.value = await res.json()
