@@ -102,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted } from 'vue'
 import api from '@/api'
 import { useAuthStore } from '@/stores/auth'
 
