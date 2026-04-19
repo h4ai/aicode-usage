@@ -26,8 +26,8 @@ from app.services.clickhouse import (
     get_monthly_request_count,
     get_monthly_token_usage,
     get_today_token_usage,
-    get_weekly_token_usage,
     get_weekly_request_count,
+    get_weekly_token_usage,
 )
 
 router = APIRouter(prefix="/api/metrics")
@@ -200,7 +200,12 @@ def metrics_detail(
 
     # Client-side sorting
     if sort_by and sort_by in {
-        "date", "model", "request_count", "input_token", "output_token", "total_token",
+        "date",
+        "model",
+        "request_count",
+        "input_token",
+        "output_token",
+        "total_token",
     }:
         reverse = sort_order != "asc"
         rows.sort(key=lambda r: r.get(sort_by, 0), reverse=reverse)
@@ -229,10 +234,16 @@ def metrics_export_csv(
     writer = csv.writer(buf)
     writer.writerow(["日期", "模型", "请求次数", "输入Token", "输出Token", "总Token"])
     for r in rows:
-        writer.writerow([
-            r["date"], r["model"], r["request_count"],
-            r["input_token"], r["output_token"], r["total_token"],
-        ])
+        writer.writerow(
+            [
+                r["date"],
+                r["model"],
+                r["request_count"],
+                r["input_token"],
+                r["output_token"],
+                r["total_token"],
+            ]
+        )
 
     buf.seek(0)
     return StreamingResponse(
@@ -241,10 +252,12 @@ def metrics_export_csv(
         headers={"Content-Disposition": "attachment; filename=usage_detail.csv"},
     )
 
+
 @router.get("/working-hours-config")
 def get_working_hours_config() -> dict:
     """Return current working hours config for display in UI (no auth required)."""
     from app.config import get_config
+
     cfg = get_config().get("working_hours", {})
     return {
         "enabled": cfg.get("enabled", False),

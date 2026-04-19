@@ -6,25 +6,69 @@
         <div style="display:flex;justify-content:space-between;align-items:center">
           <span>分组用量汇总</span>
           <template v-if="workingHoursEnabled">
-            <el-radio-group v-model="timeFilter" data-testid="dept-time-filter" size="small" @change="fetchData">
-            <el-radio-button value="all">全天</el-radio-button>
-            <el-radio-button value="work">工作时段</el-radio-button>
-            <el-radio-button value="non_work">非工作时段</el-radio-button>
-          </el-radio-group>
+            <el-radio-group
+              v-model="timeFilter"
+              data-testid="dept-time-filter"
+              size="small"
+              @change="fetchData"
+            >
+              <el-radio-button value="all">
+                全天
+              </el-radio-button>
+              <el-radio-button value="work">
+                工作时段
+              </el-radio-button>
+              <el-radio-button value="non_work">
+                非工作时段
+              </el-radio-button>
+            </el-radio-group>
           </template>
-          <el-tag v-else type="info" size="small" style="cursor:default">全天</el-tag>
+          <el-tag
+            v-else
+            type="info"
+            size="small"
+            style="cursor:default"
+          >
+            全天
+          </el-tag>
         </div>
       </template>
-      <el-table :data="rows" v-loading="loading" stripe>
-        <el-table-column prop="enterprise" label="分组" />
-        <el-table-column prop="user_count" label="用户数" sortable width="100" />
-        <el-table-column label="月 Token" sortable prop="monthly_token">
+      <el-table
+        v-loading="loading"
+        :data="rows"
+        stripe
+      >
+        <el-table-column
+          prop="enterprise"
+          label="分组"
+        />
+        <el-table-column
+          prop="user_count"
+          label="用户数"
+          sortable
+          width="100"
+        />
+        <el-table-column
+          label="月 Token"
+          sortable
+          prop="monthly_token"
+        >
           <template #default="{ row }">
             {{ (row.monthly_token / 1000).toFixed(1) }}K
           </template>
         </el-table-column>
-        <el-table-column prop="monthly_requests" label="月请求数" sortable width="110" />
-        <el-table-column prop="monthly_chats" label="月对话轮次" sortable width="120" />
+        <el-table-column
+          prop="monthly_requests"
+          label="月请求数"
+          sortable
+          width="110"
+        />
+        <el-table-column
+          prop="monthly_chats"
+          label="月对话轮次"
+          sortable
+          width="120"
+        />
       </el-table>
     </el-card>
   </div>

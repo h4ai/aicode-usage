@@ -14,14 +14,38 @@
             size="small"
             style="width:160px"
           />
-          <el-select v-model="filterStatus" size="small" style="width:120px" placeholder="状态筛选">
-            <el-option label="全部" value="" />
-            <el-option label="🔴 超限" value="red" />
-            <el-option label="🟡 接近上限" value="yellow" />
-            <el-option label="🟢 正常" value="green" />
-            <el-option label="⚪ 未使用" value="gray" />
+          <el-select
+            v-model="filterStatus"
+            size="small"
+            style="width:120px"
+            placeholder="状态筛选"
+          >
+            <el-option
+              label="全部"
+              value=""
+            />
+            <el-option
+              label="🔴 超限"
+              value="red"
+            />
+            <el-option
+              label="🟡 接近上限"
+              value="yellow"
+            />
+            <el-option
+              label="🟢 正常"
+              value="green"
+            />
+            <el-option
+              label="⚪ 未使用"
+              value="gray"
+            />
           </el-select>
-          <el-button size="small" @click="exportCsv" :loading="exporting">
+          <el-button
+            size="small"
+            :loading="exporting"
+            @click="exportCsv"
+          >
             📥 导出 CSV
           </el-button>
         </div>
@@ -29,81 +53,174 @@
     </template>
 
     <el-table
-      :data="pagedUsers"
       v-loading="loading"
+      :data="pagedUsers"
       border
       stripe
       size="small"
     >
       <!-- 状态指示灯 -->
-      <el-table-column label="状态" width="72" align="center">
+      <el-table-column
+        label="状态"
+        width="72"
+        align="center"
+      >
         <template #default="{ row }">
-          <el-tooltip :content="statusTooltip(row)" placement="top">
-            <span class="status-dot" :class="overallStatus(row)" />
+          <el-tooltip
+            :content="statusTooltip(row)"
+            placement="top"
+          >
+            <span
+              class="status-dot"
+              :class="overallStatus(row)"
+            ></span>
           </el-tooltip>
         </template>
       </el-table-column>
 
-      <el-table-column prop="display_name" label="姓名" min-width="90" />
-      <el-table-column prop="user_id" label="userId" min-width="100" />
-      <el-table-column prop="enterprise" label="分组" min-width="90" />
+      <el-table-column
+        prop="display_name"
+        label="姓名"
+        min-width="90"
+      />
+      <el-table-column
+        prop="user_id"
+        label="userId"
+        min-width="100"
+      />
+      <el-table-column
+        prop="enterprise"
+        label="分组"
+        min-width="90"
+      />
 
       <!-- 配额级别 -->
-      <el-table-column label="级别" width="110" align="center">
+      <el-table-column
+        label="级别"
+        width="110"
+        align="center"
+      >
         <template #default="{ row }">
           <el-select
             :model-value="row.quota_level"
-            @change="(val: string) => changeLevel(row.user_id, val)"
             size="small"
+            @change="(val: string) => changeLevel(row.user_id, val)"
           >
-            <el-option label="L1" value="L1" />
-            <el-option label="L2" value="L2" />
-            <el-option label="L3" value="L3" />
+            <el-option
+              label="L1"
+              value="L1"
+            />
+            <el-option
+              label="L2"
+              value="L2"
+            />
+            <el-option
+              label="L3"
+              value="L3"
+            />
           </el-select>
         </template>
       </el-table-column>
 
       <!-- 本月 Token -->
-      <el-table-column label="本月限额Token" min-width="130" sortable :sort-method="(a: UserItem, b: UserItem) => a.monthly_token - b.monthly_token">
+      <el-table-column
+        label="本月限额Token"
+        min-width="130"
+        sortable
+        :sort-method="(a: UserItem, b: UserItem) => a.monthly_token - b.monthly_token"
+      >
         <template #default="{ row }">
           <span :class="'text-' + row.status_token">
             {{ formatWan(row.monthly_token) }}
           </span>
-          <el-tag v-if="row.status_token === 'red'" type="danger" size="small" style="margin-left:4px">超限</el-tag>
-          <el-tag v-else-if="row.status_token === 'yellow'" type="warning" size="small" style="margin-left:4px">警告</el-tag>
+          <el-tag
+            v-if="row.status_token === 'red'"
+            type="danger"
+            size="small"
+            style="margin-left:4px"
+          >
+            超限
+          </el-tag>
+          <el-tag
+            v-else-if="row.status_token === 'yellow'"
+            type="warning"
+            size="small"
+            style="margin-left:4px"
+          >
+            警告
+          </el-tag>
         </template>
       </el-table-column>
 
       <!-- 今日 Token -->
-      <el-table-column label="今日 Token" min-width="110" sortable :sort-method="(a: UserItem, b: UserItem) => a.today_token - b.today_token">
+      <el-table-column
+        label="今日 Token"
+        min-width="110"
+        sortable
+        :sort-method="(a: UserItem, b: UserItem) => a.today_token - b.today_token"
+      >
         <template #default="{ row }">
           <span>{{ formatWan(row.today_token) }}</span>
         </template>
       </el-table-column>
 
       <!-- 今日对话轮次 -->
-      <el-table-column label="今日限额对话" width="110" sortable :sort-method="(a: UserItem, b: UserItem) => a.today_chats - b.today_chats">
+      <el-table-column
+        label="今日限额对话"
+        width="110"
+        sortable
+        :sort-method="(a: UserItem, b: UserItem) => a.today_chats - b.today_chats"
+      >
         <template #default="{ row }">
           <span :class="'text-' + row.status_chat">{{ row.today_chats }}</span>
-          <el-tag v-if="row.status_chat === 'red'" type="danger" size="small" style="margin-left:4px">超限</el-tag>
-          <el-tag v-else-if="row.status_chat === 'yellow'" type="warning" size="small" style="margin-left:4px">警告</el-tag>
+          <el-tag
+            v-if="row.status_chat === 'red'"
+            type="danger"
+            size="small"
+            style="margin-left:4px"
+          >
+            超限
+          </el-tag>
+          <el-tag
+            v-else-if="row.status_chat === 'yellow'"
+            type="warning"
+            size="small"
+            style="margin-left:4px"
+          >
+            警告
+          </el-tag>
         </template>
       </el-table-column>
 
       <!-- 本月对话轮次 -->
-      <el-table-column label="本月对话" width="100" sortable :sort-method="(a: UserItem, b: UserItem) => a.monthly_chats - b.monthly_chats">
+      <el-table-column
+        label="本月对话"
+        width="100"
+        sortable
+        :sort-method="(a: UserItem, b: UserItem) => a.monthly_chats - b.monthly_chats"
+      >
         <template #default="{ row }">
           <span>{{ row.monthly_chats }}</span>
         </template>
       </el-table-column>
       <!-- 本月总Token（全天，不受时段过滤） -->
-      <el-table-column label="本月总Token" min-width="120" sortable :sort-method="(a: UserItem, b: UserItem) => a.monthly_token_all - b.monthly_token_all">
+      <el-table-column
+        label="本月总Token"
+        min-width="120"
+        sortable
+        :sort-method="(a: UserItem, b: UserItem) => a.monthly_token_all - b.monthly_token_all"
+      >
         <template #default="{ row }">
           <span>{{ formatWan(row.monthly_token_all ?? row.monthly_token) }}</span>
         </template>
       </el-table-column>
       <!-- 今日总对话（全天，不受时段过滤） -->
-      <el-table-column label="今日总对话" width="110" sortable :sort-method="(a: UserItem, b: UserItem) => (a.today_chats_all ?? a.today_chats) - (b.today_chats_all ?? b.today_chats)">
+      <el-table-column
+        label="今日总对话"
+        width="110"
+        sortable
+        :sort-method="(a: UserItem, b: UserItem) => (a.today_chats_all ?? a.today_chats) - (b.today_chats_all ?? b.today_chats)"
+      >
         <template #default="{ row }">
           <span>{{ row.today_chats_all ?? row.today_chats }}</span>
         </template>
@@ -116,10 +233,10 @@
         v-model:current-page="currentPage"
         :page-size="pageSize"
         :page-sizes="[20, 50, 100]"
-        @size-change="(s: number) => { pageSize = s; currentPage = 1 }"
         layout="sizes, prev, pager, next, total"
         :total="filteredUsers.length"
         size="small"
+        @size-change="(s: number) => { pageSize = s; currentPage = 1 }"
       />
     </div>
   </el-card>

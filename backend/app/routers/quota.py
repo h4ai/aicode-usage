@@ -11,7 +11,11 @@ from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 
 from app.deps import get_current_user
-from app.services.clickhouse import get_chat_session_count, get_daily_request_count, get_monthly_token_usage
+from app.services.clickhouse import (
+    get_chat_session_count,
+    get_daily_request_count,
+    get_monthly_token_usage,
+)
 from app.services.database import get_quota_limits, get_user
 
 router = APIRouter(prefix="/api/quota")

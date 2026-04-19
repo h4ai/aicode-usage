@@ -2,19 +2,39 @@
 <!-- SPDX-FileCopyrightText: 2026 SubLang International <https://sublang.ai> -->
 
 <template>
-  <el-card class="trend-chart" data-testid="trend-chart-card">
+  <el-card
+    class="trend-chart"
+    data-testid="trend-chart-card"
+  >
     <template #header>
       <div class="trend-header">
         <span>Token 趋势</span>
         <div class="trend-controls">
-          <el-radio-group v-model="chartType" size="small">
-            <el-radio-button value="bar">柱状图</el-radio-button>
-            <el-radio-button value="line">折线图</el-radio-button>
+          <el-radio-group
+            v-model="chartType"
+            size="small"
+          >
+            <el-radio-button value="bar">
+              柱状图
+            </el-radio-button>
+            <el-radio-button value="line">
+              折线图
+            </el-radio-button>
           </el-radio-group>
-          <el-radio-group v-model="rangeMode" size="small" @change="onRangeChange">
-            <el-radio-button value="7">最近7天</el-radio-button>
-            <el-radio-button value="30">最近30天</el-radio-button>
-            <el-radio-button value="custom">自定义</el-radio-button>
+          <el-radio-group
+            v-model="rangeMode"
+            size="small"
+            @change="onRangeChange"
+          >
+            <el-radio-button value="7">
+              最近7天
+            </el-radio-button>
+            <el-radio-button value="30">
+              最近30天
+            </el-radio-button>
+            <el-radio-button value="custom">
+              自定义
+            </el-radio-button>
           </el-radio-group>
           <el-date-picker
             v-if="rangeMode === 'custom'"
@@ -30,8 +50,16 @@
         </div>
       </div>
     </template>
-    <div v-if="loading" v-loading="true" style="height: 320px" />
-    <div v-else ref="chartRef" style="height: 320px" />
+    <div
+      v-if="loading"
+      v-loading="true"
+      style="height: 320px"
+    ></div>
+    <div
+      v-else
+      ref="chartRef"
+      style="height: 320px"
+    ></div>
   </el-card>
 </template>
 

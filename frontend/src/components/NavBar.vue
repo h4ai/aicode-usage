@@ -3,9 +3,15 @@
   <div class="navbar">
     <span class="navbar-title">{{ title }}</span>
     <div class="navbar-right">
-      <el-dropdown trigger="click" @command="handleCommand">
+      <el-dropdown
+        trigger="click"
+        @command="handleCommand"
+      >
         <span class="user-info">
-          <el-avatar :size="28" :style="{ background: '#409eff', fontSize: '13px' }">
+          <el-avatar
+            :size="28"
+            :style="{ background: '#409eff', fontSize: '13px' }"
+          >
             {{ avatarText }}
           </el-avatar>
           <span class="username">{{ auth.username || auth.role || '用户' }}</span>
@@ -13,10 +19,16 @@
         </span>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item disabled style="font-size:12px;color:#999;">
+            <el-dropdown-item
+              disabled
+              style="font-size:12px;color:#999;"
+            >
               已登录：{{ auth.username || '—' }}
             </el-dropdown-item>
-            <el-dropdown-item divided command="logout">
+            <el-dropdown-item
+              divided
+              command="logout"
+            >
               <el-icon><SwitchButton /></el-icon> 退出登录
             </el-dropdown-item>
           </el-dropdown-menu>

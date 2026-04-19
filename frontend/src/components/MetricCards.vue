@@ -6,22 +6,56 @@
     <template #header>
       <div class="metric-header">
         <span>关键指标</span>
-        <el-radio-group v-model="scope" size="small" @change="fetchMetrics" data-testid="metrics-scope-group">
-          <el-radio-button value="today" data-testid="metrics-tab-today">今日</el-radio-button>
-          <el-radio-button value="week" data-testid="metrics-tab-week">本周</el-radio-button>
-          <el-radio-button value="month" data-testid="metrics-tab-month">本月</el-radio-button>
+        <el-radio-group
+          v-model="scope"
+          size="small"
+          data-testid="metrics-scope-group"
+          @change="fetchMetrics"
+        >
+          <el-radio-button
+            value="today"
+            data-testid="metrics-tab-today"
+          >
+            今日
+          </el-radio-button>
+          <el-radio-button
+            value="week"
+            data-testid="metrics-tab-week"
+          >
+            本周
+          </el-radio-button>
+          <el-radio-button
+            value="month"
+            data-testid="metrics-tab-month"
+          >
+            本月
+          </el-radio-button>
         </el-radio-group>
       </div>
     </template>
-    <div v-if="loading" v-loading="true" style="height: 80px" />
-    <el-row v-else :gutter="16">
+    <div
+      v-if="loading"
+      v-loading="true"
+      style="height: 80px"
+    ></div>
+    <el-row
+      v-else
+      :gutter="16"
+    >
       <el-col :span="scope === 'today' ? 12 : 6">
         <div class="metric-item">
-          <div class="metric-value">{{ formatWan(metrics.total_token) }}</div>
+          <div class="metric-value">
+            {{ formatWan(metrics.total_token) }}
+          </div>
           <div class="metric-label">
             {{ scope === 'today' ? '今日 Token' : scope === 'week' ? '本周 Token' : '累计 Token' }}
-            <el-tooltip content="本月所有 AI 请求消耗的 Token 总量（输入 + 输出）" placement="top">
-              <el-icon class="tip-icon"><QuestionFilled /></el-icon>
+            <el-tooltip
+              content="本月所有 AI 请求消耗的 Token 总量（输入 + 输出）"
+              placement="top"
+            >
+              <el-icon class="tip-icon">
+                <QuestionFilled />
+              </el-icon>
             </el-tooltip>
           </div>
         </div>
@@ -29,16 +63,20 @@
 
       <el-col :span="6">
         <div class="metric-item">
-          <div class="metric-value">{{ metrics.chat_count ?? 0 }}</div>
+          <div class="metric-value">
+            {{ metrics.chat_count ?? 0 }}
+          </div>
           <div class="metric-label">
             对话轮次
             <el-tooltip placement="top">
               <template #content>
-                聊天对话的响应次数（一问一答算 1 轮）<br/>
-                不含代码补全等非对话请求<br/>
+                聊天对话的响应次数（一问一答算 1 轮）<br />
+                不含代码补全等非对话请求<br />
                 <span style="color:#faad14">注：当前为轮次统计，非独立会话数</span>
               </template>
-              <el-icon class="tip-icon"><QuestionFilled /></el-icon>
+              <el-icon class="tip-icon">
+                <QuestionFilled />
+              </el-icon>
             </el-tooltip>
           </div>
         </div>
@@ -46,22 +84,36 @@
       <template v-if="scope === 'month' || scope === 'week'">
         <el-col :span="6">
           <div class="metric-item">
-            <div class="metric-value">{{ scope === 'week' ? weekDaysElapsed : (metrics.active_days ?? 0) }}</div>
+            <div class="metric-value">
+              {{ scope === 'week' ? weekDaysElapsed : (metrics.active_days ?? 0) }}
+            </div>
             <div class="metric-label">
               {{ scope === 'week' ? '本周天数' : '活跃天数' }}
-              <el-tooltip content="本月有 AI 使用记录的自然日天数" placement="top">
-                <el-icon class="tip-icon"><QuestionFilled /></el-icon>
+              <el-tooltip
+                content="本月有 AI 使用记录的自然日天数"
+                placement="top"
+              >
+                <el-icon class="tip-icon">
+                  <QuestionFilled />
+                </el-icon>
               </el-tooltip>
             </div>
           </div>
         </el-col>
         <el-col :span="6">
           <div class="metric-item">
-            <div class="metric-value">{{ formatWan(metrics.daily_avg_token ?? 0) }}</div>
+            <div class="metric-value">
+              {{ formatWan(metrics.daily_avg_token ?? 0) }}
+            </div>
             <div class="metric-label">
               日均 Token
-              <el-tooltip content="累计 Token ÷ 活跃天数，反映每个活跃日的平均消耗量" placement="top">
-                <el-icon class="tip-icon"><QuestionFilled /></el-icon>
+              <el-tooltip
+                content="累计 Token ÷ 活跃天数，反映每个活跃日的平均消耗量"
+                placement="top"
+              >
+                <el-icon class="tip-icon">
+                  <QuestionFilled />
+                </el-icon>
               </el-tooltip>
             </div>
           </div>

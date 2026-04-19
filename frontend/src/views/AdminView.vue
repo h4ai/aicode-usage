@@ -4,23 +4,44 @@
 <template>
   <div class="admin-view">
     <NavBar title="管理员后台" />
-    <el-tabs v-model="activeTab" @tab-click="onTabChange">
-      <el-tab-pane label="用户管理" name="users">
+    <el-tabs
+      v-model="activeTab"
+      @tab-click="onTabChange"
+    >
+      <el-tab-pane
+        label="用户管理"
+        name="users"
+      >
         <UserManager />
       </el-tab-pane>
-      <el-tab-pane label="全局趋势" name="trend">
+      <el-tab-pane
+        label="全局趋势"
+        name="trend"
+      >
         <GlobalTrend />
       </el-tab-pane>
-      <el-tab-pane label="分组汇总" name="dept">
+      <el-tab-pane
+        label="分组汇总"
+        name="dept"
+      >
         <DepartmentSummary />
       </el-tab-pane>
-      <el-tab-pane label="用量排行" name="leaderboard">
+      <el-tab-pane
+        label="用量排行"
+        name="leaderboard"
+      >
         <Leaderboard />
       </el-tab-pane>
-      <el-tab-pane label="工作时段" name="workhours">
+      <el-tab-pane
+        label="工作时段"
+        name="workhours"
+      >
         <WorkingHoursConfig />
       </el-tab-pane>
-      <el-tab-pane label="配额级别" name="quota">
+      <el-tab-pane
+        label="配额级别"
+        name="quota"
+      >
         <QuotaLevelManager />
       </el-tab-pane>
     </el-tabs>

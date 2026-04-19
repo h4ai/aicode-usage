@@ -7,10 +7,20 @@
       <div class="detail-header">
         <span>使用明细</span>
         <div class="detail-controls">
-          <el-radio-group v-model="rangeMode" size="small" @change="onRangeChange">
-            <el-radio-button value="7">最近7天</el-radio-button>
-            <el-radio-button value="30">最近30天</el-radio-button>
-            <el-radio-button value="custom">自定义</el-radio-button>
+          <el-radio-group
+            v-model="rangeMode"
+            size="small"
+            @change="onRangeChange"
+          >
+            <el-radio-button value="7">
+              最近7天
+            </el-radio-button>
+            <el-radio-button value="30">
+              最近30天
+            </el-radio-button>
+            <el-radio-button value="custom">
+              自定义
+            </el-radio-button>
           </el-radio-group>
           <el-date-picker
             v-if="rangeMode === 'custom'"
@@ -24,7 +34,14 @@
             data-testid="detail-date-picker"
             @change="fetchDetail"
           />
-          <el-button size="small" type="success" @click="exportCsv" data-testid="detail-export-csv">导出CSV</el-button>
+          <el-button
+            size="small"
+            type="success"
+            data-testid="detail-export-csv"
+            @click="exportCsv"
+          >
+            导出CSV
+          </el-button>
         </div>
       </div>
     </template>
@@ -36,17 +53,57 @@
       :default-sort="{ prop: 'date', order: 'descending' }"
       @sort-change="onSortChange"
     >
-      <el-table-column prop="date" label="日期" sortable="custom" width="120" />
-      <el-table-column prop="model" label="模型" sortable="custom" min-width="160" />
-      <el-table-column prop="request_count" label="对话轮次" sortable="custom" width="110" align="right" />
-      <el-table-column prop="input_token" label="输入Token" sortable="custom" width="120" align="right">
-        <template #default="{ row }">{{ formatNum(row.input_token) }}</template>
+      <el-table-column
+        prop="date"
+        label="日期"
+        sortable="custom"
+        width="120"
+      />
+      <el-table-column
+        prop="model"
+        label="模型"
+        sortable="custom"
+        min-width="160"
+      />
+      <el-table-column
+        prop="request_count"
+        label="对话轮次"
+        sortable="custom"
+        width="110"
+        align="right"
+      />
+      <el-table-column
+        prop="input_token"
+        label="输入Token"
+        sortable="custom"
+        width="120"
+        align="right"
+      >
+        <template #default="{ row }">
+          {{ formatNum(row.input_token) }}
+        </template>
       </el-table-column>
-      <el-table-column prop="output_token" label="输出Token" sortable="custom" width="120" align="right">
-        <template #default="{ row }">{{ formatNum(row.output_token) }}</template>
+      <el-table-column
+        prop="output_token"
+        label="输出Token"
+        sortable="custom"
+        width="120"
+        align="right"
+      >
+        <template #default="{ row }">
+          {{ formatNum(row.output_token) }}
+        </template>
       </el-table-column>
-      <el-table-column prop="total_token" label="总Token" sortable="custom" width="120" align="right">
-        <template #default="{ row }">{{ formatNum(row.total_token) }}</template>
+      <el-table-column
+        prop="total_token"
+        label="总Token"
+        sortable="custom"
+        width="120"
+        align="right"
+      >
+        <template #default="{ row }">
+          {{ formatNum(row.total_token) }}
+        </template>
       </el-table-column>
     </el-table>
 
