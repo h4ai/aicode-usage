@@ -37,6 +37,7 @@
 </template>
 
 <script setup lang="ts">
+import NavBar from '@/components/NavBar.vue'
 import { useTimeFilterStore } from '@/stores/timeFilter'
 import { QuestionFilled } from '@element-plus/icons-vue'
 const tf = useTimeFilterStore()
