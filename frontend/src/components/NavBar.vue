@@ -15,8 +15,6 @@
           <el-dropdown-menu>
             <el-dropdown-item disabled style="font-size:12px;color:#999;">
               已登录：{{ auth.username || '—' }}
-              <span v-if="auth.role === 'admin'" class="role-badge admin">管理员</span>
-              <span v-else class="role-badge user">普通用户</span>
             </el-dropdown-item>
             <el-dropdown-item divided command="logout">
               <el-icon><SwitchButton /></el-icon> 退出登录

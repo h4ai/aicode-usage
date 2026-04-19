@@ -3,8 +3,9 @@
 
 <template>
   <div class="dashboard-view">
-    <NavBar title="个人看板" />
+    <NavBar />
     <div class="page-header">
+      <h1 class="page-title">个人看板</h1>
       <div class="time-filter-wrapper">
         <el-tooltip placement="bottom-end" effect="light" :width="320">
           <template #content>
@@ -60,7 +61,7 @@ import DetailTable from '@/components/DetailTable.vue'
   align-items: center;
   margin-bottom: 16px;
 }
-.page-header h1 { margin: 0; }
+.page-title { margin: 0; font-size: 22px; font-weight: 700; color: #303133; }
 
 .time-filter-wrapper {
   display: flex;
