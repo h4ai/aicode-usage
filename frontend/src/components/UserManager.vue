@@ -21,6 +21,14 @@
             <el-option label="🟢 正常" value="green" />
             <el-option label="⚪ 未使用" value="gray" />
           </el-select>
+          <template v-if="workingHoursEnabled">
+            <el-radio-group v-model="timeFilter" size="small" @change="fetchUsers" data-testid="user-mgr-time-filter">
+              <el-radio-button value="all">全天</el-radio-button>
+              <el-radio-button value="work">工作时段</el-radio-button>
+              <el-radio-button value="non_work">非工作时段</el-radio-button>
+            </el-radio-group>
+          </template>
+          <el-tag v-else type="info" size="small" style="cursor:default">全天（时段过滤已关闭）</el-tag>
           <el-button size="small" @click="exportCsv" :loading="exporting">
             📥 导出 CSV
           </el-button>
@@ -147,6 +155,7 @@ interface UserItem {
 }
 
 const timeFilter = ref('all')
+const workingHoursEnabled = ref(true)
 const users = ref<UserItem[]>([])
 const loading = ref(false)
 const exporting = ref(false)
@@ -244,7 +253,15 @@ async function exportCsv() {
   }
 }
 
-onMounted(fetchUsers)
+
+onMounted(async () => {
+  try {
+    const { data: whCfg } = await api.get('/metrics/working-hours-config')
+    workingHoursEnabled.value = whCfg.enabled
+    if (!whCfg.enabled) timeFilter.value = 'all'
+  } catch {}
+  fetchUsers()
+})
 </script>
 
 <style scoped>

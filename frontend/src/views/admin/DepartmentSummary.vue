@@ -5,11 +5,14 @@
       <template #header>
         <div style="display:flex;justify-content:space-between;align-items:center">
           <span>部门用量汇总</span>
-          <el-radio-group v-model="timeFilter" data-testid="dept-time-filter" size="small" @change="fetchData">
+          <template v-if="workingHoursEnabled">
+            <el-radio-group v-model="timeFilter" data-testid="dept-time-filter" size="small" @change="fetchData">
             <el-radio-button value="all">全天</el-radio-button>
             <el-radio-button value="work">工作时段</el-radio-button>
             <el-radio-button value="non_work">非工作时段</el-radio-button>
           </el-radio-group>
+          </template>
+          <el-tag v-else type="info" size="small" style="cursor:default">全天（时段过滤已关闭）</el-tag>
         </div>
       </template>
       <el-table :data="rows" v-loading="loading" stripe>
@@ -41,6 +44,7 @@ interface DeptRow {
 }
 
 const timeFilter = ref('all')
+const workingHoursEnabled = ref(true)
 const rows = ref<DeptRow[]>([])
 const loading = ref(false)
 
@@ -54,5 +58,12 @@ async function fetchData() {
   }
 }
 
-onMounted(fetchData)
+onMounted(async () => {
+  try {
+    const { data: whCfg } = await api.get('/metrics/working-hours-config')
+    workingHoursEnabled.value = whCfg.enabled
+    if (!whCfg.enabled) timeFilter.value = 'all'
+  } catch {}
+  fetchData()
+})
 </script>
