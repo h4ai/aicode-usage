@@ -81,8 +81,7 @@ def get_quota_limits(level: str) -> dict[str, Any]:
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
-                "SELECT monthly_token, daily_chats, daily_requests FROM quota_levels"
-                " WHERE level = %s",
+                "SELECT monthly_token, daily_chats, daily_requests FROM quota_levels WHERE level = %s",
                 (level,),
             )
             row = cur.fetchone()
@@ -112,7 +111,10 @@ def get_all_quota_levels() -> list[dict[str, Any]]:
 
 
 def update_quota_level(
-    level: str, monthly_token: int, daily_chats: int, daily_requests: int,
+    level: str,
+    monthly_token: int,
+    daily_chats: int,
+    daily_requests: int,
 ) -> dict[str, Any] | None:
     """Update limits for an existing quota level. Returns updated row or None."""
     if level not in ("L1", "L2", "L3"):
@@ -142,8 +144,7 @@ def get_all_users() -> list[dict[str, Any]]:
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
-                "SELECT user_id, username, nickname, enterprise, quota_level"
-                " FROM users ORDER BY user_id",
+                "SELECT user_id, username, nickname, enterprise, quota_level FROM users ORDER BY user_id",
             )
             return [dict(row) for row in cur.fetchall()]
     finally:
@@ -220,8 +221,7 @@ def mark_alert_sent(user_id: str, month_key: str) -> None:
     try:
         with conn.cursor() as cur:
             cur.execute(
-                "INSERT INTO email_alerts (user_id, month_key) VALUES (%s, %s)"
-                " ON CONFLICT DO NOTHING",
+                "INSERT INTO email_alerts (user_id, month_key) VALUES (%s, %s) ON CONFLICT DO NOTHING",
                 (user_id, month_key),
             )
         conn.commit()

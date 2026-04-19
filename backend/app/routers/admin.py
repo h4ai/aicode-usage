@@ -74,8 +74,13 @@ def edit_quota_level(
     for lv in all_levels:
         if lv["level"] == level:
             return QuotaLevelItem(**lv)
-    return QuotaLevelItem(level=level, monthly_token=body.monthly_token,
-                          daily_chats=body.daily_chats, daily_requests=body.daily_requests, user_count=0)
+    return QuotaLevelItem(
+        level=level,
+        monthly_token=body.monthly_token,
+        daily_chats=body.daily_chats,
+        daily_requests=body.daily_requests,
+        user_count=0,
+    )
 
 
 # ---- User management --------------------------------------------------------
@@ -90,10 +95,10 @@ class UserItem(BaseModel):
     today_token: int = 0
     today_chats: int = 0
     monthly_chats: int = 0
-    monthly_token_all: int = 0   # 全天本月Token（不受time_filter影响）
-    today_chats_all: int = 0   # 全天今日对话（不受time_filter影响）
+    monthly_token_all: int = 0  # 全天本月Token（不受time_filter影响）
+    today_chats_all: int = 0  # 全天今日对话（不受time_filter影响）
     daily_requests: int
-    status_token: str = "gray"   # green/yellow/red/gray
+    status_token: str = "gray"  # green/yellow/red/gray
     status_chat: str = "gray"
 
 
@@ -148,21 +153,23 @@ def list_users(
         limits = quota_cache[level]
         mt = monthly_tokens.get(uid, 0)
         tc = today_chats.get(uid, 0)
-        result.append(UserItem(
-            user_id=uid,
-            display_name=display_name,
-            enterprise=u.get("enterprise") or "未知",
-            quota_level=level,
-            monthly_token=mt,
-            today_token=today_tokens.get(uid, 0),
-            today_chats=tc,
-            monthly_chats=monthly_chats.get(uid, 0),
-            monthly_token_all=monthly_tokens_all.get(uid, 0),
-            today_chats_all=today_chats_all.get(uid, 0),
-            daily_requests=daily_reqs.get(uid, 0),
-            status_token=_token_status(mt, int(limits.get("monthly_token", 0))),
-            status_chat=_chat_status(tc, int(limits.get("daily_chats", 0))),
-        ))
+        result.append(
+            UserItem(
+                user_id=uid,
+                display_name=display_name,
+                enterprise=u.get("enterprise") or "未知",
+                quota_level=level,
+                monthly_token=mt,
+                today_token=today_tokens.get(uid, 0),
+                today_chats=tc,
+                monthly_chats=monthly_chats.get(uid, 0),
+                monthly_token_all=monthly_tokens_all.get(uid, 0),
+                today_chats_all=today_chats_all.get(uid, 0),
+                daily_requests=daily_reqs.get(uid, 0),
+                status_token=_token_status(mt, int(limits.get("monthly_token", 0))),
+                status_chat=_chat_status(tc, int(limits.get("daily_chats", 0))),
+            )
+        )
     return result
 
 
@@ -183,9 +190,7 @@ def change_user_level(
         raise HTTPException(status_code=404, detail="用户不存在")
     monthly_tokens = get_all_users_monthly_tokens()
     daily_reqs = get_all_users_daily_requests()
-    display_name = (
-        updated.get("nickname") or updated.get("username") or updated["user_id"]
-    )
+    display_name = updated.get("nickname") or updated.get("username") or updated["user_id"]
     return UserItem(
         user_id=updated["user_id"],
         display_name=display_name,
@@ -272,14 +277,16 @@ def get_department_summary(time_filter: str = "all") -> list[dict[str, Any]]:
         total_requests = sum(monthly_requests.get(uid, 0) for uid in user_ids)
         total_chats = sum(monthly_chats_data.get(uid, 0) for uid in user_ids)
         count = len(user_ids)
-        result.append({
-            "enterprise": dept,
-            "user_count": count,
-            "monthly_token": total_tokens,
-            "monthly_requests": total_requests,
-            "monthly_chats": total_chats,
-            "avg_token_per_user": total_tokens // count if count > 0 else 0,
-        })
+        result.append(
+            {
+                "enterprise": dept,
+                "user_count": count,
+                "monthly_token": total_tokens,
+                "monthly_requests": total_requests,
+                "monthly_chats": total_chats,
+                "avg_token_per_user": total_tokens // count if count > 0 else 0,
+            }
+        )
     return result
 
 
@@ -328,17 +335,19 @@ def get_leaderboard(top: int = 10, time_filter: str = "all") -> list[dict[str, A
         mt = monthly_tokens.get(u["user_id"], 0)
         limit = level_limits.get(u.get("quota_level", "L1"), 1) or 1
         pct = round(mt / limit * 100, 1)
-        result.append({
-            "rank": i,
-            "user_id": u["user_id"],
-            "display_name": u.get("nickname") or u.get("username") or u["user_id"],
-            "enterprise": u.get("enterprise") or "未知",
-            "quota_level": u.get("quota_level", "L1"),
-            "monthly_token": mt,
-            "monthly_requests": monthly_reqs.get(u["user_id"], 0),
-            "monthly_chats": monthly_chats_data.get(u["user_id"], 0),
-            "quota_usage_pct": pct,
-        })
+        result.append(
+            {
+                "rank": i,
+                "user_id": u["user_id"],
+                "display_name": u.get("nickname") or u.get("username") or u["user_id"],
+                "enterprise": u.get("enterprise") or "未知",
+                "quota_level": u.get("quota_level", "L1"),
+                "monthly_token": mt,
+                "monthly_requests": monthly_reqs.get(u["user_id"], 0),
+                "monthly_chats": monthly_chats_data.get(u["user_id"], 0),
+                "quota_usage_pct": pct,
+            }
+        )
     return result
 
 
@@ -356,7 +365,6 @@ def list_leaderboard(
 # ---- CSV export -------------------------------------------------------------
 
 
-
 @router.get("/users/export-csv")
 def export_users_csv(
     time_filter: str = Query("all", description="all|work|non_work"),
@@ -366,33 +374,56 @@ def export_users_csv(
     users_data = list_users(time_filter=time_filter, _user=_user)
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow([
-        "userId", "显示名", "部门", "配额级别",
-        "本月限额Token", "本月总Token(全天)", "今日Token",
-        "今日限额对话", "今日总对话(全天)", "本月对话轮次",
-        "今日请求次数", "Token状态", "对话状态"
-    ])
+    writer.writerow(
+        [
+            "userId",
+            "显示名",
+            "部门",
+            "配额级别",
+            "本月限额Token",
+            "本月总Token(全天)",
+            "今日Token",
+            "今日限额对话",
+            "今日总对话(全天)",
+            "本月对话轮次",
+            "今日请求次数",
+            "Token状态",
+            "对话状态",
+        ]
+    )
     for u in users_data:
-        writer.writerow([
-            u.user_id, u.display_name, u.enterprise, u.quota_level,
-            u.monthly_token, u.monthly_token_all, u.today_token,
-            u.today_chats, u.today_chats_all, u.monthly_chats,
-            u.daily_requests, u.status_token, u.status_chat
-        ])
+        writer.writerow(
+            [
+                u.user_id,
+                u.display_name,
+                u.enterprise,
+                u.quota_level,
+                u.monthly_token,
+                u.monthly_token_all,
+                u.today_token,
+                u.today_chats,
+                u.today_chats_all,
+                u.monthly_chats,
+                u.daily_requests,
+                u.status_token,
+                u.status_chat,
+            ]
+        )
     output.seek(0)
     return StreamingResponse(
         iter([output.getvalue()]),
         media_type="text/csv; charset=utf-8-sig",
-        headers={"Content-Disposition": "attachment; filename=users_export.csv"}
+        headers={"Content-Disposition": "attachment; filename=users_export.csv"},
     )
 
 
 # ---- Working Hours Config ---------------------------------------------------
 
+
 class WorkingHoursConfig(BaseModel):
     enabled: bool
-    start: str   # "HH:MM"
-    end: str     # "HH:MM"
+    start: str  # "HH:MM"
+    end: str  # "HH:MM"
     weekday_only: bool = True  # True=仅周一至周五，False=不限星期
 
 
@@ -402,6 +433,7 @@ def get_working_hours(
 ) -> WorkingHoursConfig:
     """Return current working hours configuration."""
     from app.config import get_config
+
     cfg = get_config().get("working_hours", {})
     return WorkingHoursConfig(
         enabled=cfg.get("enabled", False),
@@ -444,5 +476,6 @@ def update_working_hours(
     load_config()  # hot-reload
     # 清空 ClickHouse 查询缓存，确保新配置立即生效
     import app.services.clickhouse as _ch_module
+
     _ch_module._cache.clear()
     return body
