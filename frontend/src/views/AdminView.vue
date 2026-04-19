@@ -3,7 +3,7 @@
 
 <template>
   <div class="admin-view">
-    <h1>管理员后台</h1>
+    <NavBar title="管理员后台" />
     <el-tabs v-model="activeTab" @tab-click="onTabChange">
       <el-tab-pane label="用户管理" name="users">
         <UserManager />
@@ -29,6 +29,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import NavBar from '@/components/NavBar.vue'
 import QuotaLevelManager from '@/components/QuotaLevelManager.vue'
 import WorkingHoursConfig from '@/components/WorkingHoursConfig.vue'
 import UserManager from '@/components/UserManager.vue'

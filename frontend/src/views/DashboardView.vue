@@ -3,8 +3,8 @@
 
 <template>
   <div class="dashboard-view">
+    <NavBar title="个人看板" />
     <div class="page-header">
-      <h1>个人看板</h1>
       <div class="time-filter-wrapper">
         <el-tooltip placement="bottom-end" effect="light" :width="320">
           <template #content>
