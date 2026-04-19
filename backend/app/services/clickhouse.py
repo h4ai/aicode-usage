@@ -65,6 +65,9 @@ def _working_hours_filter(time_filter: str = "auto") -> str:
     effective = time_filter
     if effective == "auto":
         effective = "work" if cfg.get("enabled", False) else "all"
+    # 若管理员关闭时段限制，则 work/non_work 均降级为全天
+    if not cfg.get("enabled", False) and effective in ("work", "non_work"):
+        effective = "all"
 
     # toDayOfWeek: 1=Mon, 2=Tue, ..., 5=Fri, 6=Sat, 7=Sun
     dow_expr = f"toDayOfWeek(toDateTime(timestamp / 1000, 'Asia/Shanghai'))"

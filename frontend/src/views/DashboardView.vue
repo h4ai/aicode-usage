@@ -7,26 +7,37 @@
       <h1 class="page-title">个人看板</h1>
       <div class="header-right">
         <div class="time-filter-wrapper">
-        <el-tooltip placement="bottom-end" effect="light" :width="320">
-          <template #content>
-            <div class="filter-tooltip">
-              <strong>时段过滤说明</strong>
-              <ul>
-                <li><b>全天</b>：统计当日/本周/本月所有时间段的数据，不做任何限制。</li>
-                <li><b>工作时段</b>：仅统计 {{ workStart }}~{{ workEnd }}{{ weekdayOnly ? "（工作日，周一至周五）" : "" }}内产生的数据。</li>
-                <li><b>非工作时段</b>：仅统计工作时间以外{{ weekdayOnly ? "（含周六/周日全天）" : "" }}产生的数据。</li>
-              </ul>
-              <p class="tooltip-scope"><b>生效范围：</b>指标卡片、配额进度条、Token 趋势图、模型分布图、使用明细列表（含 CSV 导出）。<br/>不影响活跃天数和配额上限值。</p>
-              <p class="tooltip-note">⚙️ 工作时段起止时间可由管理员在「系统设置」中调整。</p>
-            </div>
+          <!-- 时段限制已关闭时，显示提示并固定全天 -->
+          <template v-if="!workingHoursEnabled">
+            <el-tooltip content="管理员已关闭时段过滤，当前统计全天数据" placement="bottom">
+              <el-tag type="info" size="default" style="cursor:default">
+                <el-icon style="margin-right:4px"><InfoFilled /></el-icon>全天（时段过滤已关闭）
+              </el-tag>
+            </el-tooltip>
           </template>
-          <el-icon class="filter-help-icon"><QuestionFilled /></el-icon>
-        </el-tooltip>
-        <el-radio-group v-model="tf.timeFilter" size="default" class="time-filter-bar" data-testid="time-filter-group">
-          <el-radio-button value="all" data-testid="time-filter-all">全天</el-radio-button>
-          <el-radio-button value="work" data-testid="time-filter-work">工作时段</el-radio-button>
-          <el-radio-button value="non_work" data-testid="time-filter-non-work">非工作时段</el-radio-button>
-        </el-radio-group>
+          <!-- 时段限制开启时，显示完整切换器 -->
+          <template v-else>
+            <el-tooltip placement="bottom-end" effect="light" :width="320">
+              <template #content>
+                <div class="filter-tooltip">
+                  <strong>时段过滤说明</strong>
+                  <ul>
+                    <li><b>全天</b>：统计当日/本周/本月所有时间段的数据，不做任何限制。</li>
+                    <li><b>工作时段</b>：仅统计 {{ workStart }}~{{ workEnd }}{{ weekdayOnly ? "（工作日，周一至周五）" : "" }}内产生的数据。</li>
+                    <li><b>非工作时段</b>：仅统计工作时间以外{{ weekdayOnly ? "（含周六/周日全天）" : "" }}产生的数据。</li>
+                  </ul>
+                  <p class="tooltip-scope"><b>生效范围：</b>指标卡片、配额进度条、Token 趋势图、模型分布图、使用明细列表（含 CSV 导出）。<br/>不影响活跃天数和配额上限值。</p>
+                  <p class="tooltip-note">⚙️ 工作时段起止时间可由管理员在「系统设置」中调整。</p>
+                </div>
+              </template>
+              <el-icon class="filter-help-icon"><QuestionFilled /></el-icon>
+            </el-tooltip>
+            <el-radio-group v-model="tf.timeFilter" size="default" class="time-filter-bar" data-testid="time-filter-group">
+              <el-radio-button value="all" data-testid="time-filter-all">全天</el-radio-button>
+              <el-radio-button value="work" data-testid="time-filter-work">工作时段</el-radio-button>
+              <el-radio-button value="non_work" data-testid="time-filter-non-work">非工作时段</el-radio-button>
+            </el-radio-group>
+          </template>
         </div>
         <div class="header-divider"></div>
         <el-dropdown trigger="click" @command="handleLogout">
@@ -57,7 +68,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTimeFilterStore } from '@/stores/timeFilter'
 import { useAuthStore } from '@/stores/auth'
-import { QuestionFilled, ArrowDown, SwitchButton } from '@element-plus/icons-vue'
+import { QuestionFilled, ArrowDown, SwitchButton, InfoFilled } from '@element-plus/icons-vue'
 import api from '@/api'
 const tf = useTimeFilterStore()
 const auth = useAuthStore()
@@ -70,6 +81,7 @@ function handleLogout(cmd: string) {
 const workStart = ref('08:30')
 const workEnd = ref('18:00')
 const weekdayOnly = ref(true)
+const workingHoursEnabled = ref(true)
 
 onMounted(async () => {
   try {
@@ -77,6 +89,9 @@ onMounted(async () => {
     workStart.value = data.start
     workEnd.value = data.end
     weekdayOnly.value = data.weekday_only
+    workingHoursEnabled.value = data.enabled
+    // 若时段限制已关闭，强制重置为全天
+    if (!data.enabled) tf.timeFilter = 'all'
   } catch {}
 })
 import QuotaProgressBar from '@/components/QuotaProgressBar.vue'
