@@ -30,7 +30,8 @@
             {{ (row.monthly_token / 1000).toFixed(1) }}K
           </template>
         </el-table-column>
-        <el-table-column prop="monthly_requests" label="月请求数" sortable width="110" />
+        <el-table-column prop="monthly_requests" label="月请求数（全部）" sortable width="110" />
+      <el-table-column prop="monthly_chats" label="月对话轮次" sortable width="120" align="right" />
       </el-table>
     </el-card>
   </div>

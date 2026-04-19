@@ -21,6 +21,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="monthly_requests" label="月请求数" sortable width="110" />
+        <el-table-column prop="monthly_chats" label="月对话轮次" sortable width="120" />
       </el-table>
     </el-card>
   </div>
@@ -35,6 +36,7 @@ interface DeptRow {
   user_count: number
   monthly_token: number
   monthly_requests: number
+  monthly_chats: number
   avg_token_per_user: number
 }
 

@@ -595,12 +595,12 @@ def get_all_users_today_chats(time_filter: str = "auto") -> dict[str, int]:
     return result
 
 
-def get_all_users_monthly_chats() -> dict[str, int]:
+def get_all_users_monthly_chats(time_filter: str = "all") -> dict[str, int]:
     """Return {user_id: monthly_chat_count} for all users in current month."""
     from datetime import timezone
     now = datetime.now(tz=timezone.utc)
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).date().isoformat()
-    cache_key = f"all_monthly_chat:{month_start}"
+    cache_key = f"all_monthly_chat:{month_start}:{time_filter}"
     if cache_key in _cache:
         return dict(_cache[cache_key])
     client = _get_client()
@@ -608,7 +608,8 @@ def get_all_users_monthly_chats() -> dict[str, int]:
         f"SELECT {USER_ID}, count() FROM events"
         f" WHERE toYYYYMM({EVENT_DATE}) = toYYYYMM(today())"
         f" AND {EVENT_CODE} = 'chat_request_response'"
-        f" GROUP BY {USER_ID}"
+        + _working_hours_filter(time_filter)
+        + f" GROUP BY {USER_ID}"
     )
     result = {str(r[0]): int(r[1] or 0) for r in rows if r[0]}
     _cache[cache_key] = result

@@ -129,7 +129,7 @@ def list_users(
     monthly_tokens = get_all_users_monthly_tokens(time_filter)
     today_tokens = get_all_users_today_tokens(time_filter)
     today_chats = get_all_users_today_chats(time_filter)
-    monthly_chats = get_all_users_monthly_chats()
+    monthly_chats = get_all_users_monthly_chats(time_filter)
     daily_reqs = get_all_users_daily_requests()
     # 全天数据（不受 time_filter 影响，用于"总量"列展示）
     monthly_tokens_all = get_all_users_monthly_tokens("all") if time_filter != "all" else monthly_tokens
@@ -246,6 +246,7 @@ class DeptSummaryItem(BaseModel):
     user_count: int
     monthly_token: int
     monthly_requests: int
+    monthly_chats: int = 0
     avg_token_per_user: int
 
 
@@ -254,6 +255,7 @@ def get_department_summary(time_filter: str = "all") -> list[dict[str, Any]]:
     users = get_all_users()
     monthly_tokens = get_all_users_monthly_tokens(time_filter)
     monthly_requests = get_all_users_monthly_requests(time_filter)
+    monthly_chats_data = get_all_users_monthly_chats(time_filter)
 
     # Group users by enterprise
     dept_users: dict[str, list[str]] = {}
@@ -267,12 +269,14 @@ def get_department_summary(time_filter: str = "all") -> list[dict[str, Any]]:
     for dept, user_ids in sorted(dept_users.items()):
         total_tokens = sum(monthly_tokens.get(uid, 0) for uid in user_ids)
         total_requests = sum(monthly_requests.get(uid, 0) for uid in user_ids)
+        total_chats = sum(monthly_chats_data.get(uid, 0) for uid in user_ids)
         count = len(user_ids)
         result.append({
             "enterprise": dept,
             "user_count": count,
             "monthly_token": total_tokens,
             "monthly_requests": total_requests,
+            "monthly_chats": total_chats,
             "avg_token_per_user": total_tokens // count if count > 0 else 0,
         })
     return result
@@ -299,6 +303,7 @@ class LeaderboardItem(BaseModel):
     quota_level: str
     monthly_token: int
     monthly_requests: int
+    monthly_chats: int = 0
     quota_usage_pct: float
 
 
@@ -307,6 +312,7 @@ def get_leaderboard(top: int = 10, time_filter: str = "all") -> list[dict[str, A
     users = get_all_users()
     monthly_tokens = get_all_users_monthly_tokens(time_filter)
     monthly_reqs = get_all_users_monthly_requests(time_filter)
+    monthly_chats_data = get_all_users_monthly_chats(time_filter)
     quota_levels_data = get_all_quota_levels()
     level_limits = {lv["level"]: lv["monthly_token"] for lv in quota_levels_data}
 
@@ -329,6 +335,7 @@ def get_leaderboard(top: int = 10, time_filter: str = "all") -> list[dict[str, A
             "quota_level": u.get("quota_level", "L1"),
             "monthly_token": mt,
             "monthly_requests": monthly_reqs.get(u["user_id"], 0),
+            "monthly_chats": monthly_chats_data.get(u["user_id"], 0),
             "quota_usage_pct": pct,
         })
     return result
