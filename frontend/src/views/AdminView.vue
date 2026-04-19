@@ -5,12 +5,6 @@
   <div class="admin-view">
     <h1>管理员后台</h1>
     <el-tabs v-model="activeTab" @tab-click="onTabChange">
-      <el-tab-pane label="配额级别" name="quota">
-        <QuotaLevelManager />
-      </el-tab-pane>
-      <el-tab-pane label="工作时段" name="workhours">
-        <WorkingHoursConfig />
-      </el-tab-pane>
       <el-tab-pane label="用户管理" name="users">
         <UserManager />
       </el-tab-pane>
@@ -22,6 +16,12 @@
       </el-tab-pane>
       <el-tab-pane label="用量排行" name="leaderboard">
         <Leaderboard />
+      </el-tab-pane>
+      <el-tab-pane label="工作时段" name="workhours">
+        <WorkingHoursConfig />
+      </el-tab-pane>
+      <el-tab-pane label="配额级别" name="quota">
+        <QuotaLevelManager />
       </el-tab-pane>
     </el-tabs>
   </div>
@@ -36,7 +36,7 @@ import GlobalTrend from '@/views/admin/GlobalTrend.vue'
 import DepartmentSummary from '@/views/admin/DepartmentSummary.vue'
 import Leaderboard from '@/views/admin/Leaderboard.vue'
 
-const activeTab = ref('quota')
+const activeTab = ref('users')
 
 function onTabChange() {
   // Tab 切换后容器宽度可能还未更新，延迟触发 resize
