@@ -7,13 +7,9 @@
       <h1 class="page-title">个人看板</h1>
       <div class="header-right">
         <div class="time-filter-wrapper">
-          <!-- 时段限制已关闭时，显示提示并固定全天 -->
+          <!-- 时段限制已关闭时，显示纯Tag无tooltip -->
           <template v-if="!workingHoursEnabled">
-            <el-tooltip content="管理员已关闭时段过滤，当前统计全天数据" placement="bottom">
-              <el-tag type="info" size="default" style="cursor:default">
-                <el-icon style="margin-right:4px"><InfoFilled /></el-icon>全天（时段过滤已关闭）
-              </el-tag>
-            </el-tooltip>
+            <el-tag type="info" size="default" style="cursor:default">全天</el-tag>
           </template>
           <!-- 时段限制开启时，显示完整切换器 -->
           <template v-else>
@@ -68,7 +64,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTimeFilterStore } from '@/stores/timeFilter'
 import { useAuthStore } from '@/stores/auth'
-import { QuestionFilled, ArrowDown, SwitchButton, InfoFilled } from '@element-plus/icons-vue'
+import { QuestionFilled, ArrowDown, SwitchButton } from '@element-plus/icons-vue'
 import api from '@/api'
 const tf = useTimeFilterStore()
 const auth = useAuthStore()
