@@ -32,9 +32,9 @@ def _check_clickhouse(cfg: dict[str, Any]) -> dict[str, Any]:
         )
         client.execute("SELECT 1")
         return {"status": "ok"}
-    except Exception as exc:
-        logger.warning("ClickHouse health check failed: %s", exc)
-        return {"status": "error", "detail": str(exc)}
+    except Exception:
+        logger.exception("ClickHouse health check failed")
+        return {"status": "error", "detail": "internal_error"}
 
 
 def _check_postgres(cfg: dict[str, Any]) -> dict[str, Any]:
@@ -51,9 +51,9 @@ def _check_postgres(cfg: dict[str, Any]) -> dict[str, Any]:
         cur.close()
         conn.close()
         return {"status": "ok"}
-    except Exception as exc:
-        logger.warning("PostgreSQL health check failed: %s", exc)
-        return {"status": "error", "detail": str(exc)}
+    except Exception:
+        logger.exception("PostgreSQL health check failed")
+        return {"status": "error", "detail": "internal_error"}
 
 
 def _check_ldap(cfg: dict[str, Any]) -> dict[str, Any]:
@@ -70,9 +70,9 @@ def _check_ldap(cfg: dict[str, Any]) -> dict[str, Any]:
         conn.simple_bind_s("", "")
         conn.unbind_s()
         return {"status": "ok"}
-    except Exception as exc:
-        logger.warning("LDAP health check failed: %s", exc)
-        return {"status": "error", "detail": str(exc)}
+    except Exception:
+        logger.exception("LDAP health check failed")
+        return {"status": "error", "detail": "internal_error"}
 
 
 @router.get("/health")

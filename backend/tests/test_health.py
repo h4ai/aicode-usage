@@ -83,7 +83,7 @@ def test_check_postgres_connection_error():
     with patch("psycopg2.connect", side_effect=Exception("connection failed")):
         result = _check_postgres({"database": {"url": "postgresql://localhost/test"}})
     assert result["status"] == "error"
-    assert "connection failed" in result["detail"]
+    assert result["detail"] == "internal_error"
 
 
 # ---------------------------------------------------------------------------
