@@ -1,10 +1,18 @@
 """
 共享 fixtures for pytest
 """
-
 from __future__ import annotations
 
-from unittest.mock import patch
+import sys
+from unittest.mock import MagicMock, patch
+
+# python-ldap requires native libs not available in CI; stub the module so
+# that app.services.ldap_service can be imported in every test environment.
+if "ldap" not in sys.modules:
+    _ldap_mock = MagicMock()
+    _ldap_mock.filter = MagicMock()
+    sys.modules["ldap"] = _ldap_mock
+    sys.modules["ldap.filter"] = _ldap_mock.filter
 
 import bcrypt
 import pytest
@@ -26,7 +34,6 @@ def client():
     with patch("app.main.init_db"):
         from fastapi.testclient import TestClient
         from app.main import app
-
         with TestClient(app) as c:
             yield c
 
@@ -35,7 +42,6 @@ def client():
 def admin_token():
     """Return a pre-built admin JWT signed with the test hash — no HTTP call needed."""
     from app.services.auth import create_token
-
     return create_token(
         username="admin",
         role="admin",
