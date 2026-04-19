@@ -4,16 +4,28 @@
 <template>
   <div class="dashboard-view">
     <div class="page-header">
-      <h1 class="page-title">个人看板</h1>
+      <h1 class="page-title">
+        个人看板
+      </h1>
       <div class="header-right">
         <div class="time-filter-wrapper">
           <!-- 时段限制已关闭时，显示纯Tag无tooltip -->
           <template v-if="!workingHoursEnabled">
-            <el-tag type="info" size="default" style="cursor:default">全天</el-tag>
+            <el-tag
+              type="info"
+              size="default"
+              style="cursor:default"
+            >
+              全天
+            </el-tag>
           </template>
           <!-- 时段限制开启时，显示完整切换器 -->
           <template v-else>
-            <el-tooltip placement="bottom-end" effect="light" :width="320">
+            <el-tooltip
+              placement="bottom-end"
+              effect="light"
+              :width="320"
+            >
               <template #content>
                 <div class="filter-tooltip">
                   <strong>时段过滤说明</strong>
@@ -22,30 +34,72 @@
                     <li><b>工作时段</b>：仅统计 {{ workStart }}~{{ workEnd }}{{ weekdayOnly ? "（工作日，周一至周五）" : "" }}内产生的数据。</li>
                     <li><b>非工作时段</b>：仅统计工作时间以外{{ weekdayOnly ? "（含周六/周日全天）" : "" }}产生的数据。</li>
                   </ul>
-                  <p class="tooltip-scope"><b>生效范围：</b>指标卡片、配额进度条、Token 趋势图、模型分布图、使用明细列表（含 CSV 导出）。<br/>不影响活跃天数和配额上限值。</p>
-                  <p class="tooltip-note">⚙️ 工作时段起止时间可由管理员在「系统设置」中调整。</p>
+                  <p class="tooltip-scope">
+                    <b>生效范围：</b>指标卡片、配额进度条、Token 趋势图、模型分布图、使用明细列表（含 CSV 导出）。<br />不影响活跃天数和配额上限值。
+                  </p>
+                  <p class="tooltip-note">
+                    ⚙️ 工作时段起止时间可由管理员在「系统设置」中调整。
+                  </p>
                 </div>
               </template>
-              <el-icon class="filter-help-icon"><QuestionFilled /></el-icon>
+              <el-icon class="filter-help-icon">
+                <QuestionFilled />
+              </el-icon>
             </el-tooltip>
-            <el-radio-group v-model="tf.timeFilter" size="default" class="time-filter-bar" data-testid="time-filter-group">
-              <el-radio-button value="all" data-testid="time-filter-all">全天</el-radio-button>
-              <el-radio-button value="work" data-testid="time-filter-work">工作时段</el-radio-button>
-              <el-radio-button value="non_work" data-testid="time-filter-non-work">非工作时段</el-radio-button>
+            <el-radio-group
+              v-model="tf.timeFilter"
+              size="default"
+              class="time-filter-bar"
+              data-testid="time-filter-group"
+            >
+              <el-radio-button
+                value="all"
+                data-testid="time-filter-all"
+              >
+                全天
+              </el-radio-button>
+              <el-radio-button
+                value="work"
+                data-testid="time-filter-work"
+              >
+                工作时段
+              </el-radio-button>
+              <el-radio-button
+                value="non_work"
+                data-testid="time-filter-non-work"
+              >
+                非工作时段
+              </el-radio-button>
             </el-radio-group>
           </template>
         </div>
         <div class="header-divider"></div>
-        <el-dropdown trigger="click" @command="handleLogout">
+        <el-dropdown
+          trigger="click"
+          @command="handleLogout"
+        >
           <span class="user-badge">
-            <el-avatar :size="26" :style="{ background: '#409eff', fontSize: '12px' }">{{ avatarText }}</el-avatar>
+            <el-avatar
+              :size="26"
+              :style="{ background: '#409eff', fontSize: '12px' }"
+            >{{ avatarText }}</el-avatar>
             <span class="username-text">{{ auth.username || '用户' }}</span>
             <el-icon style="font-size:11px;color:#909399"><ArrowDown /></el-icon>
           </span>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item disabled style="font-size:12px;color:#999">已登录：{{ auth.username || '—' }}</el-dropdown-item>
-              <el-dropdown-item divided command="logout"><el-icon><SwitchButton /></el-icon> 退出登录</el-dropdown-item>
+              <el-dropdown-item
+                disabled
+                style="font-size:12px;color:#999"
+              >
+                已登录：{{ auth.username || '—' }}
+              </el-dropdown-item>
+              <el-dropdown-item
+                divided
+                command="logout"
+              >
+                <el-icon><SwitchButton /></el-icon> 退出登录
+              </el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>

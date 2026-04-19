@@ -26,8 +26,8 @@ from app.services.clickhouse import (
     get_monthly_request_count,
     get_monthly_token_usage,
     get_today_token_usage,
-    get_weekly_token_usage,
     get_weekly_request_count,
+    get_weekly_token_usage,
 )
 
 router = APIRouter(prefix="/api/metrics")

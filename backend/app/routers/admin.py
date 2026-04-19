@@ -5,19 +5,22 @@
 
 from __future__ import annotations
 
+import csv
+import io
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from app.deps import require_admin
 from app.services.clickhouse import (
-    get_all_users_monthly_chats,
-    get_all_users_today_chats,
-    get_all_users_today_tokens,
     get_all_users_daily_requests,
+    get_all_users_monthly_chats,
     get_all_users_monthly_requests,
     get_all_users_monthly_tokens,
+    get_all_users_today_chats,
+    get_all_users_today_tokens,
     get_global_trend,
     get_global_trend_by_dept,
     get_global_trend_by_model,
@@ -195,9 +198,7 @@ def change_user_level(
 
 # ---- Global trend -----------------------------------------------------------
 
-from datetime import date, datetime, timedelta, timezone  # noqa: E402
-from typing import Literal  # noqa: E402
-
+from datetime import datetime, timedelta, timezone  # noqa: E402
 
 
 class TrendItem(BaseModel):
@@ -354,8 +355,6 @@ def list_leaderboard(
 
 # ---- CSV export -------------------------------------------------------------
 
-from fastapi.responses import StreamingResponse  # noqa: E402
-import csv, io  # noqa: E402
 
 
 @router.get("/users/export-csv")
@@ -417,8 +416,11 @@ def update_working_hours(
     _user: dict[str, Any] = Depends(require_admin),
 ) -> WorkingHoursConfig:
     """Update working hours config (writes back to config.yaml)."""
-    import re, yaml
+    import re
     from pathlib import Path
+
+    import yaml
+
     from app.config import load_config
 
     # validate HH:MM format

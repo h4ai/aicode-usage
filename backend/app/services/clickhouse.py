@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
 from cachetools import TTLCache
@@ -14,8 +14,8 @@ from clickhouse_driver import Client as CHClient
 
 from app.config import get_config
 from app.data_schema import (
-    EVENT_CODE,
     ENTERPRISE,
+    EVENT_CODE,
     EVENT_DATE,
     IDE_TYPE,
     INPUT_TOKEN,
@@ -26,8 +26,6 @@ from app.data_schema import (
 )
 
 logger = logging.getLogger(__name__)
-
-from datetime import timezone, timedelta
 
 def _today_shanghai() -> str:
     """Return today's date in Asia/Shanghai timezone (YYYY-MM-DD)."""
@@ -58,8 +56,8 @@ def _working_hours_filter(time_filter: str = "auto") -> str:
     end_sec = eh * 3600 + em * 60
 
     time_expr = (
-        f"toHour(toDateTime(timestamp / 1000, 'Asia/Shanghai')) * 3600 +"
-        f" toMinute(toDateTime(timestamp / 1000, 'Asia/Shanghai')) * 60"
+        "toHour(toDateTime(timestamp / 1000, 'Asia/Shanghai')) * 3600 +"
+        " toMinute(toDateTime(timestamp / 1000, 'Asia/Shanghai')) * 60"
     )
 
     effective = time_filter
@@ -70,7 +68,7 @@ def _working_hours_filter(time_filter: str = "auto") -> str:
         effective = "all"
 
     # toDayOfWeek: 1=Mon, 2=Tue, ..., 5=Fri, 6=Sat, 7=Sun
-    dow_expr = f"toDayOfWeek(toDateTime(timestamp / 1000, 'Asia/Shanghai'))"
+    dow_expr = "toDayOfWeek(toDateTime(timestamp / 1000, 'Asia/Shanghai'))"
     weekday_only = cfg.get("working_hours", {}).get("weekday_only", True)
 
     if effective == "work":
@@ -144,7 +142,7 @@ def get_monthly_request_count(user_id: str, time_filter: str = "all") -> int:
 
 def get_weekly_token_usage(user_id: str, time_filter: str = "all") -> int:
     """Return total tokens used by *user_id* in the current ISO week (Mon~today)."""
-    from datetime import date, timedelta
+    from datetime import timedelta
     today = datetime.now(tz=timezone(timedelta(hours=8))).date()
     week_start = (today - timedelta(days=today.weekday())).isoformat()  # 本周一
     cache_key = f"weekly_token:{user_id}:{week_start}:{time_filter}"
@@ -166,7 +164,7 @@ def get_weekly_token_usage(user_id: str, time_filter: str = "all") -> int:
 
 def get_weekly_request_count(user_id: str, time_filter: str = "all") -> int:
     """Return total request count by *user_id* in the current ISO week."""
-    from datetime import date, timedelta
+    from datetime import timedelta
     today = datetime.now(tz=timezone(timedelta(hours=8))).date()
     week_start = (today - timedelta(days=today.weekday())).isoformat()
     cache_key = f"weekly_req:{user_id}:{week_start}:{time_filter}"
@@ -535,12 +533,13 @@ def get_chat_session_count(user_id: str, scope: str = "month", time_filter: str 
     if cache_key in _cache:
         return int(_cache[cache_key])
 
-    from datetime import date, timedelta
+    from datetime import timedelta
     client = _get_client()
     if scope == "today":
         result = client.execute(
             f"SELECT count() FROM events WHERE {USER_ID} = %(uid)s"
-            f" AND {EVENT_DATE} = %(today)s AND {EVENT_CODE} = 'chat_request_response'" + _working_hours_filter(time_filter),
+            f" AND {EVENT_DATE} = %(today)s AND {EVENT_CODE} = 'chat_request_response'"
+            + _working_hours_filter(time_filter),
             {"uid": user_id, "today": _today_shanghai()},
         )
     elif scope == "week":
@@ -566,7 +565,6 @@ def get_chat_session_count(user_id: str, scope: str = "month", time_filter: str 
 
 def get_all_users_today_tokens(time_filter: str = "auto") -> dict[str, int]:
     """Return {user_id: today_token} for all users."""
-    from datetime import date
     cache_key = f"all_today_token:{_today_shanghai()}:{time_filter}"
     if cache_key in _cache:
         return dict(_cache[cache_key])
@@ -583,7 +581,6 @@ def get_all_users_today_tokens(time_filter: str = "auto") -> dict[str, int]:
 
 def get_all_users_today_chats(time_filter: str = "auto") -> dict[str, int]:
     """Return {user_id: today_chat_count} for all users."""
-    from datetime import date
     cache_key = f"all_today_chat:{_today_shanghai()}:{time_filter}"
     if cache_key in _cache:
         return dict(_cache[cache_key])

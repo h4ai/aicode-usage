@@ -6,9 +6,20 @@
     <template #header>
       <span>配额级别管理</span>
     </template>
-    <el-table :data="levels" v-loading="loading" border>
-      <el-table-column prop="level" label="级别" width="100" />
-      <el-table-column label="月度Token限额" min-width="180">
+    <el-table
+      v-loading="loading"
+      :data="levels"
+      border
+    >
+      <el-table-column
+        prop="level"
+        label="级别"
+        width="100"
+      />
+      <el-table-column
+        label="月度Token限额"
+        min-width="180"
+      >
         <template #default="{ row }">
           <template v-if="editingLevel === row.level">
             <el-input-number
@@ -24,7 +35,10 @@
           </template>
         </template>
       </el-table-column>
-      <el-table-column label="日对话上限" min-width="150">
+      <el-table-column
+        label="日对话上限"
+        min-width="150"
+      >
         <template #default="{ row }">
           <template v-if="editingLevel === row.level">
             <el-input-number
@@ -40,7 +54,11 @@
           </template>
         </template>
       </el-table-column>
-      <el-table-column v-if="false" label="日请求上限" min-width="150">
+      <el-table-column
+        v-if="false"
+        label="日请求上限"
+        min-width="150"
+      >
         <template #default="{ row }">
           <template v-if="editingLevel === row.level">
             <el-input-number
@@ -56,17 +74,37 @@
           </template>
         </template>
       </el-table-column>
-      <el-table-column prop="user_count" label="当前人数" width="100" />
-      <el-table-column label="操作" width="160">
+      <el-table-column
+        prop="user_count"
+        label="当前人数"
+        width="100"
+      />
+      <el-table-column
+        label="操作"
+        width="160"
+      >
         <template #default="{ row }">
           <template v-if="editingLevel === row.level">
-            <el-button type="primary" size="small" @click="saveLevel(row.level)">
+            <el-button
+              type="primary"
+              size="small"
+              @click="saveLevel(row.level)"
+            >
               保存
             </el-button>
-            <el-button size="small" @click="cancelEdit">取消</el-button>
+            <el-button
+              size="small"
+              @click="cancelEdit"
+            >
+              取消
+            </el-button>
           </template>
           <template v-else>
-            <el-button type="primary" size="small" @click="startEdit(row)">
+            <el-button
+              type="primary"
+              size="small"
+              @click="startEdit(row)"
+            >
               编辑
             </el-button>
           </template>

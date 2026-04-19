@@ -6,28 +6,76 @@
         <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
           <span>全局趋势</span>
           <div style="display:flex;gap:8px;align-items:center">
-            <el-radio-group v-model="metricType" size="small" @change="renderChart">
-              <el-radio-button value="token">Token 用量</el-radio-button>
-              <el-radio-button value="chat">对话轮次</el-radio-button>
+            <el-radio-group
+              v-model="metricType"
+              size="small"
+              @change="renderChart"
+            >
+              <el-radio-button value="token">
+                Token 用量
+              </el-radio-button>
+              <el-radio-button value="chat">
+                对话轮次
+              </el-radio-button>
             </el-radio-group>
-  <template v-if="workingHoursEnabled">
-            <el-radio-group v-model="timeFilter" size="small" @change="fetchData" style="margin-right:4px">
-              <el-radio-button value="all">全天</el-radio-button>
-              <el-radio-button value="work">工作时段</el-radio-button>
-              <el-radio-button value="non_work">非工作时段</el-radio-button>
-            </el-radio-group>
-          </template>
-          <el-tag v-else type="info" size="small" style="cursor:default">全天</el-tag>
-            <el-select v-model="groupBy" style="width:140px" size="small" @change="fetchData">
-              <el-option label="按总量" value="" />
-              <el-option label="按模型" value="model" />
-              <el-option label="按分组" value="department" />
+            <template v-if="workingHoursEnabled">
+              <el-radio-group
+                v-model="timeFilter"
+                size="small"
+                style="margin-right:4px"
+                @change="fetchData"
+              >
+                <el-radio-button value="all">
+                  全天
+                </el-radio-button>
+                <el-radio-button value="work">
+                  工作时段
+                </el-radio-button>
+                <el-radio-button value="non_work">
+                  非工作时段
+                </el-radio-button>
+              </el-radio-group>
+            </template>
+            <el-tag
+              v-else
+              type="info"
+              size="small"
+              style="cursor:default"
+            >
+              全天
+            </el-tag>
+            <el-select
+              v-model="groupBy"
+              style="width:140px"
+              size="small"
+              @change="fetchData"
+            >
+              <el-option
+                label="按总量"
+                value=""
+              />
+              <el-option
+                label="按模型"
+                value="model"
+              />
+              <el-option
+                label="按分组"
+                value="department"
+              />
             </el-select>
           </div>
         </div>
       </template>
-      <div v-if="loading" v-loading="true" style="height:380px" />
-      <div v-else ref="chartEl" style="height:380px;width:100%" />
+      <div
+        v-if="loading"
+        v-loading="true"
+        style="height:380px"
+      ></div>
+      <div
+        v-else
+        ref="chartEl"
+        style="height:380px;width:100%"
+      ></div>
     </el-card>
   </div>
 </template>

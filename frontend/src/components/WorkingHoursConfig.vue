@@ -4,15 +4,28 @@
     <template #header>
       <div style="display:flex;align-items:center;gap:8px">
         <span>工作时段配置</span>
-        <el-tooltip content="工作时段 = 周一至周五 start~end；周六日全天视为非工作时段；月度Token不受影响" placement="top">
-          <el-icon style="color:#909399;cursor:pointer"><QuestionFilled /></el-icon>
+        <el-tooltip
+          content="工作时段 = 周一至周五 start~end；周六日全天视为非工作时段；月度Token不受影响"
+          placement="top"
+        >
+          <el-icon style="color:#909399;cursor:pointer">
+            <QuestionFilled />
+          </el-icon>
         </el-tooltip>
       </div>
     </template>
 
-    <div v-if="loading" v-loading="true" style="height:80px" />
+    <div
+      v-if="loading"
+      v-loading="true"
+      style="height:80px"
+    ></div>
     <template v-else>
-      <el-form :model="form" label-width="120px" size="default">
+      <el-form
+        :model="form"
+        label-width="120px"
+        size="default"
+      >
         <el-form-item label="启用时段限制">
           <el-switch
             v-model="form.enabled"
@@ -43,7 +56,13 @@
           </el-form-item>
         </template>
         <el-form-item>
-          <el-button type="primary" @click="save" :loading="saving">保存</el-button>
+          <el-button
+            type="primary"
+            :loading="saving"
+            @click="save"
+          >
+            保存
+          </el-button>
           <span style="margin-left:12px;color:#909399;font-size:12px">
             当前：{{ currentDesc }}
           </span>

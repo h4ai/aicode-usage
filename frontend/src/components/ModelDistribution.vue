@@ -2,15 +2,28 @@
 <!-- SPDX-FileCopyrightText: 2026 SubLang International <https://sublang.ai> -->
 
 <template>
-  <el-card class="model-distribution" data-testid="model-dist-card">
+  <el-card
+    class="model-distribution"
+    data-testid="model-dist-card"
+  >
     <template #header>
       <div class="dist-header">
         <span>模型分布</span>
         <div class="dist-controls">
-          <el-radio-group v-model="rangeMode" size="small" @change="onRangeChange">
-            <el-radio-button value="7">最近7天</el-radio-button>
-            <el-radio-button value="30">最近30天</el-radio-button>
-            <el-radio-button value="custom">自定义</el-radio-button>
+          <el-radio-group
+            v-model="rangeMode"
+            size="small"
+            @change="onRangeChange"
+          >
+            <el-radio-button value="7">
+              最近7天
+            </el-radio-button>
+            <el-radio-button value="30">
+              最近30天
+            </el-radio-button>
+            <el-radio-button value="custom">
+              自定义
+            </el-radio-button>
           </el-radio-group>
           <el-date-picker
             v-if="rangeMode === 'custom'"
@@ -26,8 +39,16 @@
         </div>
       </div>
     </template>
-    <div v-if="loading" v-loading="true" style="height: 320px" />
-    <div v-else ref="chartRef" style="height: 320px" />
+    <div
+      v-if="loading"
+      v-loading="true"
+      style="height: 320px"
+    ></div>
+    <div
+      v-else
+      ref="chartRef"
+      style="height: 320px"
+    ></div>
   </el-card>
 </template>
 

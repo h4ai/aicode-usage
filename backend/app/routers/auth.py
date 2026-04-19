@@ -108,7 +108,7 @@ def test_login(body: LoginRequest) -> LoginResponse:
     # 检查用户是否存在于 ClickHouse
     rows = _get_client().execute(
         "SELECT userId, userNickname, username, enterprise FROM otel.events "
-        f"WHERE userId = %(uid)s LIMIT 1",
+        "WHERE userId = %(uid)s LIMIT 1",
         {"uid": body.username},
     )
     if not rows:

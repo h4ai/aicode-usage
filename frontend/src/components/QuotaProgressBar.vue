@@ -6,7 +6,11 @@
     <template #header>
       <span>配额使用</span>
     </template>
-    <div v-if="loading" v-loading="true" style="height: 80px" />
+    <div
+      v-if="loading"
+      v-loading="true"
+      style="height: 80px"
+    ></div>
     <template v-else-if="quota">
       <div class="quota-bar-row">
         <span class="quota-label">月度 Token</span>
@@ -17,18 +21,27 @@
           :text-inside="true"
           :format="() => formatWan(quota!.monthly_token.used) + ' / ' + formatWan(quota!.monthly_token.limit)"
         />
-        <el-tooltip :content="quota.monthly_token.message" placement="top">
-          <el-tag :type="tagType(quota.monthly_token.color)" size="small">
+        <el-tooltip
+          :content="quota.monthly_token.message"
+          placement="top"
+        >
+          <el-tag
+            :type="tagType(quota.monthly_token.color)"
+            size="small"
+          >
             {{ quota.monthly_token.message }}
           </el-tag>
         </el-tooltip>
       </div>
       <div class="quota-bar-row">
         <span class="quota-label">今日对话
-        <el-tooltip content="仅统计工作时段内的对话轮次（时段由管理员配置）" placement="top">
-          <el-icon style="font-size:12px;color:#c0c4cc;margin-left:2px;vertical-align:middle"><QuestionFilled /></el-icon>
-        </el-tooltip>
-      </span>
+          <el-tooltip
+            content="仅统计工作时段内的对话轮次（时段由管理员配置）"
+            placement="top"
+          >
+            <el-icon style="font-size:12px;color:#c0c4cc;margin-left:2px;vertical-align:middle"><QuestionFilled /></el-icon>
+          </el-tooltip>
+        </span>
         <el-progress
           :percentage="Math.min(quota.daily_chats.percent, 100)"
           :color="colorMap[quota.daily_chats.color]"
@@ -36,13 +49,18 @@
           :text-inside="true"
           :format="() => quota!.daily_chats.used + ' / ' + quota!.daily_chats.limit + ' 轮'"
         />
-        <el-tooltip :content="quota.daily_chats.message" placement="top">
-          <el-tag :type="tagType(quota.daily_chats.color)" size="small">
+        <el-tooltip
+          :content="quota.daily_chats.message"
+          placement="top"
+        >
+          <el-tag
+            :type="tagType(quota.daily_chats.color)"
+            size="small"
+          >
             {{ quota.daily_chats.message }}
           </el-tag>
         </el-tooltip>
       </div>
-
     </template>
   </el-card>
 </template>
