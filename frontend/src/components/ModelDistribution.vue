@@ -20,6 +20,7 @@
             end-placeholder="结束日期"
             size="small"
             value-format="YYYY-MM-DD"
+            :disabled-date="disabledDate"
             @change="fetchData"
           />
         </div>
@@ -48,6 +49,14 @@ const loading = ref(true)
 const distData = ref<DistItem[]>([])
 const chartRef = ref<HTMLElement | null>(null)
 let chartInstance: echarts.ECharts | null = null
+
+/** 禁用 90 天以前的日期 */
+function disabledDate(date: Date): boolean {
+  const ninetyDaysAgo = new Date()
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
+  ninetyDaysAgo.setHours(0, 0, 0, 0)
+  return date < ninetyDaysAgo || date > new Date()
+}
 
 function buildOption(): echarts.EChartsOption {
   return {

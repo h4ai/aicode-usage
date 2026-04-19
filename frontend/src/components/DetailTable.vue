@@ -14,7 +14,8 @@
             end-placeholder="结束日期"
             size="small"
             value-format="YYYY-MM-DD"
-            @change="fetchDetail"
+            :disabled-date="disabledDate"
+            @change="onDateChange"
           />
           <el-input
             v-model="filterModel"
@@ -22,8 +23,8 @@
             size="small"
             clearable
             style="width: 160px"
-            @clear="fetchDetail"
-            @keyup.enter="fetchDetail"
+            @clear="onFilterChange"
+            @keyup.enter="onFilterChange"
           />
           <el-input
             v-model="filterIdeType"
@@ -31,17 +32,18 @@
             size="small"
             clearable
             style="width: 160px"
-            @clear="fetchDetail"
-            @keyup.enter="fetchDetail"
+            @clear="onFilterChange"
+            @keyup.enter="onFilterChange"
           />
-          <el-button size="small" @click="fetchDetail">查询</el-button>
+          <el-button size="small" @click="onFilterChange">查询</el-button>
           <el-button size="small" type="success" @click="exportCsv">导出CSV</el-button>
         </div>
       </div>
     </template>
+
     <el-table
       v-loading="loading"
-      :data="tableData"
+      :data="pagedData"
       stripe
       :default-sort="{ prop: 'date', order: 'descending' }"
       @sort-change="onSortChange"
@@ -59,11 +61,25 @@
         <template #default="{ row }">{{ formatNum(row.total_token) }}</template>
       </el-table-column>
     </el-table>
+
+    <!-- 分页 -->
+    <div class="pagination-bar">
+      <el-pagination
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :page-sizes="[10, 20, 50]"
+        :total="tableData.length"
+        layout="total, sizes, prev, pager, next"
+        small
+        background
+        @size-change="currentPage = 1"
+      />
+    </div>
   </el-card>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 const props = withDefaults(defineProps<{ timeFilter?: string }>(), { timeFilter: 'all' })
 import api from '@/api'
 
@@ -84,12 +100,29 @@ const filterIdeType = ref('')
 const sortBy = ref<string | null>(null)
 const sortOrder = ref<string>('desc')
 
+// 分页
+const currentPage = ref(1)
+const pageSize = ref(20)
+const pagedData = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  return tableData.value.slice(start, start + pageSize.value)
+})
+
 function formatNum(n: number): string {
   return n.toLocaleString()
 }
 
+/** 禁用 90 天以前及未来的日期 */
+function disabledDate(date: Date): boolean {
+  const ninetyDaysAgo = new Date()
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
+  ninetyDaysAgo.setHours(0, 0, 0, 0)
+  return date < ninetyDaysAgo || date > new Date()
+}
+
 async function fetchDetail() {
   loading.value = true
+  currentPage.value = 1
   try {
     const params: Record<string, string> = { time_filter: props.timeFilter }
     if (dateRange.value) {
@@ -107,6 +140,14 @@ async function fetchDetail() {
   } finally {
     loading.value = false
   }
+}
+
+function onDateChange() {
+  fetchDetail()
+}
+
+function onFilterChange() {
+  fetchDetail()
 }
 
 function onSortChange({ prop, order }: { prop: string; order: string | null }) {
@@ -129,11 +170,9 @@ function exportCsv() {
   if (filterIdeType.value) params.set('ide_type', filterIdeType.value)
   params.set('time_filter', props.timeFilter)
 
-  // Use the api base URL with auth token
   const token = localStorage.getItem('token')
   const baseURL = api.defaults.baseURL || '/api'
   const url = `${baseURL}/metrics/export.csv?${params.toString()}`
-  const link = document.createElement('a')
 
   fetch(url, { headers: { Authorization: `Bearer ${token}` } })
     .then((res) => {
@@ -145,6 +184,7 @@ function exportCsv() {
       return res.blob()
     })
     .then((blob) => {
+      const link = document.createElement('a')
       link.href = URL.createObjectURL(blob)
       link.download = 'usage_detail.csv'
       link.click()
@@ -177,5 +217,11 @@ watch(() => props.timeFilter, fetchDetail)
   gap: 8px;
   align-items: center;
   flex-wrap: wrap;
+}
+
+.pagination-bar {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
 }
 </style>
