@@ -21,3 +21,14 @@ frontend/tsconfig.tsbuildinfo
 node_modules
 test-results
 .env
+
+# 测试报告、截图、QA 产物（不上传 GitHub）
+qa/screenshots/
+qa/playwright-report/
+qa/test-cases.md
+qa/e2e-report*.md
+tests/
+docs/screenshots/
+docs/po-*.md
+docs/po-*.html
+docs/po-*.pdf

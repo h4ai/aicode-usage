@@ -28,7 +28,7 @@ async function setTimeFilterByTestId(page, testId: string) {
 
 test.describe('AI Code Usage Dashboard regression (2026-04-19)', () => {
   test('US-T02/T03: global time filter toggle works and persists', async ({ page }) => {
-    await login(page, 'uid_001', 'test123');
+    await login(page, 'uid_001', '<test_password>');
 
     await setTimeFilterByTestId(page, 'time-filter-work');
     await page.reload();
@@ -41,7 +41,7 @@ test.describe('AI Code Usage Dashboard regression (2026-04-19)', () => {
   });
 
   test('US-T07/T08: key metrics tabs order and week tab exists', async ({ page }) => {
-    await login(page, 'uid_001', 'test123');
+    await login(page, 'uid_001', '<test_password>');
 
     await expect(page.locator('[data-testid="metrics-scope-group"]').first()).toBeVisible();
     await expect(page.locator('[data-testid="metrics-tab-today"]').first()).toBeVisible();
@@ -50,7 +50,7 @@ test.describe('AI Code Usage Dashboard regression (2026-04-19)', () => {
   });
 
   test('US-T11: detail export respects time_filter (smoke)', async ({ page }) => {
-    await login(page, 'uid_001', 'test123');
+    await login(page, 'uid_001', '<test_password>');
 
     await setTimeFilterByTestId(page, 'time-filter-work');
 

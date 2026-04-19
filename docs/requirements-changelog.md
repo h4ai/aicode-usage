@@ -105,7 +105,7 @@
 
 **背景**：测试环境无真实 AD，LDAP 连接报错  
 **变更**：新增 `/api/auth/test-login` 接口  
-- 密码固定 `test123`，绕过 LDAP
+- 密码固定 `<test_password>`，绕过 LDAP
 - 从 ClickHouse 验证用户存在性
 - **仅用于开发/测试，生产必须禁用**
 
