@@ -2,7 +2,7 @@
 <!-- SPDX-FileCopyrightText: 2026 SubLang International <https://sublang.ai> -->
 
 <template>
-  <el-card class="trend-chart">
+  <el-card class="trend-chart" data-testid="trend-chart-card">
     <template #header>
       <div class="trend-header">
         <span>Token 趋势</span>

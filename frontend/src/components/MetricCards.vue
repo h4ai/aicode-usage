@@ -6,10 +6,10 @@
     <template #header>
       <div class="metric-header">
         <span>关键指标</span>
-        <el-radio-group v-model="scope" size="small" @change="fetchMetrics">
-          <el-radio-button value="today">今日</el-radio-button>
-          <el-radio-button value="week">本周</el-radio-button>
-          <el-radio-button value="month">本月</el-radio-button>
+        <el-radio-group v-model="scope" size="small" @change="fetchMetrics" data-testid="metrics-scope-group">
+          <el-radio-button value="today" data-testid="metrics-tab-today">今日</el-radio-button>
+          <el-radio-button value="week" data-testid="metrics-tab-week">本周</el-radio-button>
+          <el-radio-button value="month" data-testid="metrics-tab-month">本月</el-radio-button>
         </el-radio-group>
       </div>
     </template>

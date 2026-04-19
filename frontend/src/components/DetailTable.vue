@@ -9,6 +9,7 @@
         <div class="detail-controls">
           <el-date-picker
             v-model="dateRange"
+            data-testid="detail-date-picker"
             type="daterange"
             start-placeholder="开始日期"
             end-placeholder="结束日期"
@@ -35,8 +36,8 @@
             @clear="onFilterChange"
             @keyup.enter="onFilterChange"
           />
-          <el-button size="small" @click="onFilterChange">查询</el-button>
-          <el-button size="small" type="success" @click="exportCsv">导出CSV</el-button>
+          <el-button size="small" @click="onFilterChange" data-testid="detail-query-btn">查询</el-button>
+          <el-button size="small" type="success" @click="exportCsv" data-testid="detail-export-csv">导出CSV</el-button>
         </div>
       </div>
     </template>

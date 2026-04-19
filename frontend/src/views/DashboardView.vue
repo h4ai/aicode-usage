@@ -21,10 +21,10 @@
           </template>
           <el-icon class="filter-help-icon"><QuestionFilled /></el-icon>
         </el-tooltip>
-        <el-radio-group v-model="tf.timeFilter" size="default" class="time-filter-bar">
-          <el-radio-button value="all">全天</el-radio-button>
-          <el-radio-button value="work">工作时段</el-radio-button>
-          <el-radio-button value="non_work">非工作时段</el-radio-button>
+        <el-radio-group v-model="tf.timeFilter" size="default" class="time-filter-bar" data-testid="time-filter-group">
+          <el-radio-button value="all" data-testid="time-filter-all">全天</el-radio-button>
+          <el-radio-button value="work" data-testid="time-filter-work">工作时段</el-radio-button>
+          <el-radio-button value="non_work" data-testid="time-filter-non-work">非工作时段</el-radio-button>
         </el-radio-group>
       </div>
     </div>

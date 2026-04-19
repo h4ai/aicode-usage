@@ -2,7 +2,7 @@
 <!-- SPDX-FileCopyrightText: 2026 SubLang International <https://sublang.ai> -->
 
 <template>
-  <el-card class="model-distribution">
+  <el-card class="model-distribution" data-testid="model-dist-card">
     <template #header>
       <div class="dist-header">
         <span>模型分布</span>

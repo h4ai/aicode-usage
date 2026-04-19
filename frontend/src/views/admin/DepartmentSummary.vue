@@ -5,7 +5,7 @@
       <template #header>
         <div style="display:flex;justify-content:space-between;align-items:center">
           <span>部门用量汇总</span>
-          <el-radio-group v-model="timeFilter" size="small" @change="fetchData">
+          <el-radio-group v-model="timeFilter" data-testid="dept-time-filter" size="small" @change="fetchData">
             <el-radio-button value="all">全天</el-radio-button>
             <el-radio-button value="work">工作时段</el-radio-button>
             <el-radio-button value="non_work">非工作时段</el-radio-button>
