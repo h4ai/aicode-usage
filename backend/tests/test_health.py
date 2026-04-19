@@ -21,21 +21,25 @@ _MOCK_CONFIG = {
 
 def test_health_endpoint_returns_200(client):
     """GET /health returns 200 regardless of service state."""
-    with patch("app.routers.health.get_config", return_value=_MOCK_CONFIG):
-        with patch("app.routers.health._check_clickhouse", return_value={"status": "ok"}):
-            with patch("app.routers.health._check_postgres", return_value={"status": "ok"}):
-                with patch("app.routers.health._check_ldap", return_value={"status": "ok"}):
-                    resp = client.get("/health")
+    with (
+        patch("app.routers.health.get_config", return_value=_MOCK_CONFIG),
+        patch("app.routers.health._check_clickhouse", return_value={"status": "ok"}),
+        patch("app.routers.health._check_postgres", return_value={"status": "ok"}),
+        patch("app.routers.health._check_ldap", return_value={"status": "ok"}),
+    ):
+        resp = client.get("/health")
     assert resp.status_code == 200
 
 
 def test_health_endpoint_has_all_keys(client):
     """Response includes clickhouse, postgres, ldap keys."""
-    with patch("app.routers.health.get_config", return_value=_MOCK_CONFIG):
-        with patch("app.routers.health._check_clickhouse", return_value={"status": "ok"}):
-            with patch("app.routers.health._check_postgres", return_value={"status": "ok"}):
-                with patch("app.routers.health._check_ldap", return_value={"status": "ok"}):
-                    resp = client.get("/health")
+    with (
+        patch("app.routers.health.get_config", return_value=_MOCK_CONFIG),
+        patch("app.routers.health._check_clickhouse", return_value={"status": "ok"}),
+        patch("app.routers.health._check_postgres", return_value={"status": "ok"}),
+        patch("app.routers.health._check_ldap", return_value={"status": "ok"}),
+    ):
+        resp = client.get("/health")
     data = resp.json()
     assert "clickhouse" in data
     assert "postgres" in data
@@ -44,11 +48,13 @@ def test_health_endpoint_has_all_keys(client):
 
 def test_health_endpoint_returns_error_status_when_service_down(client):
     """Even when services are down, endpoint returns 200 with error details."""
-    with patch("app.routers.health.get_config", return_value=_MOCK_CONFIG):
-        with patch("app.routers.health._check_clickhouse", return_value={"status": "error", "detail": "connection refused"}):
-            with patch("app.routers.health._check_postgres", return_value={"status": "error", "detail": "timeout"}):
-                with patch("app.routers.health._check_ldap", return_value={"status": "error", "detail": "unreachable"}):
-                    resp = client.get("/health")
+    with (
+        patch("app.routers.health.get_config", return_value=_MOCK_CONFIG),
+        patch("app.routers.health._check_clickhouse", return_value={"status": "error", "detail": "connection refused"}),
+        patch("app.routers.health._check_postgres", return_value={"status": "error", "detail": "timeout"}),
+        patch("app.routers.health._check_ldap", return_value={"status": "error", "detail": "unreachable"}),
+    ):
+        resp = client.get("/health")
     assert resp.status_code == 200
     data = resp.json()
     assert data["clickhouse"]["status"] == "error"
