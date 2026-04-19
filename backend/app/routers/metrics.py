@@ -240,3 +240,15 @@ def metrics_export_csv(
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=usage_detail.csv"},
     )
+
+@router.get("/working-hours-config")
+def get_working_hours_config() -> dict:
+    """Return current working hours config for display in UI (no auth required)."""
+    from app.config import get_config
+    cfg = get_config().get("working_hours", {})
+    return {
+        "enabled": cfg.get("enabled", False),
+        "start": cfg.get("start", "08:30"),
+        "end": cfg.get("end", "18:00"),
+        "weekday_only": cfg.get("weekday_only", True),
+    }

@@ -13,8 +13,8 @@
               <strong>时段过滤说明</strong>
               <ul>
                 <li><b>全天</b>：统计当日/本周/本月所有时间段的数据，不做任何限制。</li>
-                <li><b>工作时段</b>：仅统计 08:30~18:00（工作日，周一至周五）内产生的数据。</li>
-                <li><b>非工作时段</b>：仅统计工作时间以外（含周六/周日全天）产生的数据。</li>
+                <li><b>工作时段</b>：仅统计 {{ workStart }}~{{ workEnd }}{{ weekdayOnly ? "（工作日，周一至周五）" : "" }}内产生的数据。</li>
+                <li><b>非工作时段</b>：仅统计工作时间以外{{ weekdayOnly ? "（含周六/周日全天）" : "" }}产生的数据。</li>
               </ul>
               <p class="tooltip-scope"><b>生效范围：</b>指标卡片、配额进度条、Token 趋势图、模型分布图、使用明细列表（含 CSV 导出）。<br/>不影响活跃天数和配额上限值。</p>
               <p class="tooltip-note">⚙️ 工作时段起止时间可由管理员在「系统设置」中调整。</p>
@@ -39,9 +39,24 @@
 
 <script setup lang="ts">
 import NavBar from '@/components/NavBar.vue'
+import { ref, onMounted } from 'vue'
 import { useTimeFilterStore } from '@/stores/timeFilter'
 import { QuestionFilled } from '@element-plus/icons-vue'
+import api from '@/api'
 const tf = useTimeFilterStore()
+
+const workStart = ref('08:30')
+const workEnd = ref('18:00')
+const weekdayOnly = ref(true)
+
+onMounted(async () => {
+  try {
+    const { data } = await api.get('/metrics/working-hours-config')
+    workStart.value = data.start
+    workEnd.value = data.end
+    weekdayOnly.value = data.weekday_only
+  } catch {}
+})
 import QuotaProgressBar from '@/components/QuotaProgressBar.vue'
 import MetricCards from '@/components/MetricCards.vue'
 import TrendChart from '@/components/TrendChart.vue'
