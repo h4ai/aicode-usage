@@ -225,16 +225,17 @@ def global_trend(
     start: str | None = Query(None),
     end: str | None = Query(None),
     group_by: str | None = Query(None),
+    time_filter: str = Query("all", description="all|work|non_work"),
     _user: dict[str, Any] = Depends(require_admin),
 ) -> list[dict[str, Any]]:
     """Return global daily token trend, optionally grouped by model or department."""
     if not start or not end:
         start, end = _default_date_range()
     if group_by == "model":
-        return get_global_trend_by_model(start, end)
+        return get_global_trend_by_model(start, end, time_filter)
     if group_by == "department":
-        return get_global_trend_by_dept(start, end)
-    return get_global_trend(start, end)
+        return get_global_trend_by_dept(start, end, time_filter)
+    return get_global_trend(start, end, time_filter)
 
 
 # ---- Department summary -----------------------------------------------------
@@ -386,6 +387,7 @@ class WorkingHoursConfig(BaseModel):
     enabled: bool
     start: str   # "HH:MM"
     end: str     # "HH:MM"
+    weekday_only: bool = True  # True=仅周一至周五，False=不限星期
 
 
 @router.get("/working-hours", response_model=WorkingHoursConfig)
@@ -425,9 +427,13 @@ def update_working_hours(
         "enabled": body.enabled,
         "start": body.start,
         "end": body.end,
+        "weekday_only": body.weekday_only,
     }
     with open(config_path, "w") as f:
         yaml.dump(cfg, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
 
     load_config()  # hot-reload
+    # 清空 ClickHouse 查询缓存，确保新配置立即生效
+    import app.services.clickhouse as _ch_module
+    _ch_module._cache.clear()
     return body

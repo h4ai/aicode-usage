@@ -5,16 +5,18 @@
       <template #header>
         <div style="display:flex;justify-content:space-between;align-items:center">
           <span>用量排行榜</span>
-          <el-radio-group v-model="timeFilter" data-testid="leaderboard-time-filter" size="small" @change="fetchData" style="margin-right:8px">
-            <el-radio-button value="all">全天</el-radio-button>
-            <el-radio-button value="work">工作时段</el-radio-button>
-            <el-radio-button value="non_work">非工作时段</el-radio-button>
-          </el-radio-group>
-          <el-select v-model="top" style="width:100px" @change="fetchData">
-            <el-option label="Top 10" :value="10" />
-            <el-option label="Top 20" :value="20" />
-            <el-option label="Top 50" :value="50" />
-          </el-select>
+          <div style="display:flex;gap:8px;align-items:center">
+            <el-radio-group v-model="timeFilter" data-testid="leaderboard-time-filter" size="small" @change="fetchData">
+              <el-radio-button value="all">全天</el-radio-button>
+              <el-radio-button value="work">工作时段</el-radio-button>
+              <el-radio-button value="non_work">非工作时段</el-radio-button>
+            </el-radio-group>
+            <el-select v-model="top" style="width:100px" @change="fetchData">
+              <el-option label="Top 10" :value="10" />
+              <el-option label="Top 20" :value="20" />
+              <el-option label="Top 50" :value="50" />
+            </el-select>
+          </div>
         </div>
       </template>
       <el-table :data="rows" v-loading="loading" stripe>
