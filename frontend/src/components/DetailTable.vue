@@ -38,7 +38,7 @@
     >
       <el-table-column prop="date" label="日期" sortable="custom" width="120" />
       <el-table-column prop="model" label="模型" sortable="custom" min-width="160" />
-      <el-table-column prop="request_count" label="请求次数" sortable="custom" width="110" align="right" />
+      <el-table-column prop="request_count" label="对话轮次" sortable="custom" width="110" align="right" />
       <el-table-column prop="input_token" label="输入Token" sortable="custom" width="120" align="right">
         <template #default="{ row }">{{ formatNum(row.input_token) }}</template>
       </el-table-column>
@@ -57,7 +57,7 @@
         v-model:page-size="pageSize"
         :page-sizes="[10, 20, 50]"
         :total="tableData.length"
-        layout="total, sizes, prev, pager, next"
+        layout="total, sizes, prev, pager, next, jumper"
         small
         background
         @size-change="currentPage = 1"
