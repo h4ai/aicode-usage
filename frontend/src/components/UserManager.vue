@@ -21,14 +21,6 @@
             <el-option label="🟢 正常" value="green" />
             <el-option label="⚪ 未使用" value="gray" />
           </el-select>
-          <template v-if="workingHoursEnabled">
-            <el-radio-group v-model="timeFilter" size="small" @change="fetchUsers" data-testid="user-mgr-time-filter">
-              <el-radio-button value="all">全天</el-radio-button>
-              <el-radio-button value="work">工作时段</el-radio-button>
-              <el-radio-button value="non_work">非工作时段</el-radio-button>
-            </el-radio-group>
-          </template>
-          <el-tag v-else type="info" size="small" style="cursor:default">全天</el-tag>
           <el-button size="small" @click="exportCsv" :loading="exporting">
             📥 导出 CSV
           </el-button>
@@ -154,8 +146,7 @@ interface UserItem {
   status_chat: string
 }
 
-const timeFilter = ref('all')
-const workingHoursEnabled = ref(true)
+// 用户管理固定全天，不做时段过滤
 const users = ref<UserItem[]>([])
 const loading = ref(false)
 const exporting = ref(false)
@@ -210,7 +201,7 @@ const pagedUsers = computed(() => {
 async function fetchUsers() {
   loading.value = true
   try {
-    const { data } = await api.get<UserItem[]>(`/admin/users?time_filter=${timeFilter.value}`)
+    const { data } = await api.get<UserItem[]>(`/admin/users?time_filter=all`)
     // 默认按状态+月 Token 排序
     const order = { red: 0, yellow: 1, green: 2, gray: 3 }
     data.sort((a, b) => {
@@ -239,7 +230,7 @@ async function changeLevel(userId: string, level: string) {
 async function exportCsv() {
   exporting.value = true
   try {
-    const { data } = await api.get(`/admin/users/export-csv?time_filter=${timeFilter.value}`, { responseType: 'blob' })
+    const { data } = await api.get(`/admin/users/export-csv?time_filter=all`, { responseType: 'blob' })
     const url = URL.createObjectURL(data as Blob)
     const a = document.createElement('a')
     a.href = url
@@ -254,14 +245,7 @@ async function exportCsv() {
 }
 
 
-onMounted(async () => {
-  try {
-    const { data: whCfg } = await api.get('/metrics/working-hours-config')
-    workingHoursEnabled.value = whCfg.enabled
-    if (!whCfg.enabled) timeFilter.value = 'all'
-  } catch {}
-  fetchUsers()
-})
+onMounted(fetchUsers)
 </script>
 
 <style scoped>

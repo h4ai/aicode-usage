@@ -40,7 +40,7 @@
           </template>
         </template>
       </el-table-column>
-      <el-table-column label="日请求上限" min-width="150">
+      <el-table-column v-if="false" label="日请求上限" min-width="150">
         <template #default="{ row }">
           <template v-if="editingLevel === row.level">
             <el-input-number
