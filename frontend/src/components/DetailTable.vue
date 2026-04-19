@@ -7,36 +7,23 @@
       <div class="detail-header">
         <span>使用明细</span>
         <div class="detail-controls">
+          <el-radio-group v-model="rangeMode" size="small" @change="onRangeChange">
+            <el-radio-button value="7">最近7天</el-radio-button>
+            <el-radio-button value="30">最近30天</el-radio-button>
+            <el-radio-button value="custom">自定义</el-radio-button>
+          </el-radio-group>
           <el-date-picker
-            v-model="dateRange"
-            data-testid="detail-date-picker"
+            v-if="rangeMode === 'custom'"
+            v-model="customRange"
             type="daterange"
             start-placeholder="开始日期"
             end-placeholder="结束日期"
             size="small"
             value-format="YYYY-MM-DD"
             :disabled-date="disabledDate"
-            @change="onDateChange"
+            data-testid="detail-date-picker"
+            @change="fetchDetail"
           />
-          <el-input
-            v-model="filterModel"
-            placeholder="筛选模型"
-            size="small"
-            clearable
-            style="width: 160px"
-            @clear="onFilterChange"
-            @keyup.enter="onFilterChange"
-          />
-          <el-input
-            v-model="filterIdeType"
-            placeholder="筛选IDE类型"
-            size="small"
-            clearable
-            style="width: 160px"
-            @clear="onFilterChange"
-            @keyup.enter="onFilterChange"
-          />
-          <el-button size="small" @click="onFilterChange" data-testid="detail-query-btn">查询</el-button>
           <el-button size="small" type="success" @click="exportCsv" data-testid="detail-export-csv">导出CSV</el-button>
         </div>
       </div>
@@ -95,9 +82,8 @@ interface DetailItem {
 
 const loading = ref(true)
 const tableData = ref<DetailItem[]>([])
-const dateRange = ref<[string, string] | null>(null)
-const filterModel = ref('')
-const filterIdeType = ref('')
+const rangeMode = ref<'7' | '30' | 'custom'>('7')
+const customRange = ref<[string, string] | null>(null)
 const sortBy = ref<string | null>(null)
 const sortOrder = ref<string>('desc')
 
@@ -121,34 +107,37 @@ function disabledDate(date: Date): boolean {
   return date < ninetyDaysAgo || date > new Date()
 }
 
+/** 构建当前查询参数（导出复用此函数保证一致性） */
+function buildParams(): Record<string, string> {
+  const params: Record<string, string> = { time_filter: props.timeFilter }
+  if (rangeMode.value === 'custom' && customRange.value) {
+    params.start = customRange.value[0]
+    params.end = customRange.value[1]
+  } else {
+    params.days = rangeMode.value
+  }
+  if (sortBy.value) {
+    params.sort_by = sortBy.value
+    params.sort_order = sortOrder.value
+  }
+  return params
+}
+
 async function fetchDetail() {
   loading.value = true
   currentPage.value = 1
   try {
-    const params: Record<string, string> = { time_filter: props.timeFilter }
-    if (dateRange.value) {
-      params.start = dateRange.value[0]
-      params.end = dateRange.value[1]
-    }
-    if (filterModel.value) params.model = filterModel.value
-    if (filterIdeType.value) params.ide_type = filterIdeType.value
-    if (sortBy.value) {
-      params.sort_by = sortBy.value
-      params.sort_order = sortOrder.value
-    }
-    const { data } = await api.get<DetailItem[]>('/metrics/detail', { params })
+    const { data } = await api.get<DetailItem[]>('/metrics/detail', { params: buildParams() })
     tableData.value = data
   } finally {
     loading.value = false
   }
 }
 
-function onDateChange() {
-  fetchDetail()
-}
-
-function onFilterChange() {
-  fetchDetail()
+function onRangeChange() {
+  if (rangeMode.value !== 'custom') {
+    fetchDetail()
+  }
 }
 
 function onSortChange({ prop, order }: { prop: string; order: string | null }) {
@@ -162,15 +151,8 @@ function onSortChange({ prop, order }: { prop: string; order: string | null }) {
 }
 
 function exportCsv() {
-  const params = new URLSearchParams()
-  if (dateRange.value) {
-    params.set('start', dateRange.value[0])
-    params.set('end', dateRange.value[1])
-  }
-  if (filterModel.value) params.set('model', filterModel.value)
-  if (filterIdeType.value) params.set('ide_type', filterIdeType.value)
-  params.set('time_filter', props.timeFilter)
-
+  // 导出参数与页面显示完全一致
+  const params = new URLSearchParams(buildParams() as Record<string, string>)
   const token = localStorage.getItem('token')
   const baseURL = api.defaults.baseURL || '/api'
   const url = `${baseURL}/metrics/export.csv?${params.toString()}`

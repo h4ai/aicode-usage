@@ -212,7 +212,7 @@ def metrics_detail(
 def metrics_export_csv(
     start: Optional[str] = Query(None),
     end: Optional[str] = Query(None),
-    days: int = Query(30),
+    days: int = Query(7),
     model: Optional[str] = Query(None),
     ide_type: Optional[str] = Query(None),
     user_id: Optional[str] = Query(None),
