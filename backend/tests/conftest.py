@@ -1,6 +1,7 @@
 """
 共享 fixtures for pytest
 """
+
 from __future__ import annotations
 
 from unittest.mock import patch
@@ -25,6 +26,7 @@ def client():
     with patch("app.main.init_db"):
         from fastapi.testclient import TestClient
         from app.main import app
+
         with TestClient(app) as c:
             yield c
 
@@ -33,6 +35,7 @@ def client():
 def admin_token():
     """Return a pre-built admin JWT signed with the test hash — no HTTP call needed."""
     from app.services.auth import create_token
+
     return create_token(
         username="admin",
         role="admin",
