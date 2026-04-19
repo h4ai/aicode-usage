@@ -10,10 +10,18 @@
               <el-radio-button value="token">Token 用量</el-radio-button>
               <el-radio-button value="chat">对话轮次</el-radio-button>
             </el-radio-group>
+  <template v-if="workingHoursEnabled">
+            <el-radio-group v-model="timeFilter" size="small" @change="fetchData" style="margin-right:4px">
+              <el-radio-button value="all">全天</el-radio-button>
+              <el-radio-button value="work">工作时段</el-radio-button>
+              <el-radio-button value="non_work">非工作时段</el-radio-button>
+            </el-radio-group>
+          </template>
+          <el-tag v-else type="info" size="small" style="cursor:default">全天</el-tag>
             <el-select v-model="groupBy" style="width:140px" size="small" @change="fetchData">
               <el-option label="按总量" value="" />
               <el-option label="按模型" value="model" />
-              <el-option label="按部门" value="department" />
+              <el-option label="按分组" value="department" />
             </el-select>
           </div>
         </div>
@@ -26,12 +34,15 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
+import api from '@/api'
 import * as echarts from 'echarts'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
 const chartEl = ref<HTMLElement>()
 const groupBy = ref('')
+const timeFilter = ref('all')
+const workingHoursEnabled = ref(true)
 const metricType = ref<'token' | 'chat'>('token')
 const loading = ref(false)
 let chart: echarts.ECharts | null = null
@@ -94,9 +105,10 @@ async function fetchData() {
   }
   loading.value = true
   try {
+    const tf = timeFilter.value
     const url = groupBy.value
-      ? `/api/admin/trend?group_by=${groupBy.value}`
-      : '/api/admin/trend'
+      ? `/api/admin/trend?group_by=${groupBy.value}&time_filter=${tf}`
+      : `/api/admin/trend?time_filter=${tf}`
     const res = await fetch(url, { headers: { Authorization: `Bearer ${auth.token}` } })
     rawData = await res.json()
   } finally {
@@ -107,7 +119,12 @@ async function fetchData() {
   renderChart()
 }
 
-onMounted(() => {
+onMounted(async () => {
+  try {
+    const { data: whCfg } = await api.get('/metrics/working-hours-config')
+    workingHoursEnabled.value = whCfg.enabled
+    if (!whCfg.enabled) timeFilter.value = 'all'
+  } catch {}
   fetchData()
   window.addEventListener('resize', handleResize)
 })

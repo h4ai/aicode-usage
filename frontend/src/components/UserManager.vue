@@ -9,7 +9,7 @@
         <div style="display:flex;gap:8px;align-items:center">
           <el-input
             v-model="searchText"
-            placeholder="搜索姓名/部门"
+            placeholder="搜索姓名/分组"
             clearable
             size="small"
             style="width:160px"
@@ -46,7 +46,7 @@
 
       <el-table-column prop="display_name" label="姓名" min-width="90" />
       <el-table-column prop="user_id" label="userId" min-width="100" />
-      <el-table-column prop="enterprise" label="部门" min-width="90" />
+      <el-table-column prop="enterprise" label="分组" min-width="90" />
 
       <!-- 配额级别 -->
       <el-table-column label="级别" width="110" align="center">
@@ -64,7 +64,7 @@
       </el-table-column>
 
       <!-- 本月 Token -->
-      <el-table-column label="本月 Token" min-width="130" sortable :sort-method="(a: UserItem, b: UserItem) => a.monthly_token - b.monthly_token">
+      <el-table-column label="本月限额Token" min-width="130" sortable :sort-method="(a: UserItem, b: UserItem) => a.monthly_token - b.monthly_token">
         <template #default="{ row }">
           <span :class="'text-' + row.status_token">
             {{ formatWan(row.monthly_token) }}
@@ -82,7 +82,7 @@
       </el-table-column>
 
       <!-- 今日对话轮次 -->
-      <el-table-column label="今日对话" width="110" sortable :sort-method="(a: UserItem, b: UserItem) => a.today_chats - b.today_chats">
+      <el-table-column label="今日限额对话" width="110" sortable :sort-method="(a: UserItem, b: UserItem) => a.today_chats - b.today_chats">
         <template #default="{ row }">
           <span :class="'text-' + row.status_chat">{{ row.today_chats }}</span>
           <el-tag v-if="row.status_chat === 'red'" type="danger" size="small" style="margin-left:4px">超限</el-tag>
@@ -94,6 +94,18 @@
       <el-table-column label="本月对话" width="100" sortable :sort-method="(a: UserItem, b: UserItem) => a.monthly_chats - b.monthly_chats">
         <template #default="{ row }">
           <span>{{ row.monthly_chats }}</span>
+        </template>
+      </el-table-column>
+      <!-- 本月总Token（全天，不受时段过滤） -->
+      <el-table-column label="本月总Token" min-width="120" sortable :sort-method="(a: UserItem, b: UserItem) => a.monthly_token_all - b.monthly_token_all">
+        <template #default="{ row }">
+          <span>{{ formatWan(row.monthly_token_all ?? row.monthly_token) }}</span>
+        </template>
+      </el-table-column>
+      <!-- 今日总对话（全天，不受时段过滤） -->
+      <el-table-column label="今日总对话" width="110" sortable :sort-method="(a: UserItem, b: UserItem) => (a.today_chats_all ?? a.today_chats) - (b.today_chats_all ?? b.today_chats)">
+        <template #default="{ row }">
+          <span>{{ row.today_chats_all ?? row.today_chats }}</span>
         </template>
       </el-table-column>
     </el-table>
@@ -114,7 +126,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import api from '@/api'
 
@@ -123,15 +135,18 @@ interface UserItem {
   display_name: string
   enterprise: string
   quota_level: string
-  monthly_token: number
+  monthly_token: number       // 限额统计用（受time_filter影响）
+  monthly_token_all: number   // 全天本月总量
   today_token: number
-  today_chats: number
+  today_chats: number         // 限额统计用（受time_filter影响）
+  today_chats_all: number     // 全天今日总对话
   monthly_chats: number
   daily_requests: number
   status_token: string
   status_chat: string
 }
 
+// 用户管理固定全天，不做时段过滤
 const users = ref<UserItem[]>([])
 const loading = ref(false)
 const exporting = ref(false)
@@ -186,7 +201,7 @@ const pagedUsers = computed(() => {
 async function fetchUsers() {
   loading.value = true
   try {
-    const { data } = await api.get<UserItem[]>('/admin/users')
+    const { data } = await api.get<UserItem[]>(`/admin/users?time_filter=all`)
     // 默认按状态+月 Token 排序
     const order = { red: 0, yellow: 1, green: 2, gray: 3 }
     data.sort((a, b) => {
@@ -215,7 +230,7 @@ async function changeLevel(userId: string, level: string) {
 async function exportCsv() {
   exporting.value = true
   try {
-    const { data } = await api.get('/admin/users/export-csv', { responseType: 'blob' })
+    const { data } = await api.get(`/admin/users/export-csv?time_filter=all`, { responseType: 'blob' })
     const url = URL.createObjectURL(data as Blob)
     const a = document.createElement('a')
     a.href = url
@@ -228,6 +243,7 @@ async function exportCsv() {
     exporting.value = false
   }
 }
+
 
 onMounted(fetchUsers)
 </script>

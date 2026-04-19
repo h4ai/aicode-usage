@@ -14,7 +14,7 @@ test.describe('Suite A - Auth', () => {
     await page.screenshot({ path: 'qa/screenshots/A-005-login-wrong-password.png', fullPage: true });
 
     // correct password
-    await page.getByPlaceholder('密码').fill('8rOcpnvEUSBCG8d#');
+    await page.getByPlaceholder('密码').fill('<admin_password>');
     await page.getByRole('button', { name: '登录' }).click();
 
     // Route change can be blocked if any error is thrown after login. Assert localStorage first.

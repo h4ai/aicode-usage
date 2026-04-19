@@ -2,7 +2,7 @@
 <!-- SPDX-FileCopyrightText: 2026 SubLang International <https://sublang.ai> -->
 
 <template>
-  <el-card class="model-distribution">
+  <el-card class="model-distribution" data-testid="model-dist-card">
     <template #header>
       <div class="dist-header">
         <span>模型分布</span>
@@ -20,6 +20,7 @@
             end-placeholder="结束日期"
             size="small"
             value-format="YYYY-MM-DD"
+            :disabled-date="disabledDate"
             @change="fetchData"
           />
         </div>
@@ -31,7 +32,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick, onBeforeUnmount } from 'vue'
+import { ref, onMounted, nextTick, onBeforeUnmount, watch } from 'vue'
+const props = withDefaults(defineProps<{ timeFilter?: string }>(), { timeFilter: 'all' })
 import * as echarts from 'echarts'
 import api from '@/api'
 
@@ -47,6 +49,14 @@ const loading = ref(true)
 const distData = ref<DistItem[]>([])
 const chartRef = ref<HTMLElement | null>(null)
 let chartInstance: echarts.ECharts | null = null
+
+/** 禁用 90 天以前的日期 */
+function disabledDate(date: Date): boolean {
+  const ninetyDaysAgo = new Date()
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
+  ninetyDaysAgo.setHours(0, 0, 0, 0)
+  return date < ninetyDaysAgo || date > new Date()
+}
 
 function buildOption(): echarts.EChartsOption {
   return {
@@ -97,7 +107,7 @@ async function fetchData() {
   }
   loading.value = true
   try {
-    const params: Record<string, string> = {}
+    const params: Record<string, string> = { time_filter: props.timeFilter }
     if (rangeMode.value === 'custom' && customRange.value) {
       params.start = customRange.value[0]
       params.end = customRange.value[1]
@@ -120,6 +130,7 @@ function onRangeChange() {
 }
 
 onMounted(fetchData)
+watch(() => props.timeFilter, fetchData)
 
 onBeforeUnmount(() => {
   chartInstance?.dispose()

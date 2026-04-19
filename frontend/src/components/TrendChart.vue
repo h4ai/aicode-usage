@@ -2,7 +2,7 @@
 <!-- SPDX-FileCopyrightText: 2026 SubLang International <https://sublang.ai> -->
 
 <template>
-  <el-card class="trend-chart">
+  <el-card class="trend-chart" data-testid="trend-chart-card">
     <template #header>
       <div class="trend-header">
         <span>Token 趋势</span>
@@ -24,6 +24,7 @@
             end-placeholder="结束日期"
             size="small"
             value-format="YYYY-MM-DD"
+            :disabled-date="disabledDate"
             @change="fetchTrend"
           />
         </div>
@@ -36,6 +37,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch, nextTick, onBeforeUnmount } from 'vue'
+const props = withDefaults(defineProps<{ timeFilter?: string }>(), { timeFilter: 'all' })
 import * as echarts from 'echarts'
 import api from '@/api'
 
@@ -53,6 +55,14 @@ const loading = ref(true)
 const trendData = ref<TrendItem[]>([])
 const chartRef = ref<HTMLElement | null>(null)
 let chartInstance: echarts.ECharts | null = null
+
+/** 禁用 90 天以前的日期 */
+function disabledDate(date: Date): boolean {
+  const ninetyDaysAgo = new Date()
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
+  ninetyDaysAgo.setHours(0, 0, 0, 0)
+  return date < ninetyDaysAgo || date > new Date()
+}
 
 function buildOption(): echarts.EChartsOption {
   const dates = trendData.value.map((d) => d.date)
@@ -92,14 +102,13 @@ function renderChart() {
 }
 
 async function fetchTrend() {
-  // 销毁旧实例，避免 v-if 切换后 DOM 引用失效
   if (chartInstance) {
     chartInstance.dispose()
     chartInstance = null
   }
   loading.value = true
   try {
-    const params: Record<string, string> = {}
+    const params: Record<string, string> = { time_filter: props.timeFilter }
     if (rangeMode.value === 'custom' && customRange.value) {
       params.start = customRange.value[0]
       params.end = customRange.value[1]
@@ -126,6 +135,7 @@ watch(chartType, () => {
 })
 
 onMounted(fetchTrend)
+watch(() => props.timeFilter, fetchTrend)
 
 onBeforeUnmount(() => {
   chartInstance?.dispose()

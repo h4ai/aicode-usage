@@ -26,6 +26,8 @@ from app.services.clickhouse import (
     get_monthly_request_count,
     get_monthly_token_usage,
     get_today_token_usage,
+    get_weekly_token_usage,
+    get_weekly_request_count,
 )
 
 router = APIRouter(prefix="/api/metrics")
@@ -33,6 +35,7 @@ router = APIRouter(prefix="/api/metrics")
 
 class Scope(str, Enum):
     month = "month"
+    week = "week"
     today = "today"
 
 
@@ -47,6 +50,7 @@ class MetricsSummaryResponse(BaseModel):
 @router.get("/summary", response_model=MetricsSummaryResponse)
 def metrics_summary(
     scope: Scope = Query(Scope.month),
+    time_filter: str = Query("all", description="all|work|non_work"),
     user_id: Optional[str] = Query(None, description="Admin can specify any user_id"),
     user: dict[str, Any] = Depends(get_current_user),
 ) -> MetricsSummaryResponse:
@@ -55,22 +59,34 @@ def metrics_summary(
 
     if scope == Scope.today:
         return MetricsSummaryResponse(
-            total_token=get_today_token_usage(effective_user_id),
-            request_count=get_daily_request_count(effective_user_id),
-            chat_count=get_chat_session_count(effective_user_id, "today"),
+            total_token=get_today_token_usage(effective_user_id, time_filter),
+            request_count=get_daily_request_count(effective_user_id, time_filter),
+            chat_count=get_chat_session_count(effective_user_id, "today", time_filter),
+        )
+
+    if scope == Scope.week:
+        weekly_token = get_weekly_token_usage(effective_user_id, time_filter)
+        weekly_req = get_weekly_request_count(effective_user_id, time_filter)
+        weekly_chat = get_chat_session_count(effective_user_id, "week", time_filter)
+        return MetricsSummaryResponse(
+            total_token=weekly_token,
+            request_count=weekly_req,
+            active_days=None,
+            daily_avg_token=weekly_token // 5 if weekly_token else 0,
+            chat_count=weekly_chat,
         )
 
     # month scope
-    monthly_token = get_monthly_token_usage(effective_user_id)
+    monthly_token = get_monthly_token_usage(effective_user_id, time_filter)
     active_days = get_monthly_active_days(effective_user_id)
     daily_avg = monthly_token // active_days if active_days else 0
 
     return MetricsSummaryResponse(
         total_token=monthly_token,
-        request_count=get_monthly_request_count(effective_user_id),
+        request_count=get_monthly_request_count(effective_user_id, time_filter),
         active_days=active_days,
         daily_avg_token=daily_avg,
-        chat_count=get_chat_session_count(effective_user_id, "month"),
+        chat_count=get_chat_session_count(effective_user_id, "month", time_filter),
     )
 
 
@@ -86,6 +102,7 @@ def metrics_trend(
     days: int = Query(7),
     start: Optional[str] = Query(None),
     end: Optional[str] = Query(None),
+    time_filter: str = Query("all", description="all|work|non_work"),
     user_id: Optional[str] = Query(None),
     user: dict[str, Any] = Depends(get_current_user),
 ) -> list[TrendItem]:
@@ -99,7 +116,7 @@ def metrics_trend(
         end_date = today.isoformat()
         start_date = (today - timedelta(days=days - 1)).isoformat()
 
-    rows = get_daily_trend(effective_user_id, start_date, end_date)
+    rows = get_daily_trend(effective_user_id, start_date, end_date, time_filter)
     return [TrendItem(**row) for row in rows]
 
 
@@ -114,12 +131,13 @@ def metrics_model_distribution(
     start: Optional[str] = Query(None),
     end: Optional[str] = Query(None),
     days: int = Query(30),
+    time_filter: str = Query("all"),
     user_id: Optional[str] = Query(None),
     user: dict[str, Any] = Depends(get_current_user),
 ) -> list[ModelDistributionItem]:
     effective_user_id: str = user_id if (user.get("role") == "admin" and user_id) else user.get("sub", "")
     start_date, end_date = _resolve_date_range(start, end, days)
-    rows = get_model_distribution(effective_user_id, start_date, end_date)
+    rows = get_model_distribution(effective_user_id, start_date, end_date, time_filter)
     grand_total = sum(r["total_token"] for r in rows)
     return [
         ModelDistributionItem(
@@ -172,12 +190,13 @@ def metrics_detail(
     ide_type: Optional[str] = Query(None),
     sort_by: Optional[str] = Query(None),
     sort_order: Optional[str] = Query("desc"),
+    time_filter: str = Query("all"),
     user_id: Optional[str] = Query(None),
     user: dict[str, Any] = Depends(get_current_user),
 ) -> list[DetailItem]:
     effective_user_id: str = user_id if (user.get("role") == "admin" and user_id) else user.get("sub", "")
     start_date, end_date = _resolve_date_range(start, end, days)
-    rows = get_detail_records(effective_user_id, start_date, end_date, model, ide_type)
+    rows = get_detail_records(effective_user_id, start_date, end_date, model, ide_type, time_filter)
 
     # Client-side sorting
     if sort_by and sort_by in {
@@ -193,17 +212,18 @@ def metrics_detail(
 def metrics_export_csv(
     start: Optional[str] = Query(None),
     end: Optional[str] = Query(None),
-    days: int = Query(30),
+    days: int = Query(7),
     model: Optional[str] = Query(None),
     ide_type: Optional[str] = Query(None),
     user_id: Optional[str] = Query(None),
+    time_filter: str = Query("all", description="all|work|non_work"),
     user: dict[str, Any] = Depends(get_current_user),
 ) -> StreamingResponse:
     effective_user_id: str = user_id if (user.get("role") == "admin" and user_id) else user.get("sub", "")
     start_date, end_date = _resolve_date_range(start, end, days)
     _validate_export_range(start_date, end_date)
 
-    rows = get_detail_records(effective_user_id, start_date, end_date, model, ide_type)
+    rows = get_detail_records(effective_user_id, start_date, end_date, model, ide_type, time_filter)
 
     buf = io.StringIO()
     writer = csv.writer(buf)
@@ -220,3 +240,15 @@ def metrics_export_csv(
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=usage_detail.csv"},
     )
+
+@router.get("/working-hours-config")
+def get_working_hours_config() -> dict:
+    """Return current working hours config for display in UI (no auth required)."""
+    from app.config import get_config
+    cfg = get_config().get("working_hours", {})
+    return {
+        "enabled": cfg.get("enabled", False),
+        "start": cfg.get("start", "08:30"),
+        "end": cfg.get("end", "18:00"),
+        "weekday_only": cfg.get("weekday_only", True),
+    }

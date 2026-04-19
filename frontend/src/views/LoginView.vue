@@ -97,7 +97,7 @@ async function handleLogin() {
         throw primaryErr
       }
     }
-    auth.setToken(data.token, data.role)
+    auth.setToken(data.token, data.role, form.username)
 
     if (data.role === 'admin') {
       await router.push('/admin')

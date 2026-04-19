@@ -7,48 +7,38 @@
       <div class="detail-header">
         <span>使用明细</span>
         <div class="detail-controls">
+          <el-radio-group v-model="rangeMode" size="small" @change="onRangeChange">
+            <el-radio-button value="7">最近7天</el-radio-button>
+            <el-radio-button value="30">最近30天</el-radio-button>
+            <el-radio-button value="custom">自定义</el-radio-button>
+          </el-radio-group>
           <el-date-picker
-            v-model="dateRange"
+            v-if="rangeMode === 'custom'"
+            v-model="customRange"
             type="daterange"
             start-placeholder="开始日期"
             end-placeholder="结束日期"
             size="small"
             value-format="YYYY-MM-DD"
+            :disabled-date="disabledDate"
+            data-testid="detail-date-picker"
             @change="fetchDetail"
           />
-          <el-input
-            v-model="filterModel"
-            placeholder="筛选模型"
-            size="small"
-            clearable
-            style="width: 160px"
-            @clear="fetchDetail"
-            @keyup.enter="fetchDetail"
-          />
-          <el-input
-            v-model="filterIdeType"
-            placeholder="筛选IDE类型"
-            size="small"
-            clearable
-            style="width: 160px"
-            @clear="fetchDetail"
-            @keyup.enter="fetchDetail"
-          />
-          <el-button size="small" @click="fetchDetail">查询</el-button>
-          <el-button size="small" type="success" @click="exportCsv">导出CSV</el-button>
+          <el-button size="small" type="success" @click="exportCsv" data-testid="detail-export-csv">导出CSV</el-button>
         </div>
       </div>
     </template>
+
     <el-table
       v-loading="loading"
-      :data="tableData"
+      :data="pagedData"
       stripe
       :default-sort="{ prop: 'date', order: 'descending' }"
       @sort-change="onSortChange"
     >
       <el-table-column prop="date" label="日期" sortable="custom" width="120" />
       <el-table-column prop="model" label="模型" sortable="custom" min-width="160" />
-      <el-table-column prop="request_count" label="请求次数" sortable="custom" width="110" align="right" />
+      <el-table-column prop="request_count" label="对话轮次" sortable="custom" width="110" align="right" />
       <el-table-column prop="input_token" label="输入Token" sortable="custom" width="120" align="right">
         <template #default="{ row }">{{ formatNum(row.input_token) }}</template>
       </el-table-column>
@@ -59,11 +49,26 @@
         <template #default="{ row }">{{ formatNum(row.total_token) }}</template>
       </el-table-column>
     </el-table>
+
+    <!-- 分页 -->
+    <div class="pagination-bar">
+      <el-pagination
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :page-sizes="[10, 20, 50]"
+        :total="tableData.length"
+        layout="total, sizes, prev, pager, next, jumper"
+        small
+        background
+        @size-change="currentPage = 1"
+      />
+    </div>
   </el-card>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+const props = withDefaults(defineProps<{ timeFilter?: string }>(), { timeFilter: 'all' })
 import api from '@/api'
 
 interface DetailItem {
@@ -77,34 +82,61 @@ interface DetailItem {
 
 const loading = ref(true)
 const tableData = ref<DetailItem[]>([])
-const dateRange = ref<[string, string] | null>(null)
-const filterModel = ref('')
-const filterIdeType = ref('')
+const rangeMode = ref<'7' | '30' | 'custom'>('7')
+const customRange = ref<[string, string] | null>(null)
 const sortBy = ref<string | null>(null)
 const sortOrder = ref<string>('desc')
+
+// 分页
+const currentPage = ref(1)
+const pageSize = ref(20)
+const pagedData = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  return tableData.value.slice(start, start + pageSize.value)
+})
 
 function formatNum(n: number): string {
   return n.toLocaleString()
 }
 
+/** 禁用 90 天以前及未来的日期 */
+function disabledDate(date: Date): boolean {
+  const ninetyDaysAgo = new Date()
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
+  ninetyDaysAgo.setHours(0, 0, 0, 0)
+  return date < ninetyDaysAgo || date > new Date()
+}
+
+/** 构建当前查询参数（导出复用此函数保证一致性） */
+function buildParams(): Record<string, string> {
+  const params: Record<string, string> = { time_filter: props.timeFilter }
+  if (rangeMode.value === 'custom' && customRange.value) {
+    params.start = customRange.value[0]
+    params.end = customRange.value[1]
+  } else {
+    params.days = rangeMode.value
+  }
+  if (sortBy.value) {
+    params.sort_by = sortBy.value
+    params.sort_order = sortOrder.value
+  }
+  return params
+}
+
 async function fetchDetail() {
   loading.value = true
+  currentPage.value = 1
   try {
-    const params: Record<string, string> = {}
-    if (dateRange.value) {
-      params.start = dateRange.value[0]
-      params.end = dateRange.value[1]
-    }
-    if (filterModel.value) params.model = filterModel.value
-    if (filterIdeType.value) params.ide_type = filterIdeType.value
-    if (sortBy.value) {
-      params.sort_by = sortBy.value
-      params.sort_order = sortOrder.value
-    }
-    const { data } = await api.get<DetailItem[]>('/metrics/detail', { params })
+    const { data } = await api.get<DetailItem[]>('/metrics/detail', { params: buildParams() })
     tableData.value = data
   } finally {
     loading.value = false
+  }
+}
+
+function onRangeChange() {
+  if (rangeMode.value !== 'custom') {
+    fetchDetail()
   }
 }
 
@@ -119,19 +151,11 @@ function onSortChange({ prop, order }: { prop: string; order: string | null }) {
 }
 
 function exportCsv() {
-  const params = new URLSearchParams()
-  if (dateRange.value) {
-    params.set('start', dateRange.value[0])
-    params.set('end', dateRange.value[1])
-  }
-  if (filterModel.value) params.set('model', filterModel.value)
-  if (filterIdeType.value) params.set('ide_type', filterIdeType.value)
-
-  // Use the api base URL with auth token
+  // 导出参数与页面显示完全一致
+  const params = new URLSearchParams(buildParams() as Record<string, string>)
   const token = localStorage.getItem('token')
   const baseURL = api.defaults.baseURL || '/api'
   const url = `${baseURL}/metrics/export.csv?${params.toString()}`
-  const link = document.createElement('a')
 
   fetch(url, { headers: { Authorization: `Bearer ${token}` } })
     .then((res) => {
@@ -143,6 +167,7 @@ function exportCsv() {
       return res.blob()
     })
     .then((blob) => {
+      const link = document.createElement('a')
       link.href = URL.createObjectURL(blob)
       link.download = 'usage_detail.csv'
       link.click()
@@ -154,6 +179,7 @@ function exportCsv() {
 }
 
 onMounted(fetchDetail)
+watch(() => props.timeFilter, fetchDetail)
 </script>
 
 <style scoped>
@@ -174,5 +200,11 @@ onMounted(fetchDetail)
   gap: 8px;
   align-items: center;
   flex-wrap: wrap;
+}
+
+.pagination-bar {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
 }
 </style>

@@ -27,8 +27,65 @@ from app.data_schema import (
 
 logger = logging.getLogger(__name__)
 
+from datetime import timezone, timedelta
+
+def _today_shanghai() -> str:
+    """Return today's date in Asia/Shanghai timezone (YYYY-MM-DD)."""
+    tz_sh = timezone(timedelta(hours=8))
+    return datetime.now(tz=tz_sh).date().isoformat()
+
+
 # 5-minute TTL cache, max 1024 entries
 _cache: TTLCache[str, Any] = TTLCache(maxsize=1024, ttl=300)
+
+
+
+def _working_hours_filter(time_filter: str = "auto") -> str:
+    """Return ClickHouse WHERE clause fragment for time range filter.
+
+    time_filter values:
+      "auto"     - use config working_hours.enabled to decide
+      "work"     - force working hours only
+      "non_work" - force non-working hours only
+      "all"      - no filter (full day)
+    """
+    cfg = get_config().get("working_hours", {})
+    start = cfg.get("start", "08:30")
+    end = cfg.get("end", "18:00")
+    sh, sm = map(int, start.split(":"))
+    eh, em = map(int, end.split(":"))
+    start_sec = sh * 3600 + sm * 60
+    end_sec = eh * 3600 + em * 60
+
+    time_expr = (
+        f"toHour(toDateTime(timestamp / 1000, 'Asia/Shanghai')) * 3600 +"
+        f" toMinute(toDateTime(timestamp / 1000, 'Asia/Shanghai')) * 60"
+    )
+
+    effective = time_filter
+    if effective == "auto":
+        effective = "work" if cfg.get("enabled", False) else "all"
+    # 若管理员关闭时段限制，则 work/non_work 均降级为全天
+    if not cfg.get("enabled", False) and effective in ("work", "non_work"):
+        effective = "all"
+
+    # toDayOfWeek: 1=Mon, 2=Tue, ..., 5=Fri, 6=Sat, 7=Sun
+    dow_expr = f"toDayOfWeek(toDateTime(timestamp / 1000, 'Asia/Shanghai'))"
+    weekday_only = cfg.get("working_hours", {}).get("weekday_only", True)
+
+    if effective == "work":
+        if weekday_only:
+            weekday_filter = f" AND {dow_expr} BETWEEN 1 AND 5"
+            return f"{weekday_filter} AND {time_expr} >= {start_sec} AND {time_expr} < {end_sec}"
+        else:
+            return f" AND {time_expr} >= {start_sec} AND {time_expr} < {end_sec}"
+    elif effective == "non_work":
+        if weekday_only:
+            return f" AND ({dow_expr} > 5 OR {time_expr} < {start_sec} OR {time_expr} >= {end_sec})"
+        else:
+            return f" AND ({time_expr} < {start_sec} OR {time_expr} >= {end_sec})"
+    else:
+        return ""
 
 
 def _get_client() -> CHClient:
@@ -42,11 +99,11 @@ def _get_client() -> CHClient:
     )
 
 
-def get_monthly_token_usage(user_id: str) -> int:
+def get_monthly_token_usage(user_id: str, time_filter: str = "all") -> int:
     """Return total tokens used by *user_id* in the current calendar month."""
     now = datetime.now(tz=timezone.utc)
     month_start = date(now.year, now.month, 1).isoformat()
-    cache_key = f"monthly_token:{user_id}:{month_start}"
+    cache_key = f"monthly_token:{user_id}:{month_start}:{time_filter}"
     if cache_key in _cache:
         return int(_cache[cache_key])
 
@@ -54,7 +111,8 @@ def get_monthly_token_usage(user_id: str) -> int:
     result = client.execute(
         f"SELECT sum({TOTAL_TOKEN}) FROM events"
         f" WHERE {USER_ID} = %(uid)s"
-        f" AND event_date >= %(start)s",
+        f" AND event_date >= %(start)s"
+        + _working_hours_filter(time_filter),
         {"uid": user_id, "start": month_start},
     )
     total = int(result[0][0]) if result and result[0][0] else 0
@@ -62,11 +120,11 @@ def get_monthly_token_usage(user_id: str) -> int:
     return total
 
 
-def get_monthly_request_count(user_id: str) -> int:
+def get_monthly_request_count(user_id: str, time_filter: str = "all") -> int:
     """Return total request count by *user_id* in the current calendar month."""
     now = datetime.now(tz=timezone.utc)
     month_start = date(now.year, now.month, 1).isoformat()
-    cache_key = f"monthly_req:{user_id}:{month_start}"
+    cache_key = f"monthly_req:{user_id}:{month_start}:{time_filter}"
     if cache_key in _cache:
         return int(_cache[cache_key])
 
@@ -74,13 +132,58 @@ def get_monthly_request_count(user_id: str) -> int:
     result = client.execute(
         f"SELECT count() FROM events"
         f" WHERE {USER_ID} = %(uid)s"
-        f" AND event_date >= %(start)s",
+        f" AND event_date >= %(start)s"
+        + _working_hours_filter(time_filter),
         {"uid": user_id, "start": month_start},
     )
     count = int(result[0][0]) if result and result[0][0] else 0
     _cache[cache_key] = count
     return count
 
+
+
+def get_weekly_token_usage(user_id: str, time_filter: str = "all") -> int:
+    """Return total tokens used by *user_id* in the current ISO week (Mon~today)."""
+    from datetime import date, timedelta
+    today = datetime.now(tz=timezone(timedelta(hours=8))).date()
+    week_start = (today - timedelta(days=today.weekday())).isoformat()  # 本周一
+    cache_key = f"weekly_token:{user_id}:{week_start}:{time_filter}"
+    if cache_key in _cache:
+        return int(_cache[cache_key])
+
+    client = _get_client()
+    result = client.execute(
+        f"SELECT sum({TOTAL_TOKEN}) FROM events"
+        f" WHERE {USER_ID} = %(uid)s"
+        f" AND {EVENT_DATE} >= %(start)s AND {EVENT_DATE} <= %(today)s"
+        + _working_hours_filter(time_filter),
+        {"uid": user_id, "start": week_start, "today": today.isoformat()},
+    )
+    total = int(result[0][0]) if result and result[0][0] else 0
+    _cache[cache_key] = total
+    return total
+
+
+def get_weekly_request_count(user_id: str, time_filter: str = "all") -> int:
+    """Return total request count by *user_id* in the current ISO week."""
+    from datetime import date, timedelta
+    today = datetime.now(tz=timezone(timedelta(hours=8))).date()
+    week_start = (today - timedelta(days=today.weekday())).isoformat()
+    cache_key = f"weekly_req:{user_id}:{week_start}:{time_filter}"
+    if cache_key in _cache:
+        return int(_cache[cache_key])
+
+    client = _get_client()
+    result = client.execute(
+        f"SELECT count() FROM events"
+        f" WHERE {USER_ID} = %(uid)s"
+        f" AND {EVENT_DATE} >= %(start)s AND {EVENT_DATE} <= %(today)s"
+        + _working_hours_filter(time_filter),
+        {"uid": user_id, "start": week_start, "today": today.isoformat()},
+    )
+    count = int(result[0][0]) if result and result[0][0] else 0
+    _cache[cache_key] = count
+    return count
 
 def get_monthly_active_days(user_id: str) -> int:
     """Return number of distinct days with activity in the current month."""
@@ -102,10 +205,10 @@ def get_monthly_active_days(user_id: str) -> int:
     return days
 
 
-def get_today_token_usage(user_id: str) -> int:
+def get_today_token_usage(user_id: str, time_filter: str = "auto") -> int:
     """Return total tokens used by *user_id* today."""
-    today = date.today().isoformat()
-    cache_key = f"today_token:{user_id}:{today}"
+    today = _today_shanghai()
+    cache_key = f"today_token:{user_id}:{today}:{time_filter}"
     if cache_key in _cache:
         return int(_cache[cache_key])
 
@@ -113,7 +216,7 @@ def get_today_token_usage(user_id: str) -> int:
     result = client.execute(
         f"SELECT sum({TOTAL_TOKEN}) FROM events"
         f" WHERE {USER_ID} = %(uid)s"
-        f" AND event_date = %(today)s",
+        f" AND event_date = %(today)s" + _working_hours_filter(time_filter),
         {"uid": user_id, "today": today},
     )
     total = int(result[0][0]) if result and result[0][0] else 0
@@ -121,10 +224,10 @@ def get_today_token_usage(user_id: str) -> int:
     return total
 
 
-def get_daily_request_count(user_id: str) -> int:
+def get_daily_request_count(user_id: str, time_filter: str = "auto") -> int:
     """Return number of requests by *user_id* today."""
-    today = date.today().isoformat()
-    cache_key = f"daily_req:{user_id}:{today}"
+    today = _today_shanghai()
+    cache_key = f"daily_req:{user_id}:{today}:{time_filter}"
     if cache_key in _cache:
         return int(_cache[cache_key])
 
@@ -141,10 +244,10 @@ def get_daily_request_count(user_id: str) -> int:
 
 
 def get_daily_trend(
-    user_id: str, start_date: str, end_date: str
+    user_id: str, start_date: str, end_date: str, time_filter: str = "all"
 ) -> list[dict[str, Any]]:
     """Return daily input/output/total token breakdown for a date range."""
-    cache_key = f"trend:{user_id}:{start_date}:{end_date}"
+    cache_key = f"trend:{user_id}:{start_date}:{end_date}:{time_filter}"
     if cache_key in _cache:
         return list(_cache[cache_key])
 
@@ -174,10 +277,10 @@ def get_daily_trend(
 
 
 def get_model_distribution(
-    user_id: str, start_date: str, end_date: str
+    user_id: str, start_date: str, end_date: str, time_filter: str = "all"
 ) -> list[dict[str, Any]]:
     """Return token usage grouped by model for the given date range."""
-    cache_key = f"model_dist:{user_id}:{start_date}:{end_date}"
+    cache_key = f"model_dist:{user_id}:{start_date}:{end_date}:{time_filter}"
     if cache_key in _cache:
         return list(_cache[cache_key])
 
@@ -187,7 +290,8 @@ def get_model_distribution(
         f" FROM events"
         f" WHERE {USER_ID} = %(uid)s"
         f" AND {EVENT_DATE} >= %(start)s AND {EVENT_DATE} <= %(end)s"
-        f" GROUP BY {REQUEST_MODEL_NAME}"
+        + _working_hours_filter(time_filter)
+        + f" GROUP BY {REQUEST_MODEL_NAME}"
         f" ORDER BY total DESC",
         {"uid": user_id, "start": start_date, "end": end_date},
     )
@@ -202,11 +306,11 @@ def get_model_distribution(
     return result
 
 
-def get_all_users_monthly_tokens() -> dict[str, int]:
+def get_all_users_monthly_tokens(time_filter: str = "all") -> dict[str, int]:
     """Return {user_id: total_token} for all users in current month."""
     now = datetime.now(tz=timezone.utc)
     month_start = date(now.year, now.month, 1).isoformat()
-    cache_key = f"all_monthly_token:{month_start}"
+    cache_key = f"all_monthly_token:{month_start}:{time_filter}"
     if cache_key in _cache:
         return dict(_cache[cache_key])
 
@@ -214,7 +318,8 @@ def get_all_users_monthly_tokens() -> dict[str, int]:
     rows = client.execute(
         f"SELECT {USER_ID}, sum({TOTAL_TOKEN})"
         f" FROM events WHERE {EVENT_DATE} >= %(start)s"
-        f" GROUP BY {USER_ID}",
+        + _working_hours_filter(time_filter)
+        + f" GROUP BY {USER_ID}",
         {"start": month_start},
     )
     result = {str(row[0]): int(row[1] or 0) for row in rows}
@@ -224,7 +329,7 @@ def get_all_users_monthly_tokens() -> dict[str, int]:
 
 def get_all_users_daily_requests() -> dict[str, int]:
     """Return {user_id: request_count} for all users today."""
-    today = date.today().isoformat()
+    today = _today_shanghai()
     cache_key = f"all_daily_req:{today}"
     if cache_key in _cache:
         return dict(_cache[cache_key])
@@ -241,9 +346,9 @@ def get_all_users_daily_requests() -> dict[str, int]:
     return result
 
 
-def get_global_trend(start_date: str, end_date: str) -> list[dict[str, Any]]:
+def get_global_trend(start_date: str, end_date: str, time_filter: str = "all") -> list[dict[str, Any]]:
     """Return daily aggregated token trend across ALL users."""
-    cache_key = f"global_trend:{start_date}:{end_date}"
+    cache_key = f"global_trend:{start_date}:{end_date}:{time_filter}"
     if cache_key in _cache:
         return list(_cache[cache_key])
 
@@ -254,7 +359,8 @@ def get_global_trend(start_date: str, end_date: str) -> list[dict[str, Any]]:
         f" countIf({EVENT_CODE} = 'chat_request_response') AS chat_count"
         f" FROM events"
         f" WHERE {EVENT_DATE} >= %(start)s AND {EVENT_DATE} <= %(end)s"
-        f" GROUP BY {EVENT_DATE} ORDER BY {EVENT_DATE}",
+        + _working_hours_filter(time_filter)
+        + f" GROUP BY {EVENT_DATE} ORDER BY {EVENT_DATE}",
         {"start": start_date, "end": end_date},
     )
     result: list[dict[str, Any]] = [
@@ -271,9 +377,9 @@ def get_global_trend(start_date: str, end_date: str) -> list[dict[str, Any]]:
     return result
 
 
-def get_global_trend_by_model(start_date: str, end_date: str) -> list[dict[str, Any]]:
+def get_global_trend_by_model(start_date: str, end_date: str, time_filter: str = "all") -> list[dict[str, Any]]:
     """Return daily token trend grouped by model across ALL users."""
-    cache_key = f"global_trend_model:{start_date}:{end_date}"
+    cache_key = f"global_trend_model:{start_date}:{end_date}:{time_filter}"
     if cache_key in _cache:
         return list(_cache[cache_key])
 
@@ -284,7 +390,8 @@ def get_global_trend_by_model(start_date: str, end_date: str) -> list[dict[str, 
         f" countIf({EVENT_CODE} = 'chat_request_response') AS chat_count"
         f" FROM events"
         f" WHERE {EVENT_DATE} >= %(start)s AND {EVENT_DATE} <= %(end)s"
-        f" GROUP BY {EVENT_DATE}, {REQUEST_MODEL_NAME}"
+        + _working_hours_filter(time_filter)
+        + f" GROUP BY {EVENT_DATE}, {REQUEST_MODEL_NAME}"
         f" ORDER BY {EVENT_DATE}, {REQUEST_MODEL_NAME}",
         {"start": start_date, "end": end_date},
     )
@@ -303,9 +410,9 @@ def get_global_trend_by_model(start_date: str, end_date: str) -> list[dict[str, 
     return result
 
 
-def get_global_trend_by_dept(start_date: str, end_date: str) -> list[dict[str, Any]]:
+def get_global_trend_by_dept(start_date: str, end_date: str, time_filter: str = "all") -> list[dict[str, Any]]:
     """Return daily token trend grouped by enterprise/department across ALL users."""
-    cache_key = f"global_trend_dept:{start_date}:{end_date}"
+    cache_key = f"global_trend_dept:{start_date}:{end_date}:{time_filter}"
     if cache_key in _cache:
         return list(_cache[cache_key])
 
@@ -317,7 +424,8 @@ def get_global_trend_by_dept(start_date: str, end_date: str) -> list[dict[str, A
         f" countIf({EVENT_CODE} = 'chat_request_response') AS chat_count"
         f" FROM events"
         f" WHERE {EVENT_DATE} >= %(start)s AND {EVENT_DATE} <= %(end)s"
-        f" GROUP BY {EVENT_DATE}, dept"
+        + _working_hours_filter(time_filter)
+        + f" GROUP BY {EVENT_DATE}, dept"
         f" ORDER BY {EVENT_DATE}, dept",
         {"start": start_date, "end": end_date},
     )
@@ -342,9 +450,10 @@ def get_detail_records(
     end_date: str,
     model: str | None = None,
     ide_type: str | None = None,
+    time_filter: str = "all",
 ) -> list[dict[str, Any]]:
     """Return usage records grouped by date + model, with optional filters."""
-    cache_key = f"detail:{user_id}:{start_date}:{end_date}:{model}:{ide_type}"
+    cache_key = f"detail:{user_id}:{start_date}:{end_date}:{model}:{ide_type}:{time_filter}"
     if cache_key in _cache:
         return list(_cache[cache_key])
 
@@ -366,6 +475,9 @@ def get_detail_records(
         params["ide_type"] = ide_type
 
     where = " AND ".join(conditions)
+    tf_clause = _working_hours_filter(time_filter).lstrip(" AND").strip()
+    if tf_clause:
+        where = where + " AND " + tf_clause
     client = _get_client()
     rows = client.execute(
         f"SELECT {EVENT_DATE}, {REQUEST_MODEL_NAME},"
@@ -393,11 +505,11 @@ def get_detail_records(
     return result
 
 
-def get_all_users_monthly_requests() -> dict[str, int]:
+def get_all_users_monthly_requests(time_filter: str = "all") -> dict[str, int]:
     """Return {user_id: request_count} for all users in current month."""
     now = datetime.now(tz=timezone.utc)
     month_start = date(now.year, now.month, 1).isoformat()
-    cache_key = f"all_monthly_requests:{month_start}"
+    cache_key = f"all_monthly_requests:{month_start}:{time_filter}"
     if cache_key in _cache:
         return dict(_cache[cache_key])
 
@@ -406,7 +518,8 @@ def get_all_users_monthly_requests() -> dict[str, int]:
         f"SELECT {USER_ID}, count() AS req_count"
         f" FROM events"
         f" WHERE {EVENT_DATE} >= %(start)s"
-        f" GROUP BY {USER_ID}",
+        + _working_hours_filter(time_filter)
+        + f" GROUP BY {USER_ID}",
         {"start": month_start},
     )
     result: dict[str, int] = {str(row[0]): int(row[1] or 0) for row in rows}
@@ -414,26 +527,36 @@ def get_all_users_monthly_requests() -> dict[str, int]:
     return result
 
 
-def get_chat_session_count(user_id: str, scope: str = "month") -> int:
+def get_chat_session_count(user_id: str, scope: str = "month", time_filter: str = "auto") -> int:
     """Return chat session (conversation) count for the user.
     Uses chat_request_response event count as proxy since conversationId is empty.
     """
-    cache_key = f"chat_sessions:{user_id}:{scope}"
+    cache_key = f"chat_sessions:{user_id}:{scope}:{time_filter}"
     if cache_key in _cache:
         return int(_cache[cache_key])
 
+    from datetime import date, timedelta
     client = _get_client()
     if scope == "today":
         result = client.execute(
             f"SELECT count() FROM events WHERE {USER_ID} = %(uid)s"
-            f" AND {EVENT_DATE} = today() AND {EVENT_CODE} = 'chat_request_response'",
-            {"uid": user_id},
+            f" AND {EVENT_DATE} = %(today)s AND {EVENT_CODE} = 'chat_request_response'" + _working_hours_filter(time_filter),
+            {"uid": user_id, "today": _today_shanghai()},
+        )
+    elif scope == "week":
+        today = datetime.now(tz=timezone(timedelta(hours=8))).date()
+        week_start = (today - timedelta(days=today.weekday())).isoformat()
+        result = client.execute(
+            f"SELECT count() FROM events WHERE {USER_ID} = %(uid)s"
+            f" AND {EVENT_DATE} >= %(start)s AND {EVENT_DATE} <= %(today)s"
+            f" AND {EVENT_CODE} = 'chat_request_response'" + _working_hours_filter(time_filter),
+            {"uid": user_id, "start": week_start, "today": today.isoformat()},
         )
     else:
         result = client.execute(
             f"SELECT count() FROM events WHERE {USER_ID} = %(uid)s"
             f" AND toYYYYMM({EVENT_DATE}) = toYYYYMM(today())"
-            f" AND {EVENT_CODE} = 'chat_request_response'",
+            f" AND {EVENT_CODE} = 'chat_request_response'" + _working_hours_filter(time_filter),
             {"uid": user_id},
         )
     count = int(result[0][0]) if result else 0
@@ -441,45 +564,46 @@ def get_chat_session_count(user_id: str, scope: str = "month") -> int:
     return count
 
 
-def get_all_users_today_tokens() -> dict[str, int]:
+def get_all_users_today_tokens(time_filter: str = "auto") -> dict[str, int]:
     """Return {user_id: today_token} for all users."""
     from datetime import date
-    cache_key = f"all_today_token:{date.today().isoformat()}"
+    cache_key = f"all_today_token:{_today_shanghai()}:{time_filter}"
     if cache_key in _cache:
         return dict(_cache[cache_key])
     client = _get_client()
     rows = client.execute(
         f"SELECT {USER_ID}, sum({TOTAL_TOKEN}) FROM events"
-        f" WHERE {EVENT_DATE} = today() GROUP BY {USER_ID}"
+        f" WHERE {EVENT_DATE} = %(today)s" + _working_hours_filter(time_filter) + f" GROUP BY {USER_ID}",
+        {"today": _today_shanghai()}
     )
     result = {str(r[0]): int(r[1] or 0) for r in rows if r[0]}
     _cache[cache_key] = result
     return result
 
 
-def get_all_users_today_chats() -> dict[str, int]:
+def get_all_users_today_chats(time_filter: str = "auto") -> dict[str, int]:
     """Return {user_id: today_chat_count} for all users."""
     from datetime import date
-    cache_key = f"all_today_chat:{date.today().isoformat()}"
+    cache_key = f"all_today_chat:{_today_shanghai()}:{time_filter}"
     if cache_key in _cache:
         return dict(_cache[cache_key])
     client = _get_client()
     rows = client.execute(
         f"SELECT {USER_ID}, count() FROM events"
         f" WHERE {EVENT_DATE} = today() AND {EVENT_CODE} = 'chat_request_response'"
-        f" GROUP BY {USER_ID}"
+        + _working_hours_filter(time_filter) + f" GROUP BY {USER_ID}"
     )
     result = {str(r[0]): int(r[1] or 0) for r in rows if r[0]}
     _cache[cache_key] = result
     return result
 
 
-def get_all_users_monthly_chats() -> dict[str, int]:
+def get_all_users_monthly_chats(time_filter: str = "all") -> dict[str, int]:
     """Return {user_id: monthly_chat_count} for all users in current month."""
     from datetime import timezone
     now = datetime.now(tz=timezone.utc)
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).date().isoformat()
-    cache_key = f"all_monthly_chat:{month_start}"
+    cache_key = f"all_monthly_chat:{month_start}:{time_filter}"
     if cache_key in _cache:
         return dict(_cache[cache_key])
     client = _get_client()
@@ -487,7 +611,8 @@ def get_all_users_monthly_chats() -> dict[str, int]:
         f"SELECT {USER_ID}, count() FROM events"
         f" WHERE toYYYYMM({EVENT_DATE}) = toYYYYMM(today())"
         f" AND {EVENT_CODE} = 'chat_request_response'"
-        f" GROUP BY {USER_ID}"
+        + _working_hours_filter(time_filter)
+        + f" GROUP BY {USER_ID}"
     )
     result = {str(r[0]): int(r[1] or 0) for r in rows if r[0]}
     _cache[cache_key] = result
