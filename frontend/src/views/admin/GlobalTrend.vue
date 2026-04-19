@@ -17,7 +17,7 @@
               <el-radio-button value="non_work">非工作时段</el-radio-button>
             </el-radio-group>
           </template>
-          <el-tag v-else type="info" size="small" style="cursor:default">全天（时段过滤已关闭）</el-tag>
+          <el-tag v-else type="info" size="small" style="cursor:default">全天</el-tag>
             <el-select v-model="groupBy" style="width:140px" size="small" @change="fetchData">
               <el-option label="按总量" value="" />
               <el-option label="按模型" value="model" />
