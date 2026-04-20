@@ -602,7 +602,7 @@ class TestDataSchema:
 
     def test_user_identity_constants(self):
         assert ds.USER_ID == "userId"
-        assert ds.USERNAME == "username"
+        assert ds.USERNAME == "userNickname"   # USERNAME now points to userNickname
         assert ds.USER_NICKNAME == "userNickname"
         assert ds.ENTERPRISE_ID == "enterpriseId"
         assert ds.ENTERPRISE == "enterprise"
