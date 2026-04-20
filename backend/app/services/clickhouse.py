@@ -437,11 +437,11 @@ def get_all_users_monthly_tokens(time_filter: str = "all") -> dict[str, int]:
 
     client = _get_client()
     sql = (
-        f"SELECT {USER_ID}, sum({TOTAL_TOKEN})"
+        f"SELECT {USERNAME}, sum({TOTAL_TOKEN})"
         f" FROM events WHERE event_date >= {{start:String}}"
-        f" AND {_BASE_FILTER}"
+        f" AND {_BASE_FILTER} AND {USERNAME} != ''"
         + _working_hours_filter(time_filter)
-        + f" GROUP BY {USER_ID}"
+        + f" GROUP BY {USERNAME}"
     )
     rows = client.query(sql, parameters={"start": month_start}).result_rows
     result = {str(row[0]): _safe_int(row[1]) for row in rows}
@@ -457,10 +457,10 @@ def get_all_users_daily_requests() -> dict[str, int]:
 
     client = _get_client()
     sql = (
-        f"SELECT {USER_ID}, count() FROM events"
+        f"SELECT {USERNAME}, count() FROM events"
         f" WHERE {EVENT_DATE} = {{today:String}}"
-        f" AND {_BASE_FILTER}"
-        f" GROUP BY {USER_ID}"
+        f" AND {_BASE_FILTER} AND {USERNAME} != ''"
+        f" GROUP BY {USERNAME}"
     )
     rows = client.query(sql, parameters={"today": today}).result_rows
     result = {str(row[0]): _safe_int(row[1]) for row in rows}
@@ -628,12 +628,12 @@ def get_all_users_monthly_requests(time_filter: str = "all") -> dict[str, int]:
 
     client = _get_client()
     sql = (
-        f"SELECT {USER_ID}, count() AS req_count"
+        f"SELECT {USERNAME}, count() AS req_count"
         f" FROM events"
         f" WHERE {EVENT_DATE} >= {{start:String}}"
-        f" AND {_BASE_FILTER}"
+        f" AND {_BASE_FILTER} AND {USERNAME} != ''"
         + _working_hours_filter(time_filter)
-        + f" GROUP BY {USER_ID}"
+        + f" GROUP BY {USERNAME}"
     )
     rows = client.query(sql, parameters={"start": month_start}).result_rows
     result: dict[str, int] = {str(row[0]): _safe_int(row[1]) for row in rows}
@@ -693,11 +693,11 @@ def get_all_users_today_tokens(time_filter: str = "auto") -> dict[str, int]:
 
     client = _get_client()
     sql = (
-        f"SELECT {USER_ID}, sum({TOTAL_TOKEN}) FROM events"
+        f"SELECT {USERNAME}, sum({TOTAL_TOKEN}) FROM events"
         f" WHERE {EVENT_DATE} = {{today:String}}"
-        f" AND {_BASE_FILTER}"
+        f" AND {_BASE_FILTER} AND {USERNAME} != ''"
         + _working_hours_filter(time_filter)
-        + f" GROUP BY {USER_ID}"
+        + f" GROUP BY {USERNAME}"
     )
     rows = client.query(sql, parameters={"today": today}).result_rows
     result = {str(r[0]): _safe_int(r[1]) for r in rows if r[0]}
@@ -713,12 +713,12 @@ def get_all_users_today_chats(time_filter: str = "auto") -> dict[str, int]:
 
     client = _get_client()
     sql = (
-        f"SELECT {USER_ID}, count() FROM events"
+        f"SELECT {USERNAME}, count() FROM events"
         f" WHERE {EVENT_DATE} = {{today:String}}"
         f" AND {EVENT_CODE} = 'chat_request_response'"
-        f" AND totalToken > 0"
+        f" AND totalToken > 0 AND {USERNAME} != ''"
         + _working_hours_filter(time_filter)
-        + f" GROUP BY {USER_ID}"
+        + f" GROUP BY {USERNAME}"
     )
     rows = client.query(sql, parameters={"today": today}).result_rows
     result = {str(r[0]): _safe_int(r[1]) for r in rows if r[0]}
@@ -735,12 +735,12 @@ def get_all_users_monthly_chats(time_filter: str = "all") -> dict[str, int]:
 
     client = _get_client()
     sql = (
-        f"SELECT {USER_ID}, count() FROM events"
+        f"SELECT {USERNAME}, count() FROM events"
         f" WHERE toYYYYMM({EVENT_DATE}) = toYYYYMM(today())"
         f" AND {EVENT_CODE} = 'chat_request_response'"
-        f" AND totalToken > 0"
+        f" AND totalToken > 0 AND {USERNAME} != ''"
         + _working_hours_filter(time_filter)
-        + f" GROUP BY {USER_ID}"
+        + f" GROUP BY {USERNAME}"
     )
     rows = client.query(sql, parameters={}).result_rows
     result = {str(r[0]): _safe_int(r[1]) for r in rows if r[0]}
