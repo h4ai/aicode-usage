@@ -92,7 +92,7 @@ def test_check_postgres_connection_error():
 
 def test_check_clickhouse_connection_error():
     from app.routers.health import _check_clickhouse
-    with patch("clickhouse_driver.Client", side_effect=Exception("ch error")):
+    with patch("clickhouse_connect.get_client", side_effect=Exception("ch error")):
         result = _check_clickhouse({"clickhouse": {"host": "localhost"}})
     assert result["status"] == "error"
 
