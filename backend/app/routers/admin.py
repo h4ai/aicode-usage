@@ -16,6 +16,7 @@ from pydantic import BaseModel
 from app.deps import require_admin
 from app.services.clickhouse import (
     get_all_users_daily_requests,
+    get_all_users_from_clickhouse,
     get_all_users_monthly_chats,
     get_all_users_monthly_requests,
     get_all_users_monthly_tokens,
@@ -133,7 +134,12 @@ def list_users(
     time_filter: str = Query("all", description="all|work|non_work"),
     _user: dict[str, Any] = Depends(require_admin),
 ) -> list[UserItem]:
-    users = get_all_users()
+    # 从 ClickHouse 获取完整用户列表（PG 可能不完整）
+    ch_users = get_all_users_from_clickhouse()
+    # 从 PG 获取配额设置（可能为空，不影响用户列表展示）
+    pg_users = get_all_users()
+    pg_quota_map = {u["user_id"]: u.get("quota_level", "L1") for u in pg_users}
+
     monthly_tokens = get_all_users_monthly_tokens(time_filter)
     today_tokens = get_all_users_today_tokens(time_filter)
     today_chats = get_all_users_today_chats(time_filter)
@@ -144,10 +150,10 @@ def list_users(
     today_chats_all = get_all_users_today_chats("all") if time_filter != "all" else today_chats
     quota_cache: dict[str, dict] = {}
     result: list[UserItem] = []
-    for u in users:
-        uid = u["user_id"]
-        display_name = u.get("nickname") or u.get("username") or uid
-        level = u.get("quota_level", "L1")
+    for u in ch_users:
+        uid = u["username"]   # ClickHouse username 字段（三种格式之一）
+        display_name = u.get("nickname") or uid
+        level = pg_quota_map.get(uid, "L1")  # PG 为空时默认 L1
         if level not in quota_cache:
             quota_cache[level] = get_quota_limits(level)
         limits = quota_cache[level]

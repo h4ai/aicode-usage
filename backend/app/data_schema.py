@@ -12,6 +12,7 @@ forms so that the rest of the application can import a single source of truth.
 # NOTE: ClickHouse otel.events table uses camelCase column names
 USER_ID = "userId"
 USERNAME = "username"
+USERNAME = "username"
 USER_NICKNAME = "userNickname"
 ENTERPRISE_ID = "enterpriseId"
 ENTERPRISE = "enterprise"

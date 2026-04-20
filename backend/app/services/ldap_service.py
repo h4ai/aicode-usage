@@ -165,10 +165,11 @@ class LDAPService:
 
             return {
                 "user_id": _val("sAMAccountName") or username,
-                "username": _val("cn"),
+                "username": _val("cn"),          # AD cn（如"张三"）
                 "nickname": _val("displayName"),
                 "enterprise": _val("company"),
                 "mail": _val("mail"),
+                "sam_account": _val("sAMAccountName") or username,  # AD sAMAccountName（如"aaa"）
             }
 
         except LdapAuthError:

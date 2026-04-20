@@ -4,6 +4,9 @@ admins:
 ldap:
   server: ldap://localhost:389
   base_dn: dc=company,dc=com
+  domain: ''              # NTLM 域名，如 CORP（用于 domain\username 格式登录）
+  bind_dn: ''             # 服务账号 DN（可选）如 CN=svc-ldap,OU=SA,DC=corp,DC=com
+  bind_password: ''       # 服务账号密码（可选）
   user_attr: sAMAccountName
   mail_attr: mail
 clickhouse:

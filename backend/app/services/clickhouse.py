@@ -28,7 +28,10 @@ from app.data_schema import (
     REQUEST_MODEL_NAME,
     TOTAL_TOKEN,
     USER_ID,
+    USERNAME,
 )
+
+# NOTE: events table has a column named "userNickname" (not part of data_schema constants)
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +92,44 @@ _BASE_FILTER = (
     "eventCode IN ('chat_request_response', 'chat_message_response')"
     " AND totalToken > 0"
 )
+
+
+def _user_filter(user: dict[str, Any]) -> tuple[str, dict[str, Any]]:
+    """Build a ClickHouse WHERE fragment that matches a user across 3 username formats.
+
+    ClickHouse username field may contain any of:
+      - sAMAccountName only, e.g. "aaa"
+      - CN (display name) only, e.g. "张三"
+      - composite "张三(aaa)" format
+
+    Args:
+        user: dict with keys 'sam' (sAMAccountName) and 'cn' (AD cn).
+              Falls back to 'sub' (JWT sub) when sam/cn absent.
+
+    Returns:
+        (sql_fragment, params_dict)
+    """
+    sam = user.get("sam") or user.get("sub", "")
+    cn = user.get("cn") or ""
+
+    conditions = []
+    params: dict[str, Any] = {}
+
+    if sam:
+        conditions.append(f"{USERNAME} = {{_u_sam:String}}")
+        params["_u_sam"] = sam
+        conditions.append(f"{USERNAME} LIKE {{_u_like:String}}")
+        params["_u_like"] = f"%({sam})"
+
+    if cn and cn != sam:
+        conditions.append(f"{USERNAME} = {{_u_cn:String}}")
+        params["_u_cn"] = cn
+
+    if not conditions:
+        # fallback: match nothing safely
+        conditions.append("1=0")
+
+    return f"({' OR '.join(conditions)})", params
 
 
 # ---------------------------------------------------------------------------
@@ -155,164 +196,188 @@ def _working_hours_filter(time_filter: str = "auto") -> str:
 # Query helpers
 # ---------------------------------------------------------------------------
 
-def get_monthly_token_usage(user_id: str, time_filter: str = "all") -> int:
+def get_monthly_token_usage(user: dict[str, Any], time_filter: str = "all") -> int:
     now = datetime.now(tz=timezone.utc)
     month_start = date(now.year, now.month, 1).isoformat()
-    cache_key = f"monthly_token:{user_id}:{month_start}:{time_filter}"
+    _uid = user.get("sam") or user.get("sub", "")
+    cache_key = f"monthly_token:{_uid}:{month_start}:{time_filter}"
     if cache_key in _cache:
         return int(_cache[cache_key])
 
+    user_cond, user_params = _user_filter(user)
     client = _get_client()
     sql = (
         f"SELECT sum({TOTAL_TOKEN}) FROM events"
-        f" WHERE {USER_ID} = {{uid:String}}"
+        f" WHERE {user_cond}"
         f" AND event_date >= {{start:String}}"
         f" AND {_BASE_FILTER}"
         + _working_hours_filter(time_filter)
     )
-    rows = client.query(sql, parameters={"uid": user_id, "start": month_start}).result_rows
+    params = {**user_params, "start": month_start}
+    rows = client.query(sql, parameters=params).result_rows
     total = _safe_int(rows[0][0]) if rows else 0
     _cache[cache_key] = total
     return total
 
 
-def get_monthly_request_count(user_id: str, time_filter: str = "all") -> int:
+def get_monthly_request_count(user: dict[str, Any], time_filter: str = "all") -> int:
     now = datetime.now(tz=timezone.utc)
     month_start = date(now.year, now.month, 1).isoformat()
-    cache_key = f"monthly_req:{user_id}:{month_start}:{time_filter}"
+    _uid = user.get("sam") or user.get("sub", "")
+    cache_key = f"monthly_req:{_uid}:{month_start}:{time_filter}"
     if cache_key in _cache:
         return int(_cache[cache_key])
 
+    user_cond, user_params = _user_filter(user)
     client = _get_client()
     sql = (
         f"SELECT count() FROM events"
-        f" WHERE {USER_ID} = {{uid:String}}"
+        f" WHERE {user_cond}"
         f" AND event_date >= {{start:String}}"
         f" AND {_BASE_FILTER}"
         + _working_hours_filter(time_filter)
     )
-    rows = client.query(sql, parameters={"uid": user_id, "start": month_start}).result_rows
+    params = {**user_params, "start": month_start}
+    rows = client.query(sql, parameters=params).result_rows
     count = _safe_int(rows[0][0]) if rows else 0
     _cache[cache_key] = count
     return count
 
 
-def get_weekly_token_usage(user_id: str, time_filter: str = "all") -> int:
+def get_weekly_token_usage(user: dict[str, Any], time_filter: str = "all") -> int:
     today = datetime.now(tz=timezone(timedelta(hours=8))).date()
     week_start = (today - timedelta(days=today.weekday())).isoformat()
-    cache_key = f"weekly_token:{user_id}:{week_start}:{time_filter}"
+    _uid = user.get("sam") or user.get("sub", "")
+    cache_key = f"weekly_token:{_uid}:{week_start}:{time_filter}"
     if cache_key in _cache:
         return int(_cache[cache_key])
 
+    user_cond, user_params = _user_filter(user)
     client = _get_client()
     sql = (
         f"SELECT sum({TOTAL_TOKEN}) FROM events"
-        f" WHERE {USER_ID} = {{uid:String}}"
+        f" WHERE {user_cond}"
         f" AND {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{today:String}}"
         f" AND {_BASE_FILTER}"
         + _working_hours_filter(time_filter)
     )
-    rows = client.query(sql, parameters={"uid": user_id, "start": week_start, "today": today.isoformat()}).result_rows
+    params = {**user_params, "start": week_start, "today": today.isoformat()}
+    rows = client.query(sql, parameters=params).result_rows
     total = _safe_int(rows[0][0]) if rows else 0
     _cache[cache_key] = total
     return total
 
 
-def get_weekly_request_count(user_id: str, time_filter: str = "all") -> int:
+def get_weekly_request_count(user: dict[str, Any], time_filter: str = "all") -> int:
     today = datetime.now(tz=timezone(timedelta(hours=8))).date()
     week_start = (today - timedelta(days=today.weekday())).isoformat()
-    cache_key = f"weekly_req:{user_id}:{week_start}:{time_filter}"
+    _uid = user.get("sam") or user.get("sub", "")
+    cache_key = f"weekly_req:{_uid}:{week_start}:{time_filter}"
     if cache_key in _cache:
         return int(_cache[cache_key])
 
+    user_cond, user_params = _user_filter(user)
     client = _get_client()
     sql = (
         f"SELECT count() FROM events"
-        f" WHERE {USER_ID} = {{uid:String}}"
+        f" WHERE {user_cond}"
         f" AND {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{today:String}}"
         f" AND {_BASE_FILTER}"
         + _working_hours_filter(time_filter)
     )
-    rows = client.query(sql, parameters={"uid": user_id, "start": week_start, "today": today.isoformat()}).result_rows
+    params = {**user_params, "start": week_start, "today": today.isoformat()}
+    rows = client.query(sql, parameters=params).result_rows
     count = _safe_int(rows[0][0]) if rows else 0
     _cache[cache_key] = count
     return count
 
 
-def get_monthly_active_days(user_id: str) -> int:
+def get_monthly_active_days(user: dict[str, Any]) -> int:
     now = datetime.now(tz=timezone.utc)
     month_start = date(now.year, now.month, 1).isoformat()
-    cache_key = f"monthly_active_days:{user_id}:{month_start}"
+    _uid = user.get("sam") or user.get("sub", "")
+    cache_key = f"monthly_active_days:{_uid}:{month_start}"
     if cache_key in _cache:
         return int(_cache[cache_key])
 
+    user_cond, user_params = _user_filter(user)
     client = _get_client()
     sql = (
         f"SELECT count(DISTINCT {EVENT_DATE}) FROM events"
-        f" WHERE {USER_ID} = {{uid:String}} AND event_date >= {{start:String}}"
+        f" WHERE {user_cond} AND event_date >= {{start:String}}"
         f" AND {_BASE_FILTER}"
     )
-    rows = client.query(sql, parameters={"uid": user_id, "start": month_start}).result_rows
+    params = {**user_params, "start": month_start}
+    rows = client.query(sql, parameters=params).result_rows
     days = _safe_int(rows[0][0]) if rows else 0
     _cache[cache_key] = days
     return days
 
 
-def get_today_token_usage(user_id: str, time_filter: str = "auto") -> int:
+def get_today_token_usage(user: dict[str, Any], time_filter: str = "auto") -> int:
     today = _today_shanghai()
-    cache_key = f"today_token:{user_id}:{today}:{time_filter}"
+    _uid = user.get("sam") or user.get("sub", "")
+    cache_key = f"today_token:{_uid}:{today}:{time_filter}"
     if cache_key in _cache:
         return int(_cache[cache_key])
 
+    user_cond, user_params = _user_filter(user)
     client = _get_client()
     sql = (
         f"SELECT sum({TOTAL_TOKEN}) FROM events"
-        f" WHERE {USER_ID} = {{uid:String}}"
+        f" WHERE {user_cond}"
         f" AND event_date = {{today:String}}"
         f" AND {_BASE_FILTER}"
         + _working_hours_filter(time_filter)
     )
-    rows = client.query(sql, parameters={"uid": user_id, "today": today}).result_rows
+    params = {**user_params, "today": today}
+    rows = client.query(sql, parameters=params).result_rows
     total = _safe_int(rows[0][0]) if rows else 0
     _cache[cache_key] = total
     return total
 
 
-def get_daily_request_count(user_id: str, time_filter: str = "auto") -> int:
+def get_daily_request_count(user: dict[str, Any], time_filter: str = "auto") -> int:
     today = _today_shanghai()
-    cache_key = f"daily_req:{user_id}:{today}:{time_filter}"
+    _uid = user.get("sam") or user.get("sub", "")
+    cache_key = f"daily_req:{_uid}:{today}:{time_filter}"
     if cache_key in _cache:
         return int(_cache[cache_key])
 
+    user_cond, user_params = _user_filter(user)
     client = _get_client()
     sql = (
         f"SELECT count() FROM events"
-        f" WHERE {USER_ID} = {{uid:String}} AND event_date = {{today:String}}"
+        f" WHERE {user_cond} AND event_date = {{today:String}}"
         f" AND {_BASE_FILTER}"
     )
-    rows = client.query(sql, parameters={"uid": user_id, "today": today}).result_rows
+    params = {**user_params, "today": today}
+    rows = client.query(sql, parameters=params).result_rows
     count = _safe_int(rows[0][0]) if rows else 0
     _cache[cache_key] = count
     return count
 
 
-def get_daily_trend(user_id: str, start_date: str, end_date: str, time_filter: str = "all") -> list[dict[str, Any]]:
-    cache_key = f"trend:{user_id}:{start_date}:{end_date}:{time_filter}"
+def get_daily_trend(user: dict[str, Any], start_date: str, end_date: str, time_filter: str = "all") -> list[dict[str, Any]]:
+    _uid = user.get("sam") or user.get("sub", "")
+    cache_key = f"trend:{_uid}:{start_date}:{end_date}:{time_filter}"
     if cache_key in _cache:
         return list(_cache[cache_key])
 
+    user_cond, user_params = _user_filter(user)
     client = _get_client()
     sql = (
         f"SELECT {EVENT_DATE},"
         f" sum({INPUT_TOKEN}), sum({OUTPUT_TOKEN}), sum({TOTAL_TOKEN})"
         f" FROM events"
-        f" WHERE {USER_ID} = {{uid:String}}"
+        f" WHERE {user_cond}"
         f" AND {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}"
         f" AND {_BASE_FILTER}"
         + _working_hours_filter(time_filter)
         + f" GROUP BY {EVENT_DATE} ORDER BY {EVENT_DATE}"
     )
-    rows = client.query(sql, parameters={"uid": user_id, "start": start_date, "end": end_date}).result_rows
+    params = {**user_params, "start": start_date, "end": end_date}
+    rows = client.query(sql, parameters=params).result_rows
     result: list[dict[str, Any]] = [
         {
             "date": row[0].isoformat() if hasattr(row[0], "isoformat") else str(row[0]),
@@ -327,23 +392,26 @@ def get_daily_trend(user_id: str, start_date: str, end_date: str, time_filter: s
 
 
 def get_model_distribution(
-    user_id: str, start_date: str, end_date: str, time_filter: str = "all"
+    user: dict[str, Any], start_date: str, end_date: str, time_filter: str = "all"
 ) -> list[dict[str, Any]]:
-    cache_key = f"model_dist:{user_id}:{start_date}:{end_date}:{time_filter}"
+    _uid = user.get("sam") or user.get("sub", "")
+    cache_key = f"model_dist:{_uid}:{start_date}:{end_date}:{time_filter}"
     if cache_key in _cache:
         return list(_cache[cache_key])
 
+    user_cond, user_params = _user_filter(user)
     client = _get_client()
     sql = (
         f"SELECT {REQUEST_MODEL_NAME}, sum({TOTAL_TOKEN}) AS total"
         f" FROM events"
-        f" WHERE {USER_ID} = {{uid:String}}"
+        f" WHERE {user_cond}"
         f" AND {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}"
         f" AND {_BASE_FILTER}"
         + _working_hours_filter(time_filter)
         + f" GROUP BY {REQUEST_MODEL_NAME} ORDER BY total DESC"
     )
-    rows = client.query(sql, parameters={"uid": user_id, "start": start_date, "end": end_date}).result_rows
+    params = {**user_params, "start": start_date, "end": end_date}
+    rows = client.query(sql, parameters=params).result_rows
     result: list[dict[str, Any]] = [
         {
             "model": str(row[0] or "unknown"),
@@ -493,22 +561,20 @@ def get_global_trend_by_dept(start_date: str, end_date: str, time_filter: str = 
 
 
 def get_detail_records(
-    user_id: str,
+    user: dict[str, Any],
     start_date: str,
     end_date: str,
     model: str | None = None,
     ide_type: str | None = None,
     time_filter: str = "all",
 ) -> list[dict[str, Any]]:
-    cache_key = f"detail:{user_id}:{start_date}:{end_date}:{model}:{ide_type}:{time_filter}"
+    _uid = user.get("sam") or user.get("sub", "")
+    cache_key = f"detail:{_uid}:{start_date}:{end_date}:{model}:{ide_type}:{time_filter}"
     if cache_key in _cache:
         return list(_cache[cache_key])
 
-    params: dict[str, Any] = {
-        "uid": user_id,
-        "start": start_date,
-        "end": end_date,
-    }
+    user_cond, user_params = _user_filter(user)
+    params: dict[str, Any] = {**user_params, "start": start_date, "end": end_date}
     extra = ""
     if model:
         extra += f" AND {REQUEST_MODEL_NAME} = {{model:String}}"
@@ -525,7 +591,7 @@ def get_detail_records(
         f" count() AS request_count,"
         f" sum({INPUT_TOKEN}), sum({OUTPUT_TOKEN}), sum({TOTAL_TOKEN})"
         f" FROM events"
-        f" WHERE {USER_ID} = {{uid:String}}"
+        f" WHERE {user_cond}"
         f" AND {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}"
         f" AND {_BASE_FILTER}"
         + extra + tf_clause
@@ -570,40 +636,44 @@ def get_all_users_monthly_requests(time_filter: str = "all") -> dict[str, int]:
     return result
 
 
-def get_chat_session_count(user_id: str, scope: str = "month", time_filter: str = "auto") -> int:
-    cache_key = f"chat_sessions:{user_id}:{scope}:{time_filter}"
+def get_chat_session_count(user: dict[str, Any], scope: str = "month", time_filter: str = "auto") -> int:
+    _uid = user.get("sam") or user.get("sub", "")
+    cache_key = f"chat_sessions:{_uid}:{scope}:{time_filter}"
     if cache_key in _cache:
         return int(_cache[cache_key])
 
+    user_cond, user_params = _user_filter(user)
     client = _get_client()
     tf = _working_hours_filter(time_filter)
 
     if scope == "today":
         sql = (
-            f"SELECT count() FROM events WHERE {USER_ID} = {{uid:String}}"
+            f"SELECT count() FROM events WHERE {user_cond}"
             f" AND {EVENT_DATE} = {{today:String}}"
             f" AND {EVENT_CODE} = 'chat_request_response'"
             f" AND totalToken > 0" + tf
         )
-        rows = client.query(sql, parameters={"uid": user_id, "today": _today_shanghai()}).result_rows
+        params = {**user_params, "today": _today_shanghai()}
+        rows = client.query(sql, parameters=params).result_rows
     elif scope == "week":
         today = datetime.now(tz=timezone(timedelta(hours=8))).date()
         week_start = (today - timedelta(days=today.weekday())).isoformat()
         sql = (
-            f"SELECT count() FROM events WHERE {USER_ID} = {{uid:String}}"
+            f"SELECT count() FROM events WHERE {user_cond}"
             f" AND {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{today:String}}"
             f" AND {EVENT_CODE} = 'chat_request_response'"
             f" AND totalToken > 0" + tf
         )
-        rows = client.query(sql, parameters={"uid": user_id, "start": week_start, "today": today.isoformat()}).result_rows
+        params = {**user_params, "start": week_start, "today": today.isoformat()}
+        rows = client.query(sql, parameters=params).result_rows
     else:
         sql = (
-            f"SELECT count() FROM events WHERE {USER_ID} = {{uid:String}}"
+            f"SELECT count() FROM events WHERE {user_cond}"
             f" AND toYYYYMM({EVENT_DATE}) = toYYYYMM(today())"
             f" AND {EVENT_CODE} = 'chat_request_response'"
             f" AND totalToken > 0" + tf
         )
-        rows = client.query(sql, parameters={"uid": user_id}).result_rows
+        rows = client.query(sql, parameters=user_params).result_rows
 
     count = _safe_int(rows[0][0]) if rows else 0
     _cache[cache_key] = count
@@ -669,5 +739,39 @@ def get_all_users_monthly_chats(time_filter: str = "all") -> dict[str, int]:
     )
     rows = client.query(sql, parameters={}).result_rows
     result = {str(r[0]): _safe_int(r[1]) for r in rows if r[0]}
+    _cache[cache_key] = result
+    return result
+
+
+def get_all_users_from_clickhouse() -> list[dict[str, Any]]:
+    """Return distinct users from ClickHouse events table.
+
+    Returns list of dicts with keys: username, nickname, enterprise.
+    Used as primary user list in admin panel (PG may be incomplete).
+    """
+    cache_key = "ch_all_users"
+    if cache_key in _cache:
+        return list(_cache[cache_key])
+
+    client = _get_client()
+    sql = (
+        f"SELECT {USERNAME}, any({REQUEST_MODEL_NAME}) as _m,"
+        f" anyLast(userNickname) as nickname,"
+        f" anyLast(enterprise) as enterprise"
+        f" FROM events"
+        f" WHERE {_BASE_FILTER}"
+        f" GROUP BY {USERNAME}"
+        f" ORDER BY {USERNAME}"
+    )
+    rows = client.query(sql, parameters={}).result_rows
+    result: list[dict[str, Any]] = [
+        {
+            "username": str(row[0] or ""),
+            "nickname": str(row[2] or ""),
+            "enterprise": str(row[3] or ""),
+        }
+        for row in rows
+        if row[0]
+    ]
     _cache[cache_key] = result
     return result
