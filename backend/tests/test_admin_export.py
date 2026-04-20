@@ -83,3 +83,100 @@ def test_export_csv_with_time_filter(client, admin_token, admin_config_patch):
         params={"time_filter": "work"},
     ))
     assert resp.status_code == 200
+
+
+# ---- Leaderboard CSV export -----------------------------------------------
+
+_MOCK_LEADERBOARD_ROWS = [
+    {"rank": 1, "user_id": "张三", "display_name": "张三", "enterprise": "Engineering",
+     "quota_level": "L1", "monthly_token": 3000000, "monthly_requests": 300,
+     "monthly_chats": 50, "quota_usage_pct": 12.0},
+]
+
+
+def _patch_leaderboard(fn):
+    with patch("app.routers.admin.get_leaderboard", return_value=_MOCK_LEADERBOARD_ROWS):
+        return fn()
+
+
+def test_leaderboard_export_csv_returns_csv_content_type(client, admin_token, admin_config_patch):
+    resp = _patch_leaderboard(lambda: client.get(
+        "/api/admin/leaderboard/export-csv",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    ))
+    assert resp.status_code == 200
+    assert "text/csv" in resp.headers.get("content-type", "")
+
+
+def test_leaderboard_export_csv_has_content_disposition(client, admin_token, admin_config_patch):
+    resp = _patch_leaderboard(lambda: client.get(
+        "/api/admin/leaderboard/export-csv",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    ))
+    assert "attachment" in resp.headers.get("content-disposition", "")
+
+
+def test_leaderboard_export_csv_contains_header_row(client, admin_token, admin_config_patch):
+    resp = _patch_leaderboard(lambda: client.get(
+        "/api/admin/leaderboard/export-csv",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    ))
+    assert resp.status_code == 200
+    text = resp.text
+    assert "排名" in text
+    assert "Token" in text
+    assert "对话轮次" in text
+
+
+def test_leaderboard_export_csv_with_date_range_filename(client, admin_token, admin_config_patch):
+    resp = _patch_leaderboard(lambda: client.get(
+        "/api/admin/leaderboard/export-csv?start=2026-04-01&end=2026-04-20",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    ))
+    assert resp.status_code == 200
+    cd = resp.headers.get("content-disposition", "")
+    assert "2026-04-01" in cd
+    assert "2026-04-20" in cd
+
+
+def test_leaderboard_export_csv_requires_auth(client):
+    resp = client.get("/api/admin/leaderboard/export-csv")
+    assert resp.status_code in (401, 403)
+
+
+def test_users_export_csv_with_date_range_passes_start_end(client, admin_token, admin_config_patch):
+    """export-csv with start/end should pass them to list_users."""
+    with (
+        patch("app.routers.admin.get_all_users_from_clickhouse", return_value=_MOCK_CH_USERS),
+        patch("app.routers.admin.get_all_users", return_value=_MOCK_USERS),
+        patch("app.routers.admin.get_all_users_tokens_in_range", return_value={}),
+        patch("app.routers.admin.get_all_users_requests_in_range", return_value={}),
+        patch("app.routers.admin.get_all_users_chats_in_range", return_value={}),
+        patch("app.routers.admin.get_quota_limits", return_value=_MOCK_QUOTA_LIMITS),
+    ):
+        resp = client.get(
+            "/api/admin/users/export-csv?start=2026-04-01&end=2026-04-20",
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+    assert resp.status_code == 200
+    cd = resp.headers.get("content-disposition", "")
+    assert "2026-04-01" in cd
+
+
+def test_users_export_csv_date_range_column_label(client, admin_token, admin_config_patch):
+    """When start/end provided, column label should show date range, not '本月'."""
+    with (
+        patch("app.routers.admin.get_all_users_from_clickhouse", return_value=_MOCK_CH_USERS),
+        patch("app.routers.admin.get_all_users", return_value=_MOCK_USERS),
+        patch("app.routers.admin.get_all_users_tokens_in_range", return_value={}),
+        patch("app.routers.admin.get_all_users_requests_in_range", return_value={}),
+        patch("app.routers.admin.get_all_users_chats_in_range", return_value={}),
+        patch("app.routers.admin.get_quota_limits", return_value=_MOCK_QUOTA_LIMITS),
+    ):
+        resp = client.get(
+            "/api/admin/users/export-csv?start=2026-04-01&end=2026-04-20",
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+    assert resp.status_code == 200
+    text = resp.text
+    assert "2026-04-01~2026-04-20" in text

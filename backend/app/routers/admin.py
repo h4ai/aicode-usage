@@ -413,10 +413,18 @@ def list_leaderboard(
 @router.get("/users/export-csv")
 def export_users_csv(
     time_filter: str = Query("all", description="all|work|non_work"),
+    start: str | None = Query(None, description="开始日期 YYYY-MM-DD"),
+    end: str | None = Query(None, description="结束日期 YYYY-MM-DD"),
     _user: dict[str, Any] = Depends(require_admin),
 ) -> StreamingResponse:
     """Export user list as CSV."""
-    users_data = list_users(time_filter=time_filter, start=None, end=None, _user=_user)
+    users_data = list_users(time_filter=time_filter, start=start, end=end, _user=_user)
+    has_range = bool(start and end)
+    period_label = f"{start}~{end}" if has_range else "本月"
+    token_col = f"Token({period_label})" if has_range else "本月总Token(全天)"
+    chat_col = f"对话轮次({period_label})" if has_range else "本月对话轮次"
+    filename = f"users_export_{start}_{end}.csv" if has_range else "users_export.csv"
+
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(
@@ -426,11 +434,11 @@ def export_users_csv(
             "部门",
             "配额级别",
             "本月限额Token",
-            "本月总Token(全天)",
+            token_col,
             "今日Token",
             "今日限额对话",
             "今日总对话(全天)",
-            "本月对话轮次",
+            chat_col,
             "今日请求次数",
             "Token状态",
             "对话状态",
@@ -458,7 +466,41 @@ def export_users_csv(
     return StreamingResponse(
         iter([output.getvalue()]),
         media_type="text/csv; charset=utf-8-sig",
-        headers={"Content-Disposition": "attachment; filename=users_export.csv"},
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
+
+@router.get("/leaderboard/export-csv")
+def export_leaderboard_csv(
+    top: int = Query(100, ge=1, le=500),
+    time_filter: str = Query("all", description="all|work|non_work"),
+    start: str | None = Query(None, description="开始日期 YYYY-MM-DD"),
+    end: str | None = Query(None, description="结束日期 YYYY-MM-DD"),
+    _user: dict[str, Any] = Depends(require_admin),
+) -> StreamingResponse:
+    """Export leaderboard as CSV."""
+    rows = get_leaderboard(top=top, time_filter=time_filter, start=start, end=end)
+    has_range = bool(start and end)
+    period_label = f"{start}~{end}" if has_range else "本月"
+    filename = f"leaderboard_export_{start}_{end}.csv" if has_range else "leaderboard_export.csv"
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(
+        ["排名", "姓名", "分组", "配额级别",
+         f"Token({period_label})", f"请求数({period_label})", f"对话轮次({period_label})", "配额使用%"]
+    )
+    for r in rows:
+        writer.writerow([
+            r["rank"], r["display_name"], r["enterprise"], r["quota_level"],
+            r["monthly_token"], r["monthly_requests"], r["monthly_chats"], r["quota_usage_pct"],
+        ])
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv; charset=utf-8-sig",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
 
 

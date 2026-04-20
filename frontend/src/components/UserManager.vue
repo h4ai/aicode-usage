@@ -389,11 +389,28 @@ async function changeLevel(userId: string, level: string) {
 async function exportCsv() {
   exporting.value = true
   try {
-    const { data } = await api.get(`/admin/users/export-csv?time_filter=all`, { responseType: 'blob' })
+    const today = new Date()
+    const fmt = (d: Date) => d.toISOString().slice(0, 10)
+    let startDate: string | null = null
+    let endDate: string | null = null
+    if (rangeMode.value === '7') {
+      startDate = fmt(new Date(today.getTime() - 6 * 86400000))
+      endDate = fmt(today)
+    } else if (rangeMode.value === '30') {
+      startDate = fmt(new Date(today.getTime() - 29 * 86400000))
+      endDate = fmt(today)
+    } else if (rangeMode.value === 'custom' && customRange.value) {
+      startDate = customRange.value[0]
+      endDate = customRange.value[1]
+    }
+    let url_path = `/admin/users/export-csv?time_filter=${timeFilter.value}`
+    if (startDate && endDate) url_path += `&start=${startDate}&end=${endDate}`
+    const { data } = await api.get(url_path, { responseType: 'blob' })
     const url = URL.createObjectURL(data as Blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `users_export_${new Date().toISOString().slice(0, 10)}.csv`
+    const suffix = startDate && endDate ? `${startDate}_${endDate}` : new Date().toISOString().slice(0, 10)
+    a.download = `users_export_${suffix}.csv`
     a.click()
     URL.revokeObjectURL(url)
   } catch {

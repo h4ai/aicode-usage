@@ -68,6 +68,13 @@
                 :value="50"
               />
             </el-select>
+            <el-button
+              size="small"
+              :loading="exporting"
+              @click="exportCsv"
+            >
+              导出 CSV
+            </el-button>
           </div>
         </div>
       </template>
@@ -127,6 +134,7 @@ import { useAuthStore } from '@/stores/auth'
 const auth = useAuthStore()
 const rows = ref<any[]>([])
 const loading = ref(false)
+const exporting = ref(false)
 const timeFilter = ref('all')
 const workingHoursEnabled = ref(true)
 const top = ref(10)
@@ -162,6 +170,30 @@ async function fetchData() {
     rows.value = await res.json()
   } finally {
     loading.value = false
+  }
+}
+
+async function exportCsv() {
+  exporting.value = true
+  try {
+    const { start, end } = _computeDateRange()
+    let url_path = `/api/admin/leaderboard/export-csv?top=500&time_filter=${timeFilter.value}`
+    if (start && end) url_path += `&start=${start}&end=${end}`
+    const resp = await fetch(url_path, {
+      headers: { Authorization: `Bearer ${auth.token}` }
+    })
+    const blob = await resp.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    const suffix = start && end ? `${start}_${end}` : new Date().toISOString().slice(0, 10)
+    a.download = `leaderboard_export_${suffix}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch {
+    console.error('导出失败')
+  } finally {
+    exporting.value = false
   }
 }
 
