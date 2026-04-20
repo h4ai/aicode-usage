@@ -80,6 +80,7 @@ def login(body: LoginRequest) -> LoginResponse:
     user_id = ad_info.get("user_id") or body.username
     sam_account = ad_info.get("sam_account") or user_id   # sAMAccountName（如 aaa）
     cn_name = ad_info.get("username") or ""               # AD cn（如 张三）
+    nickname = ad_info.get("nickname") or ""              # AD displayName（用于 username 为空时兜底匹配）
 
     # Auto-create or update user in PostgreSQL (defaults to L1 level)
     upsert_user(
@@ -96,8 +97,9 @@ def login(body: LoginRequest) -> LoginResponse:
         password_hash="",
         extra={
             "userId": user_id,
-            "sam": sam_account,   # sAMAccountName，用于 ClickHouse 三条件 OR 匹配
-            "cn": cn_name,        # AD cn（中文名），用于 ClickHouse 三条件 OR 匹配
+            "sam": sam_account,    # sAMAccountName，用于 ClickHouse 三条件 OR 匹配
+            "cn": cn_name,         # AD cn（中文名），用于 ClickHouse 三条件 OR 匹配
+            "nickname": nickname,  # AD displayName，username 为空时 userNickname 兜底匹配
         },
     )
     return LoginResponse(token=token, role="user")

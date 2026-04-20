@@ -11,8 +11,7 @@ forms so that the rest of the application can import a single source of truth.
 # -- User / identity ----------------------------------------------------------
 # NOTE: ClickHouse otel.events table uses camelCase column names
 USER_ID = "userId"
-USERNAME = "username"
-USERNAME = "username"
+USERNAME = "userNickname"   # 主用户标识字段改为 userNickname（性能更好，覆盖所有用户）
 USER_NICKNAME = "userNickname"
 ENTERPRISE_ID = "enterpriseId"
 ENTERPRISE = "enterprise"
@@ -45,7 +44,7 @@ IS_SUCCESSFUL = "isSuccessful"
 # -- camelCase aliases (used in requirements / API responses) ------------------
 CAMEL_MAP: dict[str, str] = {
     USER_ID: "userId",
-    USERNAME: "username",
+    USERNAME: "userNickname",
     USER_NICKNAME: "userNickname",
     ENTERPRISE_ID: "enterpriseId",
     ENTERPRISE: "enterprise",

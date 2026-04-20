@@ -95,15 +95,15 @@ _BASE_FILTER = (
 
 
 def _user_filter(user: dict[str, Any]) -> tuple[str, dict[str, Any]]:
-    """Build a ClickHouse WHERE fragment that matches a user across 3 username formats.
+    """Build a ClickHouse WHERE fragment that matches a user across 3 userNickname formats.
 
-    ClickHouse username field may contain any of:
+    ClickHouse userNickname field may contain any of:
       - sAMAccountName only, e.g. "aaa"
       - CN (display name) only, e.g. "张三"
       - composite "张三(aaa)" format
 
     Args:
-        user: dict with keys 'sam' (sAMAccountName) and 'cn' (AD cn).
+        user: dict with keys 'sam' (sAMAccountName), 'cn' (AD cn), 'nickname' (displayName).
               Falls back to 'sub' (JWT sub) when sam/cn absent.
 
     Returns:
@@ -111,6 +111,7 @@ def _user_filter(user: dict[str, Any]) -> tuple[str, dict[str, Any]]:
     """
     sam = user.get("sam") or user.get("sub", "")
     cn = user.get("cn") or ""
+    nickname = user.get("nickname") or ""
 
     conditions = []
     params: dict[str, Any] = {}
@@ -124,6 +125,10 @@ def _user_filter(user: dict[str, Any]) -> tuple[str, dict[str, Any]]:
     if cn and cn != sam:
         conditions.append(f"{USERNAME} = {{_u_cn:String}}")
         params["_u_cn"] = cn
+
+    if nickname and nickname not in (sam, cn):
+        conditions.append(f"{USERNAME} = {{_u_nick:String}}")
+        params["_u_nick"] = nickname
 
     if not conditions:
         # fallback: match nothing safely
@@ -746,8 +751,8 @@ def get_all_users_monthly_chats(time_filter: str = "all") -> dict[str, int]:
 def get_all_users_from_clickhouse() -> list[dict[str, Any]]:
     """Return distinct users from ClickHouse events table.
 
+    Uses userNickname (USERNAME constant) as the primary user identifier.
     Returns list of dicts with keys: username, nickname, enterprise.
-    Used as primary user list in admin panel (PG may be incomplete).
     """
     cache_key = "ch_all_users"
     if cache_key in _cache:
@@ -755,20 +760,19 @@ def get_all_users_from_clickhouse() -> list[dict[str, Any]]:
 
     client = _get_client()
     sql = (
-        f"SELECT {USERNAME}, any({REQUEST_MODEL_NAME}) as _m,"
-        f" anyLast(userNickname) as nickname,"
+        f"SELECT {USERNAME},"
         f" anyLast(enterprise) as enterprise"
         f" FROM events"
-        f" WHERE {_BASE_FILTER}"
+        f" WHERE {_BASE_FILTER} AND {USERNAME} != ''"
         f" GROUP BY {USERNAME}"
         f" ORDER BY {USERNAME}"
     )
     rows = client.query(sql, parameters={}).result_rows
     result: list[dict[str, Any]] = [
         {
-            "username": str(row[0] or ""),
-            "nickname": str(row[2] or ""),
-            "enterprise": str(row[3] or ""),
+            "username": str(row[0]),        # userNickname 即为主标识
+            "nickname": str(row[0]),        # 同上，用于 display_name
+            "enterprise": str(row[1] or ""),
         }
         for row in rows
         if row[0]
