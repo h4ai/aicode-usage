@@ -17,20 +17,19 @@ logger = logging.getLogger(__name__)
 
 
 def _check_clickhouse(cfg: dict[str, Any]) -> dict[str, Any]:
-    """Attempt a lightweight ClickHouse ping."""
+    """Attempt a lightweight ClickHouse ping using clickhouse_connect (HTTP)."""
     ch_cfg = cfg.get("clickhouse", {})
     try:
-        from clickhouse_driver import Client
+        from clickhouse_connect import get_client
 
-        client = Client(
+        client = get_client(
             host=ch_cfg.get("host", "localhost"),
-            port=ch_cfg.get("port", 9000),
+            port=ch_cfg.get("port", 8123),
             database=ch_cfg.get("database", "otel"),
-            user=ch_cfg.get("user", "default"),
+            username=ch_cfg.get("user", "default"),
             password=ch_cfg.get("password", ""),
-            connect_timeout=3,
         )
-        client.execute("SELECT 1")
+        client.query("SELECT 1")
         return {"status": "ok"}
     except Exception:
         logger.exception("ClickHouse health check failed")
