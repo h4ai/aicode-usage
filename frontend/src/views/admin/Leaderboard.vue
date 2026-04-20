@@ -93,7 +93,7 @@
           label="分组"
         />
         <el-table-column
-          label="月 Token"
+          label="Token 用量"
           prop="monthly_token"
           sortable
         >
@@ -103,13 +103,13 @@
         </el-table-column>
         <el-table-column
           prop="monthly_requests"
-          label="月请求数"
+          label="请求数"
           sortable
           width="110"
         />
         <el-table-column
           prop="monthly_chats"
-          label="月对话轮次"
+          label="对话轮次"
           sortable
           width="120"
           align="right"

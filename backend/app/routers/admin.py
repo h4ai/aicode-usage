@@ -345,40 +345,49 @@ class LeaderboardItem(BaseModel):
 
 
 def get_leaderboard(top: int = 10, time_filter: str = "all", start: str | None = None, end: str | None = None) -> list[dict[str, Any]]:
-    """Return top N users sorted by monthly token consumption."""
-    users = get_all_users()
+    """Return top N users sorted by token consumption in the given range."""
+    # 主数据源：ClickHouse（key = userNickname）
+    ch_users = get_all_users_from_clickhouse()
+    # PG 用于获取 quota_level
+    pg_users = get_all_users()
+    pg_quota_map = {u["user_id"]: u.get("quota_level", "L1") for u in pg_users}
+
     if start and end:
-        monthly_tokens = get_all_users_tokens_in_range(start, end, time_filter)
-        monthly_reqs = get_all_users_requests_in_range(start, end, time_filter)
-        monthly_chats_data = get_all_users_chats_in_range(start, end, time_filter)
+        tokens_map = get_all_users_tokens_in_range(start, end, time_filter)
+        reqs_map = get_all_users_requests_in_range(start, end, time_filter)
+        chats_map = get_all_users_chats_in_range(start, end, time_filter)
     else:
-        monthly_tokens = get_all_users_monthly_tokens(time_filter)
-        monthly_reqs = get_all_users_monthly_requests(time_filter)
-        monthly_chats_data = get_all_users_monthly_chats(time_filter)
+        tokens_map = get_all_users_monthly_tokens(time_filter)
+        reqs_map = get_all_users_monthly_requests(time_filter)
+        chats_map = get_all_users_monthly_chats(time_filter)
+
     quota_levels_data = get_all_quota_levels()
     level_limits = {lv["level"]: lv["monthly_token"] for lv in quota_levels_data}
 
+    # ch_users key = username（userNickname），与 tokens_map key 一致
     ranked = sorted(
-        users,
-        key=lambda u: monthly_tokens.get(u["user_id"], 0),
+        ch_users,
+        key=lambda u: tokens_map.get(u["username"], 0),
         reverse=True,
     )[:top]
 
     result: list[dict[str, Any]] = []
     for i, u in enumerate(ranked, start=1):
-        mt = monthly_tokens.get(u["user_id"], 0)
-        limit = level_limits.get(u.get("quota_level", "L1"), 1) or 1
+        uid = u["username"]   # userNickname
+        level = pg_quota_map.get(uid, "L1")
+        limit = level_limits.get(level, 1) or 1
+        mt = tokens_map.get(uid, 0)
         pct = round(mt / limit * 100, 1)
         result.append(
             {
                 "rank": i,
-                "user_id": u["user_id"],
-                "display_name": u.get("nickname") or u.get("username") or u["user_id"],
+                "user_id": uid,
+                "display_name": u.get("nickname") or uid,
                 "enterprise": u.get("enterprise") or "未知",
-                "quota_level": u.get("quota_level", "L1"),
+                "quota_level": level,
                 "monthly_token": mt,
-                "monthly_requests": monthly_reqs.get(u["user_id"], 0),
-                "monthly_chats": monthly_chats_data.get(u["user_id"], 0),
+                "monthly_requests": reqs_map.get(uid, 0),
+                "monthly_chats": chats_map.get(uid, 0),
                 "quota_usage_pct": pct,
             }
         )
