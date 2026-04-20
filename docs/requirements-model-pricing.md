@@ -180,3 +180,49 @@ CREATE TABLE IF NOT EXISTS model_pricing (
 | P1 | 模型自动发现 |
 | P1 | 明细表费用列 |
 | P2 | 价格变更历史查看页面 |
+
+---
+
+## 十、技术评估补充（2026-04-20 OPS 评估）
+
+### 10.1 各页面 input/output Token 支持现状
+
+| 页面/模块 | input_token | output_token | total_token | 费用计算可行性 | 所需改动 |
+|-----------|-------------|--------------|-------------|----------------|----------|
+| 个人看板 - 趋势图 (TrendChart) | ✅ 已有 | ✅ 已有 | ✅ 已有 | ✅ **直接支持** | 无 |
+| 个人看板 - 使用明细 (DetailTable) | ✅ 已有 | ✅ 已有 | ✅ 已有 | ✅ **直接支持** | 无 |
+| 管理后台 - 全局趋势 (GlobalTrend) | ✅ 后端已返回 | ✅ 后端已返回 | ✅ 已有 | ✅ **直接支持** | 无 |
+| 个人看板 - 指标卡 (MetricCards) | ❌ 只有 total_token | ❌ | ✅ | ⚠️ **需扩展 API** | summary 接口新增 `cost` 字段（今日/本周/本月） |
+| 管理后台 - 用户管理 (UserManager) | ❌ 只有 total 汇总 | ❌ | ✅ | ⚠️ **需新增函数** | 新增按模型分组的 input/output 聚合查询 |
+| 管理后台 - 分组汇总 (DepartmentSummary) | ❌ 只有 monthly_token | ❌ | ✅ | ⚠️ **需扩展** | 新增费用聚合列 |
+| 管理后台 - 排行榜 (Leaderboard) | ❌ 只有 monthly_token | ❌ | ✅ | ⚠️ **需扩展** | 新增费用列 |
+| 模型分布 (ModelDistribution) | ❌ 只有 total_token | ❌ | ✅ | ⚠️ **需扩展** | 按模型返回 input/output（精确计费用） |
+
+> ClickHouse 数据验证：inputToken / outputToken / totalToken 三个字段均存在，覆盖率 97.6%（2117+2168 条有效，51 条无 input/output 数据）。
+
+### 10.2 后端额外改动清单
+
+| 文件 | 需新增/修改 | 说明 |
+|------|------------|------|
+| `services/clickhouse.py` | 新增 `get_all_users_monthly_cost()` | 按 user_id + model 分组查 input/output，与 model_pricing 联算费用 |
+| `services/clickhouse.py` | 新增 `get_all_users_today_cost()` | 同上，范围限今日 |
+| `services/clickhouse.py` | 升级 `get_model_distribution()` | 新增返回 input_token / output_token（当前只有 total） |
+| `routers/metrics.py` | `MetricsSummaryResponse` 新增 `cost` 字段 | 今日/本周/本月各维度费用 |
+| `routers/admin.py` | `UserItem` 新增 `monthly_cost` / `today_cost` | 用户列表及 CSV 导出 |
+
+### 10.3 前端额外改动清单（补充）
+
+| 文件 | 需新增/修改 |
+|------|------------|
+| `MetricCards.vue` | 新增费用卡片（跟随今日/本周/本月切换） |
+| `DetailTable.vue` | 新增「费用」列（已有 input/output，直接计算） |
+| `UserManager.vue` | 新增「本月费用」「今日费用」列 |
+| `ModelDistribution.vue` | 新增 input/output 接收，支持按模型精确计费 |
+| `DepartmentSummary.vue` | 新增费用聚合列 |
+| `Leaderboard.vue` | 新增费用排行列（可选） |
+
+### 10.4 不需要改动的模块
+
+- 个人趋势图（TrendChart）：已有 input/output/total，直接可展示
+- 使用明细（DetailTable）：已有 input/output/total，加费用列即可
+- 全局趋势（GlobalTrend）：后端已返回 input/output/total
