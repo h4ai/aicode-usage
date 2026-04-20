@@ -95,15 +95,16 @@ _BASE_FILTER = (
 
 
 def _user_filter(user: dict[str, Any]) -> tuple[str, dict[str, Any]]:
-    """Build a ClickHouse WHERE fragment that matches a user across 3 username formats.
+    """Build a ClickHouse WHERE fragment that matches a user across username formats.
 
     ClickHouse username field may contain any of:
       - sAMAccountName only, e.g. "aaa"
       - CN (display name) only, e.g. "张三"
       - composite "张三(aaa)" format
+      - empty string (username not set, but userNickname may exist)
 
     Args:
-        user: dict with keys 'sam' (sAMAccountName) and 'cn' (AD cn).
+        user: dict with keys 'sam' (sAMAccountName), 'cn' (AD cn), 'nickname' (displayName).
               Falls back to 'sub' (JWT sub) when sam/cn absent.
 
     Returns:
@@ -111,6 +112,7 @@ def _user_filter(user: dict[str, Any]) -> tuple[str, dict[str, Any]]:
     """
     sam = user.get("sam") or user.get("sub", "")
     cn = user.get("cn") or ""
+    nickname = user.get("nickname") or ""
 
     conditions = []
     params: dict[str, Any] = {}
@@ -124,6 +126,11 @@ def _user_filter(user: dict[str, Any]) -> tuple[str, dict[str, Any]]:
     if cn and cn != sam:
         conditions.append(f"{USERNAME} = {{_u_cn:String}}")
         params["_u_cn"] = cn
+
+    # username 为空时用 userNickname 兜底匹配（部分客户端不上报 username）
+    if nickname and nickname not in (sam, cn):
+        conditions.append(f"(({USERNAME} = '' OR {USERNAME} IS NULL) AND userNickname = {{_u_nick:String}})")
+        params["_u_nick"] = nickname
 
     if not conditions:
         # fallback: match nothing safely
@@ -747,31 +754,45 @@ def get_all_users_from_clickhouse() -> list[dict[str, Any]]:
     """Return distinct users from ClickHouse events table.
 
     Returns list of dicts with keys: username, nickname, enterprise.
+    - username: sAMAccountName / composite format / empty string when unknown
+    - nickname: AD displayName / cn，用于展示
+    - display_key: 优先 username，username 为空时 fallback 到 nickname（用作 user_id）
+
     Used as primary user list in admin panel (PG may be incomplete).
+    username 为空但 userNickname 不为空的用户也会被包含。
     """
     cache_key = "ch_all_users"
     if cache_key in _cache:
         return list(_cache[cache_key])
 
     client = _get_client()
+    # GROUP BY username, userNickname 确保 username 为空也能按 nickname 区分用户
     sql = (
-        f"SELECT {USERNAME}, any({REQUEST_MODEL_NAME}) as _m,"
+        f"SELECT {USERNAME},"
         f" anyLast(userNickname) as nickname,"
         f" anyLast(enterprise) as enterprise"
         f" FROM events"
         f" WHERE {_BASE_FILTER}"
-        f" GROUP BY {USERNAME}"
-        f" ORDER BY {USERNAME}"
+        f" GROUP BY {USERNAME}, userNickname"
+        f" ORDER BY nickname, {USERNAME}"
     )
     rows = client.query(sql, parameters={}).result_rows
-    result: list[dict[str, Any]] = [
-        {
-            "username": str(row[0] or ""),
-            "nickname": str(row[2] or ""),
-            "enterprise": str(row[3] or ""),
-        }
-        for row in rows
-        if row[0]
-    ]
+    result: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for row in rows:
+        raw_username = str(row[0] or "")
+        nickname = str(row[1] or "")
+        enterprise = str(row[2] or "")
+        # display_key：查询/配额映射用的唯一标识；username 为空时用 nickname 代替
+        display_key = raw_username if raw_username else nickname
+        if not display_key or display_key in seen:
+            continue
+        seen.add(display_key)
+        result.append({
+            "username": display_key,   # 空 username 时用 nickname 填充，保证非空
+            "nickname": nickname,
+            "enterprise": enterprise,
+            "username_empty": not raw_username,  # 标记原始 username 是否为空（供调试）
+        })
     _cache[cache_key] = result
     return result
