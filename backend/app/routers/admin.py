@@ -352,8 +352,8 @@ class LeaderboardItem(BaseModel):
     quota_usage_pct: float
 
 
-def get_leaderboard(top: int = 10, time_filter: str = "all", start: str | None = None, end: str | None = None) -> list[dict[str, Any]]:
-    """Return top N users sorted by token consumption in the given range."""
+def get_leaderboard(top: int | None = None, time_filter: str = "all", start: str | None = None, end: str | None = None) -> list[dict[str, Any]]:
+    """Return all users sorted by token consumption in the given range."""
     # 主数据源：ClickHouse（key = userNickname）
     ch_users = get_all_users_from_clickhouse()
     # PG 用于获取 quota_level
@@ -377,7 +377,9 @@ def get_leaderboard(top: int = 10, time_filter: str = "all", start: str | None =
         ch_users,
         key=lambda u: tokens_map.get(u["username"], 0),
         reverse=True,
-    )[:top]
+    )
+    if top:
+        ranked = ranked[:top]
 
     result: list[dict[str, Any]] = []
     for i, u in enumerate(ranked, start=1):
@@ -404,14 +406,13 @@ def get_leaderboard(top: int = 10, time_filter: str = "all", start: str | None =
 
 @router.get("/leaderboard", response_model=list[LeaderboardItem])
 def list_leaderboard(
-    top: int = Query(10, ge=1, le=100),
     time_filter: str = Query("all", description="all|work|non_work"),
     start: str | None = Query(None, description="开始日期 YYYY-MM-DD"),
     end: str | None = Query(None, description="结束日期 YYYY-MM-DD"),
     _user: dict[str, Any] = Depends(require_admin),
 ) -> list[LeaderboardItem]:
-    """Return top N users by monthly token usage."""
-    rows = get_leaderboard(top=top, time_filter=time_filter, start=start, end=end)
+    """Return all users sorted by token usage (frontend handles pagination)."""
+    rows = get_leaderboard(top=None, time_filter=time_filter, start=start, end=end)
     return [LeaderboardItem(**row) for row in rows]
 
 

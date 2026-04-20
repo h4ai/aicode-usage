@@ -50,24 +50,6 @@
               value-format="YYYY-MM-DD"
               @change="fetchData"
             />
-            <el-select
-              v-model="top"
-              style="width:100px"
-              @change="fetchData"
-            >
-              <el-option
-                label="Top 10"
-                :value="10"
-              />
-              <el-option
-                label="Top 20"
-                :value="20"
-              />
-              <el-option
-                label="Top 50"
-                :value="50"
-              />
-            </el-select>
             <el-button
               size="small"
               :loading="exporting"
@@ -80,7 +62,7 @@
       </template>
       <el-table
         v-loading="loading"
-        :data="rows"
+        :data="pagedRows"
         stripe
       >
         <el-table-column
@@ -88,7 +70,7 @@
           width="70"
         >
           <template #default="{ $index }">
-            {{ $index + 1 }}
+            {{ (currentPage - 1) * pageSize + $index + 1 }}
           </template>
         </el-table-column>
         <el-table-column
@@ -122,12 +104,22 @@
           align="right"
         />
       </el-table>
+      <div style="margin-top:12px;display:flex;justify-content:flex-end">
+        <el-pagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :page-sizes="[20, 50, 100]"
+          :total="rows.length"
+          layout="total, sizes, prev, pager, next"
+          background
+        />
+      </div>
     </el-card>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import api from '@/api'
 import { useAuthStore } from '@/stores/auth'
 
@@ -137,9 +129,15 @@ const loading = ref(false)
 const exporting = ref(false)
 const timeFilter = ref('all')
 const workingHoursEnabled = ref(true)
-const top = ref(10)
+const currentPage = ref(1)
+const pageSize = ref(20)
 const rangeMode = ref<'month' | '7' | '30' | 'custom'>('month')
 const customRange = ref<[string, string] | null>(null)
+
+const pagedRows = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  return rows.value.slice(start, start + pageSize.value)
+})
 
 function _computeDateRange(): { start: string | null; end: string | null } {
   const today = new Date()
@@ -162,7 +160,7 @@ async function fetchData() {
   loading.value = true
   try {
     const { start, end } = _computeDateRange()
-    let url = `/api/admin/leaderboard?top=${top.value}&time_filter=${timeFilter.value}`
+    let url = `/api/admin/leaderboard?time_filter=${timeFilter.value}`
     if (start && end) url += `&start=${start}&end=${end}`
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${auth.token}` }
