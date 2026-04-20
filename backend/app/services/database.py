@@ -152,15 +152,26 @@ def get_all_users() -> list[dict[str, Any]]:
 
 
 def update_user_level(user_id: str, level: str) -> dict[str, Any] | None:
-    """Update a user's quota level. Returns updated row or None."""
+    """Update a user's quota level. Upserts the user row if not exists.
+
+    PG may be empty (users are sourced from ClickHouse). When updating level
+    for a user not yet in PG, insert a minimal row first, then update level.
+    Returns updated row or None on invalid level.
+    """
     if level not in ("L1", "L2", "L3"):
         return None
     conn = _get_conn()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            # UPSERT: insert with given level if user doesn't exist, else update
             cur.execute(
-                "UPDATE users SET quota_level = %s WHERE user_id = %s RETURNING *",
-                (level, user_id),
+                """
+                INSERT INTO users (user_id, username, quota_level)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (user_id) DO UPDATE SET quota_level = EXCLUDED.quota_level
+                RETURNING *
+                """,
+                (user_id, user_id, level),
             )
             row = cur.fetchone()
         conn.commit()
