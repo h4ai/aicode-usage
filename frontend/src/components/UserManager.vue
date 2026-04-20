@@ -403,7 +403,7 @@ async function exportCsv() {
       startDate = customRange.value[0]
       endDate = customRange.value[1]
     }
-    let url_path = `/admin/users/export-csv?time_filter=${timeFilter.value}`
+    let url_path = `/admin/users/export-csv?time_filter=all`
     if (startDate && endDate) url_path += `&start=${startDate}&end=${endDate}`
     const { data } = await api.get(url_path, { responseType: 'blob' })
     const url = URL.createObjectURL(data as Blob)
