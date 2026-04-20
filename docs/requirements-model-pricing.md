@@ -1,0 +1,182 @@
+# 模型 Token 价格管理 & 费用计算 需求文档 v0.2
+
+> 状态：✅ 已确认 | 作者：PM | 日期：2026-04-20
+> 变更：v0.1 → v0.2：沈老板确认 5 项待确认事项
+
+---
+
+## 一、需求背景
+
+当前系统只统计 Token 用量，不计算费用。不同模型价格差异大，需要引入模型价格体系，让管理员和用户都能看到**实际费用**。
+
+---
+
+## 二、已确认决策
+
+| # | 决策 | 说明 |
+|---|------|------|
+| 1 | **人民币（CNY）** | 货币单位固定为人民币 |
+| 2 | **2 位小数** | 费用显示 ¥xx.xx |
+| 3 | **保留价格变更历史** | 按 `effective_from` 查询历史价格 |
+| 4 | **优先 input/output 分别计价** | ClickHouse 数据完整支持（2117/2168 条有 input/output），仅 51 条无数据 |
+| 5 | **费用不纳入告警** | 不设费用阈值告警 |
+
+---
+
+## 三、费用计算公式
+
+**优先方案（已验证可行）：**
+```
+费用 = (inputToken / 1,000,000) × input_price + (outputToken / 1,000,000) × output_price
+```
+
+> ClickHouse 数据验证：5 个模型全部有 inputToken/outputToken 数据，覆盖率 97.6%。
+
+**当前已知模型（5 个）：**
+
+| 模型 | 需管理员定价 |
+|------|-------------|
+| GPT-4o | ✅ |
+| DeepSeek V3 | ✅ |
+| Claude 3.5 Sonnet | ✅ |
+| GPT-4o Mini | ✅ |
+| Qwen Max | ✅ |
+
+---
+
+## 四、功能详解
+
+### 4.1 管理后台 —「模型价格」页面（新增）
+
+管理后台新增「模型价格」页签，支持 **增删改查**。
+
+**数据模型（PostgreSQL）：**
+
+```sql
+-- 当前生效价格
+CREATE TABLE IF NOT EXISTS model_pricing (
+    id             SERIAL PRIMARY KEY,
+    model_name     TEXT NOT NULL,
+    input_price    DECIMAL(10, 4) NOT NULL DEFAULT 0,
+    output_price   DECIMAL(10, 4) NOT NULL DEFAULT 0,
+    currency       TEXT NOT NULL DEFAULT 'CNY',
+    effective_from DATE NOT NULL DEFAULT CURRENT_DATE,
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (model_name, effective_from)
+);
+```
+
+> 使用 `(model_name, effective_from)` 联合唯一约束，支持价格变更历史。查询时取 `effective_from <= 目标日期` 的最新记录。
+
+**页面功能：**
+
+| 功能 | 说明 |
+|------|------|
+| 列表 | 模型名称、输入价格（¥/百万Token）、输出价格（¥/百万Token）、生效日期、操作 |
+| 新增 | 弹窗：模型名称（下拉+手动输入）、输入价格、输出价格、生效日期 |
+| 编辑 | 修改价格 → 新增一条记录（保留历史），或修改当前记录 |
+| 删除 | 确认后删除 |
+| 模型发现 | 从 ClickHouse 读取所有 `requestModelName`，显示未定价模型，一键导入 |
+
+### 4.2 管理后台 — 用户管理界面调整
+
+**新增列：**
+
+| 列名 | 计算 | 格式 |
+|------|------|------|
+| 本月费用 | 按模型 input/output 分别计价汇总 | ¥xx.xx |
+| 今日费用 | 同上，范围限今日 | ¥xx.xx |
+
+**CSV 导出**：新增「本月费用」「今日费用」列
+
+### 4.3 用户个人面板调整
+
+**指标卡片区新增：**
+
+| 指标 | 维度 | 格式 |
+|------|------|------|
+| 费用 | 跟随现有「本月/今日」切换 | ¥xx.xx |
+
+**使用明细表格**：新增「费用」列（每条记录的费用）
+
+---
+
+## 五、涉及修改范围
+
+### 5.1 后端（Python/FastAPI）
+
+| 文件 | 修改 |
+|------|------|
+| `services/database.py` | 新增 `model_pricing` 表 DDL + CRUD |
+| `routers/admin.py` | 新增 `/api/admin/model-pricing` CRUD 端点 |
+| `routers/admin.py` | 用户列表 + CSV 导出新增费用字段 |
+| `services/clickhouse.py` | 按模型分组查 input/output token |
+| `routers/metrics.py` | 个人面板费用计算 |
+
+### 5.2 前端（Vue 3）
+
+| 文件 | 修改 |
+|------|------|
+| `views/admin/` | 新增「模型价格」管理页面 |
+| `views/admin/UserManagement.vue` | 表格+CSV 新增费用列 |
+| `views/Dashboard.vue` | 指标卡片+明细表新增费用 |
+| `router/index.ts` | 新增路由 |
+| `api/` | 新增 API 调用 |
+
+### 5.3 数据库
+
+- PostgreSQL 新增 `model_pricing` 表（见上方 DDL）
+
+---
+
+## 六、API 设计
+
+### 模型价格管理
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/admin/model-pricing` | 获取所有模型当前定价 |
+| POST | `/api/admin/model-pricing` | 新增定价 |
+| PUT | `/api/admin/model-pricing/{id}` | 更新定价 |
+| DELETE | `/api/admin/model-pricing/{id}` | 删除定价 |
+| GET | `/api/admin/model-pricing/discover` | 发现未定价模型 |
+| GET | `/api/admin/model-pricing/history/{model_name}` | 查看价格变更历史 |
+
+### 费用查询（扩展现有接口）
+
+| 接口 | 新增字段 |
+|------|----------|
+| `GET /api/admin/users` | `monthly_cost`, `today_cost` |
+| `GET /api/admin/export/csv` | 「本月费用」「今日费用」列 |
+| `GET /api/metrics/summary` | `cost` 字段 |
+| `GET /api/metrics/detail` | 每条记录 `cost` 字段 |
+
+---
+
+## 七、管理后台页签顺序
+
+```
+用户管理(默认) → 全局趋势 → 用量排行 → 分组汇总 → 模型价格(新增) → 工作时段 → 配额管理
+```
+
+---
+
+## 八、未定价模型处理
+
+- 费用显示 `¥0.00`，标记 ⚠️ 提示
+- 模型价格页面顶部提示「X 个未定价模型」
+
+---
+
+## 九、优先级
+
+| 优先级 | 功能 |
+|--------|------|
+| P0 | model_pricing 表 + CRUD API + 管理页面 |
+| P0 | 费用计算逻辑 |
+| P0 | 用户管理费用列 + CSV |
+| P0 | 个人面板费用 |
+| P1 | 模型自动发现 |
+| P1 | 明细表费用列 |
+| P2 | 价格变更历史查看页面 |
