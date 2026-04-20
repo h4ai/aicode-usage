@@ -66,10 +66,13 @@ def quota_usage(
     user_id: Optional[str] = Query(None),
     user: dict[str, Any] = Depends(get_current_user),
 ) -> QuotaUsageResponse:
-    effective_user_id: str = user_id if (user.get("role") == "admin" and user_id) else user.get("sub", "")
+    if user.get("role") == "admin" and user_id:
+        effective_user: dict[str, Any] = {"sam": user_id, "cn": user_id, "sub": user_id, "nickname": user_id}
+    else:
+        effective_user = user  # JWT payload 含 nickname/cn/sam
 
     # Get user's quota level from PostgreSQL
-    db_user = get_user(effective_user_id)
+    db_user = get_user(effective_user.get("sub", ""))
     level = db_user["quota_level"] if db_user else "L1"
     limits = get_quota_limits(level)
 
@@ -78,9 +81,9 @@ def quota_usage(
     daily_limit = int(limits["daily_requests"])
 
     # Query ClickHouse for current usage
-    monthly_used = get_monthly_token_usage(effective_user_id)
-    chats_used = get_chat_session_count(effective_user_id, "today")
-    daily_used = get_daily_request_count(effective_user_id)
+    monthly_used = get_monthly_token_usage(effective_user)
+    chats_used = get_chat_session_count(effective_user, "today")
+    daily_used = get_daily_request_count(effective_user)
 
     monthly_pct = (monthly_used / monthly_limit * 100) if monthly_limit else 0
     chats_pct = (chats_used / chats_limit * 100) if chats_limit else 0
