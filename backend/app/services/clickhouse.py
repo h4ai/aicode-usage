@@ -95,32 +95,46 @@ _BASE_FILTER = (
 
 
 def _user_filter(user: dict[str, Any]) -> tuple[str, dict[str, Any]]:
-    """Build a ClickHouse WHERE fragment that matches a user by userNickname.
+    """Build a ClickHouse WHERE fragment that matches a user across 3 userNickname formats.
 
-    USERNAME constant now points to 'userNickname' (covers all users including
-    those without a username field). Matching priority:
-      1. nickname (AD displayName) — primary match key
-      2. cn (AD cn) — fallback if nickname absent
-      3. sam (sAMAccountName) — last resort
+    ClickHouse userNickname field may contain any of:
+      - sAMAccountName only, e.g. "aaa"
+      - CN (display name) only, e.g. "张三"
+      - composite "张三(aaa)" format
 
     Args:
-        user: dict with keys 'nickname', 'cn', 'sam', 'sub' from JWT payload.
+        user: dict with keys 'sam' (sAMAccountName), 'cn' (AD cn), 'nickname' (displayName).
+              Falls back to 'sub' (JWT sub) when sam/cn absent.
 
     Returns:
         (sql_fragment, params_dict)
     """
-    # 优先用 nickname（displayName），其次 cn，最后 sam
-    match_val = (
-        user.get("nickname")
-        or user.get("cn")
-        or user.get("sam")
-        or user.get("sub", "")
-    )
+    sam = user.get("sam") or user.get("sub", "")
+    cn = user.get("cn") or ""
+    nickname = user.get("nickname") or ""
 
-    if not match_val:
-        return "1=0", {}
+    conditions = []
+    params: dict[str, Any] = {}
 
-    return f"{USERNAME} = {{_u_nick:String}}", {"_u_nick": match_val}
+    if sam:
+        conditions.append(f"{USERNAME} = {{_u_sam:String}}")
+        params["_u_sam"] = sam
+        conditions.append(f"{USERNAME} LIKE {{_u_like:String}}")
+        params["_u_like"] = f"%({sam})"
+
+    if cn and cn != sam:
+        conditions.append(f"{USERNAME} = {{_u_cn:String}}")
+        params["_u_cn"] = cn
+
+    if nickname and nickname not in (sam, cn):
+        conditions.append(f"{USERNAME} = {{_u_nick:String}}")
+        params["_u_nick"] = nickname
+
+    if not conditions:
+        # fallback: match nothing safely
+        conditions.append("1=0")
+
+    return f"({' OR '.join(conditions)})", params
 
 
 # ---------------------------------------------------------------------------
