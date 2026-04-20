@@ -41,6 +41,24 @@
               value="gray"
             />
           </el-select>
+          <el-radio-group v-model="rangeMode" size="small" style="margin-left:8px">
+            <el-radio-button value="month">本月</el-radio-button>
+            <el-radio-button value="7">近7天</el-radio-button>
+            <el-radio-button value="30">近30天</el-radio-button>
+            <el-radio-button value="custom">自定义</el-radio-button>
+          </el-radio-group>
+          <el-date-picker
+            v-if="rangeMode === 'custom'"
+            v-model="customRange"
+            type="daterange"
+            size="small"
+            style="margin-left:8px;width:220px"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            format="YYYY-MM-DD"
+            value-format="YYYY-MM-DD"
+            @change="fetchUsers"
+          />
           <el-button
             size="small"
             :loading="exporting"
@@ -271,6 +289,8 @@ const searchText = ref('')
 const filterStatus = ref('')
 const currentPage = ref(1)
 const pageSize = ref(20)
+const rangeMode = ref<'month' | '7' | '30' | 'custom'>('month')
+const customRange = ref<[string, string] | null>(null)
 
 function formatWan(n: number): string {
   if (n >= 100000000) return (n / 100000000).toFixed(1) + '亿'
@@ -318,7 +338,25 @@ const pagedUsers = computed(() => {
 async function fetchUsers() {
   loading.value = true
   try {
-    const { data } = await api.get<UserItem[]>(`/admin/users?time_filter=all`)
+    // 计算 start/end
+    const today = new Date()
+    const fmt = (d: Date) => d.toISOString().slice(0, 10)
+    let startDate: string | null = null
+    let endDate: string | null = null
+    if (rangeMode.value === '7') {
+      startDate = fmt(new Date(today.getTime() - 6 * 86400000))
+      endDate = fmt(today)
+    } else if (rangeMode.value === '30') {
+      startDate = fmt(new Date(today.getTime() - 29 * 86400000))
+      endDate = fmt(today)
+    } else if (rangeMode.value === 'custom' && customRange.value) {
+      startDate = customRange.value[0]
+      endDate = customRange.value[1]
+    }
+    // 构造 URL
+    let url = `/admin/users?time_filter=all`
+    if (startDate && endDate) url += `&start=${startDate}&end=${endDate}`
+    const { data } = await api.get<UserItem[]>(url)
     // 默认按状态+月 Token 排序
     const order = { red: 0, yellow: 1, green: 2, gray: 3 }
     data.sort((a, b) => {
@@ -332,6 +370,10 @@ async function fetchUsers() {
     loading.value = false
   }
 }
+
+watch(rangeMode, () => {
+  if (rangeMode.value !== 'custom') fetchUsers()
+})
 
 async function changeLevel(userId: string, level: string) {
   try {

@@ -27,6 +27,7 @@ def _patch_users(fn):
         patch("app.routers.admin.get_all_users_today_tokens", return_value={}),
         patch("app.routers.admin.get_all_users_today_chats", return_value={}),
         patch("app.routers.admin.get_all_users_monthly_chats", return_value={}),
+        patch("app.routers.admin.get_all_users_monthly_requests", return_value={}),
         patch("app.routers.admin.get_all_users_daily_requests", return_value={}),
         patch("app.routers.admin.get_quota_limits", return_value=_MOCK_QUOTA_LIMITS),
     ):

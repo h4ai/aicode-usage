@@ -748,6 +748,63 @@ def get_all_users_monthly_chats(time_filter: str = "all") -> dict[str, int]:
     return result
 
 
+def get_all_users_tokens_in_range(start_date: str, end_date: str, time_filter: str = "all") -> dict[str, int]:
+    """Return {userNickname: total_token} for date range [start_date, end_date]."""
+    cache_key = f"all_range_token:{start_date}:{end_date}:{time_filter}"
+    if cache_key in _cache:
+        return dict(_cache[cache_key])
+    client = _get_client()
+    sql = (
+        f"SELECT {USERNAME}, sum({TOTAL_TOKEN})"
+        f" FROM events WHERE {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}"
+        f" AND {_BASE_FILTER} AND {USERNAME} != ''"
+        + _working_hours_filter(time_filter)
+        + f" GROUP BY {USERNAME}"
+    )
+    rows = client.query(sql, parameters={"start": start_date, "end": end_date}).result_rows
+    result = {str(row[0]): _safe_int(row[1]) for row in rows}
+    _cache[cache_key] = result
+    return result
+
+
+def get_all_users_requests_in_range(start_date: str, end_date: str, time_filter: str = "all") -> dict[str, int]:
+    """Return {userNickname: request_count} for date range."""
+    cache_key = f"all_range_req:{start_date}:{end_date}:{time_filter}"
+    if cache_key in _cache:
+        return dict(_cache[cache_key])
+    client = _get_client()
+    sql = (
+        f"SELECT {USERNAME}, count() AS req_count"
+        f" FROM events WHERE {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}"
+        f" AND {_BASE_FILTER} AND {USERNAME} != ''"
+        + _working_hours_filter(time_filter)
+        + f" GROUP BY {USERNAME}"
+    )
+    rows = client.query(sql, parameters={"start": start_date, "end": end_date}).result_rows
+    result = {str(row[0]): _safe_int(row[1]) for row in rows}
+    _cache[cache_key] = result
+    return result
+
+
+def get_all_users_chats_in_range(start_date: str, end_date: str, time_filter: str = "all") -> dict[str, int]:
+    """Return {userNickname: chat_count} for date range."""
+    cache_key = f"all_range_chat:{start_date}:{end_date}:{time_filter}"
+    if cache_key in _cache:
+        return dict(_cache[cache_key])
+    client = _get_client()
+    sql = (
+        f"SELECT {USERNAME}, count() FROM events"
+        f" WHERE {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}"
+        f" AND {EVENT_CODE} = 'chat_request_response' AND totalToken > 0 AND {USERNAME} != ''"
+        + _working_hours_filter(time_filter)
+        + f" GROUP BY {USERNAME}"
+    )
+    rows = client.query(sql, parameters={"start": start_date, "end": end_date}).result_rows
+    result = {str(row[0]): _safe_int(row[1]) for row in rows}
+    _cache[cache_key] = result
+    return result
+
+
 def get_all_users_from_clickhouse() -> list[dict[str, Any]]:
     """Return distinct users from ClickHouse events table.
 

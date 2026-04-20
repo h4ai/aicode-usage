@@ -15,13 +15,16 @@ from pydantic import BaseModel
 
 from app.deps import require_admin
 from app.services.clickhouse import (
+    get_all_users_chats_in_range,
     get_all_users_daily_requests,
     get_all_users_from_clickhouse,
     get_all_users_monthly_chats,
     get_all_users_monthly_requests,
     get_all_users_monthly_tokens,
+    get_all_users_requests_in_range,
     get_all_users_today_chats,
     get_all_users_today_tokens,
+    get_all_users_tokens_in_range,
     get_global_trend,
     get_global_trend_by_dept,
     get_global_trend_by_model,
@@ -132,6 +135,8 @@ def _chat_status(used: int, limit: int) -> str:
 @router.get("/users", response_model=list[UserItem])
 def list_users(
     time_filter: str = Query("all", description="all|work|non_work"),
+    start: str | None = Query(None, description="开始日期 YYYY-MM-DD，不传则默认本月"),
+    end: str | None = Query(None, description="结束日期 YYYY-MM-DD，不传则默认今天"),
     _user: dict[str, Any] = Depends(require_admin),
 ) -> list[UserItem]:
     # 从 ClickHouse 获取完整用户列表（PG 可能不完整）
@@ -140,14 +145,25 @@ def list_users(
     pg_users = get_all_users()
     pg_quota_map = {u["user_id"]: u.get("quota_level", "L1") for u in pg_users}
 
-    monthly_tokens = get_all_users_monthly_tokens(time_filter)
-    today_tokens = get_all_users_today_tokens(time_filter)
-    today_chats = get_all_users_today_chats(time_filter)
-    monthly_chats = get_all_users_monthly_chats(time_filter)
-    daily_reqs = get_all_users_daily_requests()
-    # 全天数据（不受 time_filter 影响，用于"总量"列展示）
-    monthly_tokens_all = get_all_users_monthly_tokens("all") if time_filter != "all" else monthly_tokens
-    today_chats_all = get_all_users_today_chats("all") if time_filter != "all" else today_chats
+    if start and end:
+        # 自定义日期范围
+        monthly_tokens = get_all_users_tokens_in_range(start, end, time_filter)
+        monthly_chats = get_all_users_chats_in_range(start, end, time_filter)
+        monthly_tokens_all = get_all_users_tokens_in_range(start, end, "all") if time_filter != "all" else monthly_tokens
+        today_chats_all = get_all_users_chats_in_range(start, end, "all") if time_filter != "all" else monthly_chats
+        today_tokens: dict[str, int] = {}  # 自定义范围不区分今日
+        today_chats = monthly_chats  # 复用范围内的对话数
+        daily_reqs: dict[str, int] = {}
+    else:
+        # 默认：本月聚合
+        monthly_tokens = get_all_users_monthly_tokens(time_filter)
+        today_tokens = get_all_users_today_tokens(time_filter)
+        today_chats = get_all_users_today_chats(time_filter)
+        monthly_chats = get_all_users_monthly_chats(time_filter)
+        daily_reqs = get_all_users_daily_requests()
+        # 全天数据（不受 time_filter 影响，用于"总量"列展示）
+        monthly_tokens_all = get_all_users_monthly_tokens("all") if time_filter != "all" else monthly_tokens
+        today_chats_all = get_all_users_today_chats("all") if time_filter != "all" else today_chats
     quota_cache: dict[str, dict] = {}
     result: list[UserItem] = []
     for u in ch_users:
@@ -262,12 +278,17 @@ class DeptSummaryItem(BaseModel):
     avg_token_per_user: int
 
 
-def get_department_summary(time_filter: str = "all") -> list[dict[str, Any]]:
+def get_department_summary(time_filter: str = "all", start: str | None = None, end: str | None = None) -> list[dict[str, Any]]:
     """Compute department summary by merging PostgreSQL users with ClickHouse token data."""
     users = get_all_users()
-    monthly_tokens = get_all_users_monthly_tokens(time_filter)
-    monthly_requests = get_all_users_monthly_requests(time_filter)
-    monthly_chats_data = get_all_users_monthly_chats(time_filter)
+    if start and end:
+        monthly_tokens = get_all_users_tokens_in_range(start, end, time_filter)
+        monthly_requests = get_all_users_requests_in_range(start, end, time_filter)
+        monthly_chats_data = get_all_users_chats_in_range(start, end, time_filter)
+    else:
+        monthly_tokens = get_all_users_monthly_tokens(time_filter)
+        monthly_requests = get_all_users_monthly_requests(time_filter)
+        monthly_chats_data = get_all_users_monthly_chats(time_filter)
 
     # Group users by enterprise
     dept_users: dict[str, list[str]] = {}
@@ -299,10 +320,12 @@ def get_department_summary(time_filter: str = "all") -> list[dict[str, Any]]:
 @router.get("/departments", response_model=list[DeptSummaryItem])
 def list_departments(
     time_filter: str = Query("all", description="all|work|non_work"),
+    start: str | None = Query(None, description="开始日期 YYYY-MM-DD"),
+    end: str | None = Query(None, description="结束日期 YYYY-MM-DD"),
     _user: dict[str, Any] = Depends(require_admin),
 ) -> list[DeptSummaryItem]:
     """Return token usage summary grouped by enterprise/department."""
-    rows = get_department_summary(time_filter)
+    rows = get_department_summary(time_filter, start, end)
     return [DeptSummaryItem(**row) for row in rows]
 
 
@@ -321,12 +344,17 @@ class LeaderboardItem(BaseModel):
     quota_usage_pct: float
 
 
-def get_leaderboard(top: int = 10, time_filter: str = "all") -> list[dict[str, Any]]:
+def get_leaderboard(top: int = 10, time_filter: str = "all", start: str | None = None, end: str | None = None) -> list[dict[str, Any]]:
     """Return top N users sorted by monthly token consumption."""
     users = get_all_users()
-    monthly_tokens = get_all_users_monthly_tokens(time_filter)
-    monthly_reqs = get_all_users_monthly_requests(time_filter)
-    monthly_chats_data = get_all_users_monthly_chats(time_filter)
+    if start and end:
+        monthly_tokens = get_all_users_tokens_in_range(start, end, time_filter)
+        monthly_reqs = get_all_users_requests_in_range(start, end, time_filter)
+        monthly_chats_data = get_all_users_chats_in_range(start, end, time_filter)
+    else:
+        monthly_tokens = get_all_users_monthly_tokens(time_filter)
+        monthly_reqs = get_all_users_monthly_requests(time_filter)
+        monthly_chats_data = get_all_users_monthly_chats(time_filter)
     quota_levels_data = get_all_quota_levels()
     level_limits = {lv["level"]: lv["monthly_token"] for lv in quota_levels_data}
 
@@ -361,10 +389,12 @@ def get_leaderboard(top: int = 10, time_filter: str = "all") -> list[dict[str, A
 def list_leaderboard(
     top: int = Query(10, ge=1, le=100),
     time_filter: str = Query("all", description="all|work|non_work"),
+    start: str | None = Query(None, description="开始日期 YYYY-MM-DD"),
+    end: str | None = Query(None, description="结束日期 YYYY-MM-DD"),
     _user: dict[str, Any] = Depends(require_admin),
 ) -> list[LeaderboardItem]:
     """Return top N users by monthly token usage."""
-    rows = get_leaderboard(top=top, time_filter=time_filter)
+    rows = get_leaderboard(top=top, time_filter=time_filter, start=start, end=end)
     return [LeaderboardItem(**row) for row in rows]
 
 
@@ -377,7 +407,7 @@ def export_users_csv(
     _user: dict[str, Any] = Depends(require_admin),
 ) -> StreamingResponse:
     """Export user list as CSV."""
-    users_data = list_users(time_filter=time_filter, _user=_user)
+    users_data = list_users(time_filter=time_filter, start=None, end=None, _user=_user)
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(

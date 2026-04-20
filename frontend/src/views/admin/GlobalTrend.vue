@@ -63,6 +63,23 @@
                 value="department"
               />
             </el-select>
+            <el-radio-group v-model="rangeMode" size="small" style="margin-left:8px" @change="onRangeModeChange">
+              <el-radio-button value="7">近7天</el-radio-button>
+              <el-radio-button value="30">近30天</el-radio-button>
+              <el-radio-button value="custom">自定义</el-radio-button>
+            </el-radio-group>
+            <el-date-picker
+              v-if="rangeMode === 'custom'"
+              v-model="customRange"
+              type="daterange"
+              size="small"
+              style="margin-left:8px;width:220px"
+              start-placeholder="开始日期"
+              end-placeholder="结束日期"
+              format="YYYY-MM-DD"
+              value-format="YYYY-MM-DD"
+              @change="fetchData"
+            />
           </div>
         </div>
       </template>
@@ -93,8 +110,28 @@ const timeFilter = ref('all')
 const workingHoursEnabled = ref(true)
 const metricType = ref<'token' | 'chat'>('token')
 const loading = ref(false)
+const rangeMode = ref<'7' | '30' | 'custom'>('30')
+const customRange = ref<[string, string] | null>(null)
 let chart: echarts.ECharts | null = null
 let rawData: any[] = []
+
+function _computeDateRange(): { start: string; end: string } {
+  const today = new Date()
+  const fmt = (d: Date) => d.toISOString().slice(0, 10)
+  if (rangeMode.value === '7') {
+    return { start: fmt(new Date(today.getTime() - 6 * 86400000)), end: fmt(today) }
+  } else if (rangeMode.value === '30') {
+    return { start: fmt(new Date(today.getTime() - 29 * 86400000)), end: fmt(today) }
+  } else if (customRange.value) {
+    return { start: customRange.value[0], end: customRange.value[1] }
+  }
+  // fallback: last 30 days
+  return { start: fmt(new Date(today.getTime() - 29 * 86400000)), end: fmt(today) }
+}
+
+function onRangeModeChange() {
+  if (rangeMode.value !== 'custom') fetchData()
+}
 
 function handleResize() {
   chart?.resize()
@@ -154,9 +191,11 @@ async function fetchData() {
   loading.value = true
   try {
     const tf = timeFilter.value
-    const url = groupBy.value
+    const { start, end } = _computeDateRange()
+    const baseUrl = groupBy.value
       ? `/api/admin/trend?group_by=${groupBy.value}&time_filter=${tf}`
       : `/api/admin/trend?time_filter=${tf}`
+    const url = `${baseUrl}&start=${start}&end=${end}`
     const res = await fetch(url, { headers: { Authorization: `Bearer ${auth.token}` } })
     rawData = await res.json()
   } finally {

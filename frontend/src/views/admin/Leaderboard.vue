@@ -32,6 +32,24 @@
             >
               全天
             </el-tag>
+            <el-radio-group v-model="rangeMode" size="small" style="margin-left:8px" @change="onRangeModeChange">
+              <el-radio-button value="month">本月</el-radio-button>
+              <el-radio-button value="7">近7天</el-radio-button>
+              <el-radio-button value="30">近30天</el-radio-button>
+              <el-radio-button value="custom">自定义</el-radio-button>
+            </el-radio-group>
+            <el-date-picker
+              v-if="rangeMode === 'custom'"
+              v-model="customRange"
+              type="daterange"
+              size="small"
+              style="margin-left:8px;width:220px"
+              start-placeholder="开始日期"
+              end-placeholder="结束日期"
+              format="YYYY-MM-DD"
+              value-format="YYYY-MM-DD"
+              @change="fetchData"
+            />
             <el-select
               v-model="top"
               style="width:100px"
@@ -112,11 +130,33 @@ const loading = ref(false)
 const timeFilter = ref('all')
 const workingHoursEnabled = ref(true)
 const top = ref(10)
+const rangeMode = ref<'month' | '7' | '30' | 'custom'>('month')
+const customRange = ref<[string, string] | null>(null)
+
+function _computeDateRange(): { start: string | null; end: string | null } {
+  const today = new Date()
+  const fmt = (d: Date) => d.toISOString().slice(0, 10)
+  if (rangeMode.value === '7') {
+    return { start: fmt(new Date(today.getTime() - 6 * 86400000)), end: fmt(today) }
+  } else if (rangeMode.value === '30') {
+    return { start: fmt(new Date(today.getTime() - 29 * 86400000)), end: fmt(today) }
+  } else if (rangeMode.value === 'custom' && customRange.value) {
+    return { start: customRange.value[0], end: customRange.value[1] }
+  }
+  return { start: null, end: null }
+}
+
+function onRangeModeChange() {
+  if (rangeMode.value !== 'custom') fetchData()
+}
 
 async function fetchData() {
   loading.value = true
   try {
-    const res = await fetch(`/api/admin/leaderboard?top=${top.value}&time_filter=${timeFilter.value}`, {
+    const { start, end } = _computeDateRange()
+    let url = `/api/admin/leaderboard?top=${top.value}&time_filter=${timeFilter.value}`
+    if (start && end) url += `&start=${start}&end=${end}`
+    const res = await fetch(url, {
       headers: { Authorization: `Bearer ${auth.token}` }
     })
     rows.value = await res.json()
