@@ -1,0 +1,6 @@
+apiVersion: v2
+name: ai-code-usage
+description: AI Code Usage Dashboard — Helm Chart for OpenShift
+type: application
+version: 1.0.0
+appVersion: "1.0.0"

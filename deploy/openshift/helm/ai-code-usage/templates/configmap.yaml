@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ai-code-usage.fullname" . }}-config
+data:
+  config.yaml: |
+    clickhouse:
+      host: {{ .Values.clickhouse.host }}
+      port: {{ .Values.clickhouse.port }}
+      database: {{ .Values.clickhouse.database }}
+      user: {{ .Values.clickhouse.user }}
+      password: {{ .Values.clickhouse.password | quote }}
+
+    database:
+      url: postgresql://postgres:{{ .Values.postgres.password }}@{{ include "ai-code-usage.fullname" . }}-postgres:5432/ai_usage
+
+    ldap:
+      enabled: {{ .Values.ldap.enabled }}
+      server: {{ .Values.ldap.server }}
+      domain: {{ .Values.ldap.domain }}
+      base_dn: {{ .Values.ldap.base_dn }}
+      bind_dn: {{ .Values.ldap.bind_dn }}
+      bind_password: {{ .Values.ldap.bind_password | quote }}
+
+    smtp:
+      enabled: {{ .Values.smtp.enabled }}
+      host: {{ .Values.smtp.host }}
+      port: {{ .Values.smtp.port }}
+      use_tls: {{ .Values.smtp.use_tls }}
+      from_email: {{ .Values.smtp.from_email }}
+      from_name: {{ .Values.smtp.from_name }}
+
+    auth:
+      secret_key: {{ .Values.auth.secret_key | quote }}
+      algorithm: HS256
+      access_token_expire_minutes: {{ .Values.auth.access_token_expire_minutes }}
+
+    working_hours:
+      enabled: {{ .Values.workingHours.enabled }}
+      start: {{ .Values.workingHours.start | quote }}
+      end: {{ .Values.workingHours.end | quote }}
+      weekday_only: {{ .Values.workingHours.weekday_only }}

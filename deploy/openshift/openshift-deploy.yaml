@@ -1,0 +1,326 @@
+# =============================================================================
+# AI Code Usage Dashboard — OpenShift 单文件部署方案（方案 B）
+# 用法：oc apply -f openshift-deploy.yaml
+# 前提：已登录 OpenShift 并切换到目标 namespace
+# =============================================================================
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 0. Namespace（可选，如果已有 namespace 可删除此段）
+# ─────────────────────────────────────────────────────────────────────────────
+# apiVersion: v1
+# kind: Namespace
+# metadata:
+#   name: ai-code-usage
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# 1. Secret — 敏感配置（DB 密码、LDAP 密码等）
+#    ⚠️ 部署前修改 stringData 中的值
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ai-code-usage-secret
+type: Opaque
+stringData:
+  postgres-password: "postgres"          # ← 修改为生产密码
+  ldap-password: ""                      # ← 修改为 LDAP bind 密码（如有）
+  admin-password-hash: "$2b$12$6o8L9wXKEWXino6JEx55/.QvqAkWhTYnnztELmM/9eV53Qls8XEBi"
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# 2. ConfigMap — 应用配置（非敏感部分）
+#    ⚠️ 部署前修改 clickhouse.host、ldap.* 等字段
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ai-code-usage-config
+data:
+  config.yaml: |
+    clickhouse:
+      host: <CLICKHOUSE_HOST>            # ← 修改为 ClickHouse 服务 IP/域名
+      port: 8123
+      database: otel
+      user: default
+      password: ''
+
+    database:
+      url: postgresql://postgres:postgres@ai-code-usage-postgres:5432/ai_usage
+
+    ldap:
+      enabled: true
+      server: ldap://<LDAP_HOST>:389    # ← 修改为 LDAP 域名
+      domain: <AD_DOMAIN>               # ← 如 corp.example.com
+      base_dn: DC=corp,DC=example,DC=com
+      bind_dn: CN=svc-ldap,OU=ServiceAccounts,DC=corp,DC=example,DC=com
+      bind_password: ""                 # 由 Secret 挂载覆盖
+
+    smtp:
+      enabled: false
+      host: <SMTP_HOST>
+      port: 25
+      use_tls: false
+      from_email: noreply@example.com
+      from_name: AI Code Usage
+
+    auth:
+      secret_key: change-me-in-production-use-a-long-random-string
+      algorithm: HS256
+      access_token_expire_minutes: 480
+
+    working_hours:
+      enabled: false
+      start: "08:30"
+      end: "18:00"
+      weekday_only: true
+
+    admin:
+      username: admin
+      # password hash 由 Secret 挂载
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# 3. PersistentVolumeClaim — PostgreSQL 数据持久化
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ai-code-usage-pgdata
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  # storageClassName: ""   # ← 可指定 StorageClass，不填则用集群默认
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# 4. Deployment — PostgreSQL
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-code-usage-postgres
+  labels:
+    app: ai-code-usage
+    component: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-code-usage
+      component: postgres
+  template:
+    metadata:
+      labels:
+        app: ai-code-usage
+        component: postgres
+    spec:
+      # OpenShift 使用随机非 root UID，需要允许写入
+      securityContext:
+        fsGroup: 999
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: ai_usage
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ai-code-usage-secret
+                  key: postgres-password
+          volumeMounts:
+            - name: pgdata
+              mountPath: /var/lib/postgresql/data
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+      volumes:
+        - name: pgdata
+          persistentVolumeClaim:
+            claimName: ai-code-usage-pgdata
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# 5. Service — PostgreSQL（ClusterIP，仅集群内访问）
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-code-usage-postgres
+spec:
+  selector:
+    app: ai-code-usage
+    component: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# 6. Deployment — Backend（FastAPI）
+#    ⚠️ 将 image 替换为你实际推送到镜像仓库的地址
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-code-usage-backend
+  labels:
+    app: ai-code-usage
+    component: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-code-usage
+      component: backend
+  template:
+    metadata:
+      labels:
+        app: ai-code-usage
+        component: backend
+    spec:
+      containers:
+        - name: backend
+          image: <REGISTRY>/ai-code-usage-backend:latest  # ← 修改为实际镜像地址
+          ports:
+            - containerPort: 8002
+          env:
+            - name: DATABASE_URL
+              value: postgresql://postgres:postgres@ai-code-usage-postgres:5432/ai_usage
+          volumeMounts:
+            - name: config
+              mountPath: /app/config.yaml
+              subPath: config.yaml
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8002
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8002
+            initialDelaySeconds: 20
+            periodSeconds: 30
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "1000m"
+      volumes:
+        - name: config
+          configMap:
+            name: ai-code-usage-config
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# 7. Service — Backend（ClusterIP）
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-code-usage-backend
+spec:
+  selector:
+    app: ai-code-usage
+    component: backend
+  ports:
+    - port: 8002
+      targetPort: 8002
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# 8. Deployment — Frontend（Vue3 + Express）
+#    ⚠️ 将 image 替换为你实际推送到镜像仓库的地址
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-code-usage-frontend
+  labels:
+    app: ai-code-usage
+    component: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-code-usage
+      component: frontend
+  template:
+    metadata:
+      labels:
+        app: ai-code-usage
+        component: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: <REGISTRY>/ai-code-usage-frontend:latest  # ← 修改为实际镜像地址
+          ports:
+            - containerPort: 3002
+          env:
+            # 集群内通过 Service 访问后端，无需暴露后端端口
+            - name: BACKEND_URL
+              value: http://ai-code-usage-backend:8002
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3002
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# 9. Service — Frontend（ClusterIP）
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-code-usage-frontend
+spec:
+  selector:
+    app: ai-code-usage
+    component: frontend
+  ports:
+    - port: 3002
+      targetPort: 3002
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# 10. Route — 前端对外暴露（OpenShift 自动生成域名）
+#     部署后执行 `oc get route ai-code-usage-frontend` 获取访问地址
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: ai-code-usage-frontend
+spec:
+  to:
+    kind: Service
+    name: ai-code-usage-frontend
+  port:
+    targetPort: 3002
+  tls:
+    termination: edge          # HTTPS 终止在 Router 层，后端 HTTP 即可
+    insecureEdgeTerminationPolicy: Redirect

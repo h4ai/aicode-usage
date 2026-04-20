@@ -1,0 +1,83 @@
+# =============================================================================
+# AI Code Usage Dashboard — Helm values（OpenShift）
+# 部署前修改所有 <PLACEHOLDER> 标记的字段
+# =============================================================================
+
+# ── 镜像配置 ─────────────────────────────────────────────────────────────────
+backend:
+  image:
+    repository: <REGISTRY>/ai-code-usage-backend  # ← 修改
+    tag: latest
+    pullPolicy: IfNotPresent
+  replicas: 1
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "1000m"
+
+frontend:
+  image:
+    repository: <REGISTRY>/ai-code-usage-frontend  # ← 修改
+    tag: latest
+    pullPolicy: IfNotPresent
+  replicas: 1
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "50m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+
+# ── PostgreSQL ────────────────────────────────────────────────────────────────
+postgres:
+  image: postgres:16-alpine
+  password: "postgres"        # ← 修改为生产密码
+  storage: "10Gi"
+  # storageClassName: ""      # ← 指定 StorageClass（留空用集群默认）
+
+# ── ClickHouse（外部服务，不部署到集群）─────────────────────────────────────
+clickhouse:
+  host: <CLICKHOUSE_HOST>     # ← 修改为 ClickHouse IP/域名
+  port: 8123
+  database: otel
+  user: default
+  password: ""
+
+# ── LDAP ─────────────────────────────────────────────────────────────────────
+ldap:
+  enabled: true
+  server: ldap://<LDAP_HOST>:389   # ← 修改
+  domain: <AD_DOMAIN>              # ← 如 corp.example.com
+  base_dn: DC=corp,DC=example,DC=com
+  bind_dn: CN=svc-ldap,OU=ServiceAccounts,DC=corp,DC=example,DC=com
+  bind_password: ""                # ← 修改
+
+# ── SMTP ─────────────────────────────────────────────────────────────────────
+smtp:
+  enabled: false
+  host: <SMTP_HOST>
+  port: 25
+  use_tls: false
+  from_email: noreply@example.com
+  from_name: AI Code Usage
+
+# ── Auth ─────────────────────────────────────────────────────────────────────
+auth:
+  secret_key: "change-me-in-production-use-a-long-random-string"  # ← 修改
+  access_token_expire_minutes: 480
+
+# ── Route（OpenShift）────────────────────────────────────────────────────────
+route:
+  tls: true                  # 是否启用 HTTPS（edge termination）
+  # host: ""                 # 留空则 OpenShift 自动生成域名
+
+# ── Working Hours ─────────────────────────────────────────────────────────────
+workingHours:
+  enabled: false
+  start: "08:30"
+  end: "18:00"
+  weekday_only: true

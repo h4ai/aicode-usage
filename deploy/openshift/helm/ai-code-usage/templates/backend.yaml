@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ai-code-usage.fullname" . }}-backend
+  labels:
+    app: {{ include "ai-code-usage.fullname" . }}
+    component: backend
+spec:
+  replicas: {{ .Values.backend.replicas }}
+  selector:
+    matchLabels:
+      app: {{ include "ai-code-usage.fullname" . }}
+      component: backend
+  template:
+    metadata:
+      labels:
+        app: {{ include "ai-code-usage.fullname" . }}
+        component: backend
+    spec:
+      containers:
+        - name: backend
+          image: {{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          ports:
+            - containerPort: 8002
+          env:
+            - name: DATABASE_URL
+              value: postgresql://postgres:{{ .Values.postgres.password }}@{{ include "ai-code-usage.fullname" . }}-postgres:5432/ai_usage
+          volumeMounts:
+            - name: config
+              mountPath: /app/config.yaml
+              subPath: config.yaml
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8002
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8002
+            initialDelaySeconds: 20
+            periodSeconds: 30
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "ai-code-usage.fullname" . }}-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ai-code-usage.fullname" . }}-backend
+spec:
+  selector:
+    app: {{ include "ai-code-usage.fullname" . }}
+    component: backend
+  ports:
+    - port: 8002
+      targetPort: 8002
