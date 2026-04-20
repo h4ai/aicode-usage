@@ -75,11 +75,18 @@ _MOCK_USERS = [
     {"user_id": "user2", "username": "Li Si", "nickname": None, "enterprise": "", "quota_level": "L2"},
 ]
 
+# ClickHouse format (primary source for admin user list)
+_MOCK_CH_USERS = [
+    {"username": "Zhang San", "nickname": "张三", "enterprise": "Engineering"},
+    {"username": "Li Si", "nickname": "", "enterprise": ""},
+]
+
 _MOCK_QUOTA_LIMITS = {"monthly_token": 5000000, "daily_chats": 50, "daily_requests": 500}
 
 
 def _patch_list_users(fn, **kwargs):
     defaults = dict(
+        get_all_users_from_clickhouse=_MOCK_CH_USERS,
         get_all_users=_MOCK_USERS,
         get_all_users_monthly_tokens={},
         get_all_users_today_tokens={},
@@ -92,6 +99,7 @@ def _patch_list_users(fn, **kwargs):
     defaults.update(kwargs)
 
     with (
+        patch("app.routers.admin.get_all_users_from_clickhouse", return_value=defaults["get_all_users_from_clickhouse"]),
         patch("app.routers.admin.get_all_users", return_value=defaults["get_all_users"]),
         patch("app.routers.admin.get_all_users_monthly_tokens", return_value=defaults["get_all_users_monthly_tokens"]),
         patch("app.routers.admin.get_all_users_today_tokens", return_value=defaults["get_all_users_today_tokens"]),
@@ -141,7 +149,7 @@ def test_admin_users_unknown_enterprise_for_empty(client, admin_token, admin_con
         "/api/admin/users",
         headers={"Authorization": f"Bearer {admin_token}"},
     ))
-    user2 = next(u for u in resp.json() if u["user_id"] == "user2")
+    user2 = next(u for u in resp.json() if u["user_id"] == "Li Si")
     assert user2["enterprise"] == "未知"
 
 
@@ -151,20 +159,20 @@ def test_admin_users_display_name_fallback(client, admin_token, admin_config_pat
         "/api/admin/users",
         headers={"Authorization": f"Bearer {admin_token}"},
     ))
-    user2 = next(u for u in resp.json() if u["user_id"] == "user2")
+    user2 = next(u for u in resp.json() if u["user_id"] == "Li Si")
     assert user2["display_name"] == "Li Si"
 
 
 def test_admin_users_status_token_reflects_usage(client, admin_token, admin_config_patch):
-    """user1 using 80% of tokens → yellow status."""
+    """Zhang San using 80% of tokens → yellow status."""
     resp = _patch_list_users(
         lambda: client.get(
             "/api/admin/users",
             headers={"Authorization": f"Bearer {admin_token}"},
         ),
-        get_all_users_monthly_tokens={"user1": 4000000},  # 80% of 5M
+        get_all_users_monthly_tokens={"Zhang San": 4000000},  # 80% of 5M
     )
-    user1 = next(u for u in resp.json() if u["user_id"] == "user1")
+    user1 = next(u for u in resp.json() if u["user_id"] == "Zhang San")
     assert user1["status_token"] == "yellow"
 
 

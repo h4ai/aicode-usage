@@ -78,6 +78,9 @@ def login(body: LoginRequest) -> LoginResponse:
         raise HTTPException(status_code=401, detail="用户名或密码错误")
 
     user_id = ad_info.get("user_id") or body.username
+    sam_account = ad_info.get("sam_account") or user_id   # sAMAccountName（如 aaa）
+    cn_name = ad_info.get("username") or ""               # AD cn（如 张三）
+
     # Auto-create or update user in PostgreSQL (defaults to L1 level)
     upsert_user(
         user_id=user_id,
@@ -91,7 +94,11 @@ def login(body: LoginRequest) -> LoginResponse:
         username=user_id,
         role="user",
         password_hash="",
-        extra={"userId": user_id},
+        extra={
+            "userId": user_id,
+            "sam": sam_account,   # sAMAccountName，用于 ClickHouse 三条件 OR 匹配
+            "cn": cn_name,        # AD cn（中文名），用于 ClickHouse 三条件 OR 匹配
+        },
     )
     return LoginResponse(token=token, role="user")
 

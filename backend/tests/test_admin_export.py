@@ -12,11 +12,16 @@ _MOCK_USERS = [
     {"user_id": "user1", "username": "Zhang San", "nickname": "张三", "enterprise": "Engineering", "quota_level": "L1"},
 ]
 
+_MOCK_CH_USERS = [
+    {"username": "Zhang San", "nickname": "张三", "enterprise": "Engineering"},
+]
+
 _MOCK_QUOTA_LIMITS = {"monthly_token": 5000000, "daily_chats": 50, "daily_requests": 500}
 
 
 def _patch_users(fn):
     with (
+        patch("app.routers.admin.get_all_users_from_clickhouse", return_value=_MOCK_CH_USERS),
         patch("app.routers.admin.get_all_users", return_value=_MOCK_USERS),
         patch("app.routers.admin.get_all_users_monthly_tokens", return_value={}),
         patch("app.routers.admin.get_all_users_today_tokens", return_value={}),
@@ -67,7 +72,7 @@ def test_export_csv_contains_user_data(client, admin_token, admin_config_patch):
         headers={"Authorization": f"Bearer {admin_token}"},
     ))
     text = resp.text
-    assert "user1" in text
+    assert "Zhang San" in text
 
 
 def test_export_csv_with_time_filter(client, admin_token, admin_config_patch):
