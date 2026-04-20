@@ -231,9 +231,29 @@ CREATE TABLE IF NOT EXISTS model_pricing (
 
 ## 十一、Ralph 开发方式说明（2026-04-20）
 
-### 11.1 建议的 User Story 拆分
+### 11.0 三层 Spec 管道
 
-当正式开始开发时，将以下 US 追加到 `scripts/ralph/prd.json`：
+本项目采用**三层开发流程**（2026-04-18 确认，`h4ai/spex` commit `f18d60c`）：
+
+```
+L1: requirements.md          ← 人确认的需求（本文档，只读）
+L2: GEARS + AC               ← 行为规格 + 验收标准（砍掉 User Stories 层）
+L3: prd.json                 ← 机器可执行，由 L2 直接生成
+```
+
+> **变化**：旧流程有四层（requirements → GEARS → User Stories → prd.json）。
+> 新流程砍掉了 User Stories，GEARS 直接包含 AC，然后生成 prd.json。
+> AI Agent 只需精确行为描述（GEARS）+ 验收标准（AC），不需要 `As a...I want...` 的动机格式。
+
+**对 Ralph 脚本的影响：无需改动。**
+ralph.sh 只读 `prd.json` 和 `CLAUDE.md`，三层结构对脚本透明。
+变化仅在人工准备阶段（L1→L2→L3），执行阶段不变：
+- TDD：先写失败测试（Red）→ 实现（Green）→ 全量 pytest → commit
+- 每个条目完成后 `passes: true`，继续下一个
+
+### 11.1 建议的 GEARS 条目拆分（追加到 prd.json）
+
+当正式开始开发时，将以下条目追加到 `scripts/ralph/prd.json`（`description` 字段直接写行为描述，不用 User Story 格式）：
 
 | US ID | 标题 | 优先级 | 说明 |
 |-------|------|--------|------|
