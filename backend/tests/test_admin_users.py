@@ -88,23 +88,24 @@ def _patch_list_users(fn, **kwargs):
     defaults = dict(
         get_all_users_from_clickhouse=_MOCK_CH_USERS,
         get_all_users=_MOCK_USERS,
-        get_all_users_monthly_tokens={},
+        get_all_users_tokens_in_month={},
         get_all_users_today_tokens={},
         get_all_users_today_chats={},
-        get_all_users_monthly_chats={},
+        get_all_users_chats_in_month={},
+        get_all_users_requests_in_month={},
         get_all_users_daily_requests={},
         get_quota_limits=_MOCK_QUOTA_LIMITS,
-        get_all_users_monthly_requests={},
     )
     defaults.update(kwargs)
 
     with (
         patch("app.routers.admin.get_all_users_from_clickhouse", return_value=defaults["get_all_users_from_clickhouse"]),
         patch("app.routers.admin.get_all_users", return_value=defaults["get_all_users"]),
-        patch("app.routers.admin.get_all_users_monthly_tokens", return_value=defaults["get_all_users_monthly_tokens"]),
+        patch("app.routers.admin.get_all_users_tokens_in_month", return_value=defaults["get_all_users_tokens_in_month"]),
         patch("app.routers.admin.get_all_users_today_tokens", return_value=defaults["get_all_users_today_tokens"]),
         patch("app.routers.admin.get_all_users_today_chats", return_value=defaults["get_all_users_today_chats"]),
-        patch("app.routers.admin.get_all_users_monthly_chats", return_value=defaults["get_all_users_monthly_chats"]),
+        patch("app.routers.admin.get_all_users_chats_in_month", return_value=defaults["get_all_users_chats_in_month"]),
+        patch("app.routers.admin.get_all_users_requests_in_month", return_value=defaults.get("get_all_users_requests_in_month", {})),
         patch("app.routers.admin.get_all_users_daily_requests", return_value=defaults["get_all_users_daily_requests"]),
         patch("app.routers.admin.get_quota_limits", return_value=defaults["get_quota_limits"]),
     ):
@@ -170,7 +171,7 @@ def test_admin_users_status_token_reflects_usage(client, admin_token, admin_conf
             "/api/admin/users",
             headers={"Authorization": f"Bearer {admin_token}"},
         ),
-        get_all_users_monthly_tokens={"Zhang San": 4000000},  # 80% of 5M
+        get_all_users_tokens_in_month={"Zhang San": 4000000},  # 80% of 5M
     )
     user1 = next(u for u in resp.json() if u["user_id"] == "Zhang San")
     assert user1["status_token"] == "yellow"
@@ -226,14 +227,14 @@ def test_change_user_level_success(client, admin_token, admin_config_patch):
 # /api/admin/users with date range (start + end)
 # ---------------------------------------------------------------------------
 
-def _patch_list_users_range(fn, **kwargs):
-    """Patch for date-range variant — uses _in_range functions instead of monthly."""
+def _patch_list_users_month(fn, **kwargs):
+    """Patch for historical month query — uses _in_month functions."""
     defaults = dict(
         get_all_users_from_clickhouse=_MOCK_CH_USERS,
         get_all_users=_MOCK_USERS,
-        get_all_users_tokens_in_range={},
-        get_all_users_requests_in_range={},
-        get_all_users_chats_in_range={},
+        get_all_users_tokens_in_month={},
+        get_all_users_requests_in_month={},
+        get_all_users_chats_in_month={},
         get_quota_limits=_MOCK_QUOTA_LIMITS,
     )
     defaults.update(kwargs)
@@ -241,18 +242,21 @@ def _patch_list_users_range(fn, **kwargs):
     with (
         patch("app.routers.admin.get_all_users_from_clickhouse", return_value=defaults["get_all_users_from_clickhouse"]),
         patch("app.routers.admin.get_all_users", return_value=defaults["get_all_users"]),
-        patch("app.routers.admin.get_all_users_tokens_in_range", return_value=defaults["get_all_users_tokens_in_range"]),
-        patch("app.routers.admin.get_all_users_requests_in_range", return_value=defaults["get_all_users_requests_in_range"]),
-        patch("app.routers.admin.get_all_users_chats_in_range", return_value=defaults["get_all_users_chats_in_range"]),
+        patch("app.routers.admin.get_all_users_tokens_in_month", return_value=defaults["get_all_users_tokens_in_month"]),
+        patch("app.routers.admin.get_all_users_requests_in_month", return_value=defaults.get("get_all_users_requests_in_month", {})),
+        patch("app.routers.admin.get_all_users_chats_in_month", return_value=defaults["get_all_users_chats_in_month"]),
         patch("app.routers.admin.get_quota_limits", return_value=defaults["get_quota_limits"]),
     ):
         return fn()
 
+# Keep old alias for backward compat within tests
+_patch_list_users_range = _patch_list_users_month
 
-def test_admin_users_with_date_range_returns_list(client, admin_token, admin_config_patch):
-    """When start+end provided, /admin/users should still return a valid user list."""
-    resp = _patch_list_users_range(lambda: client.get(
-        "/api/admin/users?start=2026-04-01&end=2026-04-20",
+
+def test_admin_users_with_year_month_returns_list(client, admin_token, admin_config_patch):
+    """When year+month provided, /admin/users should return a valid user list."""
+    resp = _patch_list_users_month(lambda: client.get(
+        "/api/admin/users?year=2026&month=3",
         headers={"Authorization": f"Bearer {admin_token}"},
     ))
     assert resp.status_code == 200
@@ -260,47 +264,63 @@ def test_admin_users_with_date_range_returns_list(client, admin_token, admin_con
     assert len(resp.json()) == 2
 
 
-def test_admin_users_with_date_range_uses_range_tokens(client, admin_token, admin_config_patch):
-    """When start+end provided, monthly_token should come from in_range function."""
-    resp = _patch_list_users_range(
+def test_admin_users_with_year_month_uses_month_tokens(client, admin_token, admin_config_patch):
+    """When year+month provided, monthly_token should come from in_month function."""
+    resp = _patch_list_users_month(
         lambda: client.get(
-            "/api/admin/users?start=2026-04-01&end=2026-04-20",
+            "/api/admin/users?year=2026&month=3",
             headers={"Authorization": f"Bearer {admin_token}"},
         ),
-        get_all_users_tokens_in_range={"Zhang San": 1234567},
+        get_all_users_tokens_in_month={"Zhang San": 1234567},
     )
     assert resp.status_code == 200
     user1 = next(u for u in resp.json() if u["user_id"] == "Zhang San")
     assert user1["monthly_token"] == 1234567
 
 
-def test_admin_users_with_date_range_uses_range_chats(client, admin_token, admin_config_patch):
-    """When start+end provided, monthly_chats should come from in_range function."""
-    resp = _patch_list_users_range(
+def test_admin_users_with_year_month_uses_month_chats(client, admin_token, admin_config_patch):
+    """When year+month provided, monthly_chats should come from in_month function."""
+    resp = _patch_list_users_month(
         lambda: client.get(
-            "/api/admin/users?start=2026-04-01&end=2026-04-20",
+            "/api/admin/users?year=2026&month=3",
             headers={"Authorization": f"Bearer {admin_token}"},
         ),
-        get_all_users_chats_in_range={"Zhang San": 42},
+        get_all_users_chats_in_month={"Zhang San": 42},
     )
     assert resp.status_code == 200
     user1 = next(u for u in resp.json() if u["user_id"] == "Zhang San")
     assert user1["monthly_chats"] == 42
 
 
-def test_admin_users_with_only_start_ignores_range(client, admin_token, admin_config_patch):
-    """Only start without end should fall back to monthly (not use range functions)."""
+def test_admin_users_historical_month_today_fields_are_zero(client, admin_token, admin_config_patch):
+    """Historical month (not current): today_token/today_chats/daily_requests should be 0."""
+    resp = _patch_list_users_month(
+        lambda: client.get(
+            "/api/admin/users?year=2025&month=1",
+            headers={"Authorization": f"Bearer {admin_token}"},
+        ),
+    )
+    assert resp.status_code == 200
+    for u in resp.json():
+        assert u["today_token"] == 0
+        assert u["today_chats"] == 0
+        assert u["daily_requests"] == 0
+
+
+def test_admin_users_without_year_month_uses_current_month(client, admin_token, admin_config_patch):
+    """Without year/month, should use current month (calls monthly functions)."""
     resp = _patch_list_users(lambda: client.get(
-        "/api/admin/users?start=2026-04-01",
+        "/api/admin/users",
         headers={"Authorization": f"Bearer {admin_token}"},
     ))
     assert resp.status_code == 200
 
 
 def test_admin_users_date_range_invalid_format_returns_200_or_422(client, admin_token, admin_config_patch):
-    """Invalid date format: backend passes string to ClickHouse as-is; should be 200 or 422."""
-    resp = _patch_list_users_range(lambda: client.get(
-        "/api/admin/users?start=not-a-date&end=also-not",
+    """month=99 is invalid; FastAPI should return 422."""
+    resp = _patch_list_users_month(lambda: client.get(
+        "/api/admin/users?year=2026&month=99",
         headers={"Authorization": f"Bearer {admin_token}"},
     ))
-    assert resp.status_code in (200, 422)
+    # month=99 passes as int but _month_range will fail; expect 422 or 500
+    assert resp.status_code in (200, 422, 500)

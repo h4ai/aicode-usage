@@ -748,6 +748,33 @@ def get_all_users_monthly_chats(time_filter: str = "all") -> dict[str, int]:
     return result
 
 
+def _month_range(year: int, month: int) -> tuple[str, str]:
+    """Return (start, end) ISO strings for the given year/month."""
+    import calendar
+    start = date(year, month, 1).isoformat()
+    last_day = calendar.monthrange(year, month)[1]
+    end = date(year, month, last_day).isoformat()
+    return start, end
+
+
+def get_all_users_tokens_in_month(year: int, month: int, time_filter: str = "all") -> dict[str, int]:
+    """Return {userNickname: total_token} for a specific year/month."""
+    start, end = _month_range(year, month)
+    return get_all_users_tokens_in_range(start, end, time_filter)
+
+
+def get_all_users_requests_in_month(year: int, month: int, time_filter: str = "all") -> dict[str, int]:
+    """Return {userNickname: request_count} for a specific year/month."""
+    start, end = _month_range(year, month)
+    return get_all_users_requests_in_range(start, end, time_filter)
+
+
+def get_all_users_chats_in_month(year: int, month: int, time_filter: str = "all") -> dict[str, int]:
+    """Return {userNickname: chat_count} for a specific year/month."""
+    start, end = _month_range(year, month)
+    return get_all_users_chats_in_range(start, end, time_filter)
+
+
 def get_all_users_tokens_in_range(start_date: str, end_date: str, time_filter: str = "all") -> dict[str, int]:
     """Return {userNickname: total_token} for date range [start_date, end_date]."""
     cache_key = f"all_range_token:{start_date}:{end_date}:{time_filter}"
