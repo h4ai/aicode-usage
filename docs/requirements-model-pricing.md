@@ -226,3 +226,37 @@ CREATE TABLE IF NOT EXISTS model_pricing (
 - 个人趋势图（TrendChart）：已有 input/output/total，直接可展示
 - 使用明细（DetailTable）：已有 input/output/total，加费用列即可
 - 全局趋势（GlobalTrend）：后端已返回 input/output/total
+
+---
+
+## 十一、Ralph 开发方式说明（2026-04-20）
+
+### 11.1 建议的 User Story 拆分
+
+当正式开始开发时，将以下 US 追加到 `scripts/ralph/prd.json`：
+
+| US ID | 标题 | 优先级 | 说明 |
+|-------|------|--------|------|
+| US-017 | model_pricing 表 DDL + CRUD API | P0 | PG 建表、5 个基础端点、数据库服务层 |
+| US-018 | 管理后台「模型价格」管理页面 | P0 | Vue 新页面、AdminView 新增页签 |
+| US-019 | ClickHouse 费用计算函数（按模型 input/output 聚合）| P0 | 新增费用查询函数、集成到用户/个人 API |
+| US-020 | 用户管理新增费用列 + CSV 导出 | P0 | UserManager.vue + admin.py + export |
+| US-021 | 个人面板费用指标卡 + 明细费用列 | P0 | MetricCards.vue + DetailTable.vue |
+| US-022 | 未定价模型自动发现 + ⚠️ 提示 | P1 | discover 端点 + 前端提示横幅 |
+
+### 11.2 Codebase Patterns（供 Ralph Agent 使用）
+
+开发前需将以下内容追加到 `scripts/ralph/progress.txt` 的 `## Codebase Patterns` 节：
+
+```
+- model_pricing 表在 PostgreSQL，DDL 已在 docs/requirements-model-pricing.md §4.1
+- 费用计算公式：(inputToken/1_000_000)*input_price + (outputToken/1_000_000)*output_price，人民币 2 位小数
+- 费用查询需从 ClickHouse 按 (user_id, requestModelName) 分组取 sum(inputToken)/sum(outputToken)，再与 PG model_pricing JOIN 算费
+- 已有 input/output 的接口：get_daily_trend, get_detail_records, get_global_trend, get_global_trend_by_model
+- 需要新增 input/output 的接口：get_model_distribution（当前只有 total_token）
+- 汇总类函数（get_all_users_monthly_tokens 等）只取 totalToken，费用计算需新增独立函数，不改原函数签名
+- model_pricing 查询时取 effective_from <= 目标日期 的最新记录（最近一条）
+- 未定价模型费用显示 ¥0.00，前端加 ⚠️ 标记
+- 费用不纳入告警（不设阈值）
+- 管理后台页签顺序：用户管理 → 全局趋势 → 用量排行 → 分组汇总 → 模型价格(新) → 工作时段 → 配额管理
+```
