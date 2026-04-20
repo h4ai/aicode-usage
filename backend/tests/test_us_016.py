@@ -9,7 +9,7 @@ AC-4: SMTP 配置从 config.yaml 热加载
 """
 
 from __future__ import annotations
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, AsyncMock, patch, call
 import pytest
 
 
@@ -143,9 +143,12 @@ def test_ac4_smtp_config_read_from_config():
         }
     }
     with patch("app.services.notification.get_config", return_value=smtp_cfg) as mock_cfg:
-        with patch("smtplib.SMTP") as mock_smtp:
-            mock_conn = MagicMock()
-            mock_smtp.return_value.__enter__ = MagicMock(return_value=mock_conn)
-            mock_smtp.return_value.__exit__ = MagicMock(return_value=False)
+        with patch("aiosmtplib.SMTP") as mock_smtp:
+            mock_conn = AsyncMock()
+            mock_smtp.return_value = mock_conn
+            mock_conn.connect = AsyncMock()
+            mock_conn.login = AsyncMock()
+            mock_conn.send_message = AsyncMock()
+            mock_conn.quit = AsyncMock()
             send_quota_email(to_email="user@test.com", username="testuser", used=4200000, limit=5000000)
     mock_cfg.assert_called()

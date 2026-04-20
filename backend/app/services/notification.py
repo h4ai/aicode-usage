@@ -5,15 +5,21 @@
 
 Checks all users' monthly token usage and sends a one-time alert
 when usage first reaches 80% of the monthly limit.
+
+Uses aiosmtplib (async SMTP) instead of smtplib — no blocking I/O,
+suitable for environments where relay server requires no-auth SMTP.
 """
 
 from __future__ import annotations
 
+import asyncio
 import logging
-import smtplib
 from datetime import datetime, timezone
+from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Any
+
+import aiosmtplib
 
 from app.config import get_config
 from app.services.clickhouse import get_monthly_token_usage
@@ -34,6 +40,81 @@ def get_all_users_with_mail() -> list[dict[str, Any]]:
     return get_all_users()
 
 
+async def mail_send(
+    subject: str,
+    receiver: str,
+    bcc: str,
+    content: str,
+    cc: str | None = None,
+) -> None:
+    """Send HTML email via aiosmtplib (reads SMTP config from config.yaml).
+
+    Args:
+        subject: 邮件主题
+        receiver: 收件人（逗号分隔）
+        bcc: 密送（逗号分隔）
+        content: HTML 邮件正文
+        cc: 抄送（逗号分隔，可选）
+    """
+    cfg = get_config()
+    smtp_cfg = cfg.get("smtp", {})
+    host: str = smtp_cfg.get("host", "")
+    port: int = int(smtp_cfg.get("port", 25))
+    smtp_user: str = smtp_cfg.get("username", "")
+    smtp_pass: str = smtp_cfg.get("password", "")
+    from_name: str = smtp_cfg.get("from_name", "AI Code Usage")
+    from_email: str = smtp_cfg.get("from_email", "")
+
+    if not host:
+        raise RuntimeError("SMTP host not configured")
+
+    msg = MIMEMultipart()
+    msg.attach(MIMEText(content, "html", "utf-8"))
+    msg["From"] = f"{from_name} <{from_email}>" if from_name else from_email
+    msg["To"] = receiver
+    msg["Bcc"] = bcc
+    msg["Subject"] = subject
+    if cc:
+        msg["Cc"] = cc
+        recipients = receiver.split(",") + bcc.split(",") + cc.split(",")
+    else:
+        recipients = receiver.split(",") + bcc.split(",")
+
+    # Filter empty strings
+    recipients = [r.strip() for r in recipients if r.strip()]
+
+    client = aiosmtplib.SMTP(hostname=host, port=port)
+    await client.connect()
+    if smtp_user:
+        await client.login(smtp_user, smtp_pass)
+    await client.send_message(msg, recipients=recipients)
+    await client.quit()
+    logger.info("Mail sent: subject=%s to=%s", subject, receiver)
+
+
+async def send_quota_email_async(
+    *,
+    to_email: str,
+    username: str,
+    used: int,
+    limit: int,
+) -> None:
+    """Send quota warning email (async)."""
+    cfg = get_config()
+    smtp_cfg = cfg.get("smtp", {})
+    from_email: str = smtp_cfg.get("from_email", "")
+
+    pct = round(used / limit * 100, 1) if limit > 0 else 0
+    subject = f"【AI Code Usage】您的本月 Token 用量已达 {pct}%"
+    content = (
+        f"<p>您好 {username}，</p>"
+        f"<p>您本月的 Token 用量已达 <strong>{pct}%</strong>（{used:,} / {limit:,} tokens）。</p>"
+        f"<p>如需增加配额，请联系管理员。</p>"
+        f"<p>— AI Code Usage 系统</p>"
+    )
+    await mail_send(subject, to_email, "", content)
+
+
 def send_quota_email(
     *,
     to_email: str,
@@ -41,40 +122,13 @@ def send_quota_email(
     used: int,
     limit: int,
 ) -> None:
-    """Send quota warning email via SMTP.
-
-    Reads SMTP configuration from config.yaml on each call (hot-reload).
-    Raises on SMTP failure — caller decides whether to mark as sent.
-    """
-    cfg = get_config()
-    smtp_cfg = cfg.get("smtp", {})
-    host = smtp_cfg.get("host", "")
-    port = int(smtp_cfg.get("port", 587))
-    smtp_user = smtp_cfg.get("username", "")
-    smtp_pass = smtp_cfg.get("password", "")
-    from_name = smtp_cfg.get("from_name", "AI Code Usage")
-    from_email = smtp_cfg.get("from_email", "")
-
-    pct = round(used / limit * 100, 1) if limit > 0 else 0
-    subject = f"【AI Code Usage】您的本月 Token 用量已达 {pct}%"
-    body = (
-        f"您好 {username}，\n\n"
-        f"您本月的 Token 用量已达 {pct}%（{used:,} / {limit:,} tokens）。\n"
-        f"如需增加配额，请联系管理员。\n\n"
-        f"— AI Code Usage 系统"
-    )
-
-    msg = MIMEText(body, "plain", "utf-8")
-    msg["Subject"] = subject
-    msg["From"] = f"{from_name} <{from_email}>"
-    msg["To"] = to_email
-
-    with smtplib.SMTP(host, port) as conn:
-        conn.ehlo()
-        if smtp_user:
-            conn.starttls()
-            conn.login(smtp_user, smtp_pass)
-        conn.sendmail(from_email or smtp_user, [to_email], msg.as_string())
+    """Sync wrapper for send_quota_email_async (called by APScheduler)."""
+    asyncio.run(send_quota_email_async(
+        to_email=to_email,
+        username=username,
+        used=used,
+        limit=limit,
+    ))
 
 
 def check_quota_alerts() -> None:
