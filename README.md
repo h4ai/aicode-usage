@@ -2,7 +2,7 @@
 
 > 企业 AI 编程助手用量可视化看板  
 > 技术栈：Vue3 + Element Plus + ECharts + Python FastAPI + ClickHouse + PostgreSQL  
-> 部署方式：Docker Compose（单机）
+> 部署方式：Docker Compose（单机，适配内网离线环境）
 
 ---
 
@@ -21,6 +21,21 @@
 
 ---
 
+## 部署架构
+
+```
+浏览器
+  └─▶ 前端容器 :3002 (Node Express)
+        ├─ 静态文件 + SPA fallback
+        └─ /api/* → 反向代理 → 后端容器 :8002 (FastAPI)
+                                  ├─ PostgreSQL :5432 (配额/用户配置)
+                                  └─ ClickHouse :8123 (用量数据，已有实例)
+```
+
+> **内网离线说明**：前后端镜像均无 `apt-get` 调用。LDAP 使用纯 Python 的 `ldap3` 库，邮件使用 `aiosmtplib`，构建时只需 pip wheel，适合无外网访问的金融内网环境。
+
+---
+
 ## 快速部署
 
 ### 前置条件
@@ -35,65 +50,70 @@
 ### 1. 克隆仓库
 
 ```bash
-git clone https://github.com/h4ai/aicode-usage.git -b ralph/ai-code-usage-dashboard
+git clone https://github.com/h4ai/aicode-usage.git
 cd aicode-usage
 ```
 
 ### 2. 配置 `backend/config.yaml`
 
 ```yaml
-database:
-  clickhouse:
-    host: "your-clickhouse-host"     # ClickHouse 地址（容器内用 host.docker.internal）
-    port: 8123
-    database: "otel"                 # 数据库名，默认 otel
-    username: "default"
-    password: ""                     # 无密码留空
-
-  postgres:
-    host: "postgres"                 # Docker Compose 内部服务名，勿改
-    port: 5432
-    database: "ai_usage"
-    username: "postgres"
-    password: "postgres"
+admins:
+  - username: admin
+    password_hash: "$2b$12$..."   # bcrypt hash，见下方生成命令
 
 ldap:
-  server: "ldap://your-ad-server:389"
+  server: "ldap://your-ad-server:389"   # 支持 ldap:// 和 ldaps://
   base_dn: "DC=company,DC=com"
-  bind_dn: "CN=svc_account,OU=Service,DC=company,DC=com"
-  bind_password: "your-ldap-service-account-password"
+  domain: "CORP"                        # NTLM 域名（AD 环境填写）
+  bind_dn: ""                           # 可选：服务账号 DN，用于搜索用户信息
+  bind_password: ""                     # 可选：服务账号密码
 
-auth:
-  jwt_secret: "change-this-to-a-random-64-char-string"  # ⚠️ 必须修改
-  jwt_expire_hours: 8
-  admins:
-    - username: "admin"
-      password_hash: "$2b$12$..."    # bcrypt hash，用下方命令生成
+clickhouse:
+  host: "host.docker.internal"          # 宿主机 ClickHouse（Linux 填宿主机 IP）
+  port: 19000                           # Native 协议端口（HTTP 用 8123）
+  database: "otel"
+  user: "default"
+  password: ""
 
-working_hours:
-  enabled: false                     # true=开启时段过滤，false=关闭
-  start: "09:00"                     # 工作时段开始（HH:MM，上海时区）
-  end: "18:00"                       # 工作时段结束
-  weekday_only: true                 # true=仅周一至周五
+database:
+  url: "postgresql://postgres:postgres@postgres:5432/ai_usage"
 
 smtp:
-  host: ""
-  port: 587
-  username: ""
+  host: "mailrelay.company.com"         # 内网邮件中继，留空则禁用邮件通知
+  port: 25
+  username: ""                          # 无需认证的 relay 留空
   password: ""
-  from_addr: ""
+  from_name: "AI Code Usage"
+  from_email: "ai-usage@company.com"
+
+working_hours:
+  enabled: false                        # true=开启时段过滤
+  start: "09:00"
+  end: "18:00"
+  weekday_only: true
 ```
 
 **生成管理员密码 hash（bcrypt）：**
 
 ```bash
-docker run --rm python:3.11-slim python3 -c \
-  "import bcrypt; print(bcrypt.hashpw(b'YOUR_ADMIN_PASSWORD', bcrypt.gensalt()).decode())"
+docker run --rm python:3.12-slim python3 -c \
+  "import bcrypt; print(bcrypt.hashpw(b'YOUR_PASSWORD', bcrypt.gensalt()).decode())"
 ```
 
-将输出的 hash 字符串填入 `config.yaml` 的 `password_hash` 字段。
+### 3. 配置前端后端地址（可选）
 
-### 3. 启动服务
+默认前端通过 Docker 内部网络访问后端（`http://backend:8002`）。  
+如后端部署在独立主机，修改 `docker-compose.yml`：
+
+```yaml
+frontend:
+  environment:
+    - BACKEND_URL=http://192.168.1.100:8002   # 改为后端实际地址
+```
+
+> 注意：`BACKEND_URL` 是容器到容器的内部地址，浏览器始终通过相对路径 `/api` 访问（由前端容器代理），无需暴露后端地址给客户端。
+
+### 4. 启动服务
 
 ```bash
 docker compose up -d
@@ -103,13 +123,35 @@ docker compose up -d
 
 | 服务 | 地址 | 说明 |
 |------|------|------|
-| 前端看板 | http://localhost:3002 | 用户登录入口 |
+| 前端看板 | http://localhost:3002 | 用户/管理员登录入口 |
 | 后端 API | http://localhost:8002 | FastAPI，含 /docs 接口文档 |
+| 健康检查 | http://localhost:3002/health | 各依赖服务状态 |
 | PostgreSQL | localhost:5434 | 配额/用户配置持久化 |
 
-### 4. ClickHouse 数据源配置
+### 5. 验证部署
 
-系统读取 ClickHouse `otel.events` 表，需包含以下字段：
+```bash
+# 检查所有服务状态
+curl http://localhost:3002/health
+# 期望输出：{"clickhouse":{"status":"ok"},"postgres":{"status":"ok"},"ldap":{"status":"ok"}}
+
+# 检查容器状态
+docker compose ps
+```
+
+### 6. 登录方式
+
+| 角色 | 登录方式 | 说明 |
+|------|---------|------|
+| 管理员 | 用户名 + 明文密码 | 对应 `config.yaml` admins 中的账号 |
+| 普通用户 | AD 域账号 + 域密码 | 需配置 `ldap.server` |
+| 测试用户 | `POST /api/auth/test-login` | LDAP 未接入时使用，验证 ClickHouse 中存在该 userId |
+
+---
+
+## ClickHouse 数据源要求
+
+系统读取 `otel.events` 表，需包含以下字段：
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
@@ -124,23 +166,6 @@ docker compose up -d
 | `timestamp` | Int64 | 毫秒时间戳 |
 | `event_date` | Date | MATERIALIZED 列（`toDate(toDateTime(timestamp/1000))`） |
 
-如使用 SubLang 等标准埋点，表结构已兼容，无需额外处理。
-
-### 5. 创建 ClickHouse 视图（可选，提升查询性能）
-
-```bash
-# 进入 sql/ 目录，执行建视图 SQL
-cat sql/views.sql | curl -s "http://your-clickhouse:8123/" --data-binary @-
-```
-
-### 6. 登录验证
-
-- **管理员**：使用 `config.yaml` 中配置的 `username` + 对应明文密码
-- **普通用户**：企业 AD 域账号（LDAP 需配置）
-- **测试模式**（LDAP 未接入时）：
-  - 接口：`POST /api/auth/test-login`，body `{"username": "<userId>", "password": "<test_password>"}`
-  - 系统验证 ClickHouse 中存在该 userId 即允许登录，密码固定为 `config.yaml` 中 `test_login_password` 字段（默认值见配置）
-
 ---
 
 ## 项目结构
@@ -149,56 +174,38 @@ cat sql/views.sql | curl -s "http://your-clickhouse:8123/" --data-binary @-
 aicode-usage/
 ├── backend/                    # Python FastAPI 后端
 │   ├── app/
-│   │   ├── main.py             # 应用入口
+│   │   ├── main.py
 │   │   ├── routers/
 │   │   │   ├── auth.py         # 登录 / JWT / test-login
-│   │   │   ├── metrics.py      # 个人指标接口
+│   │   │   ├── metrics.py      # 个人指标接口（含时段过滤）
 │   │   │   ├── quota.py        # 配额查询
 │   │   │   └── admin.py        # 管理后台接口
 │   │   └── services/
-│   │       ├── clickhouse.py   # ClickHouse 查询层（含时段过滤）
-│   │       ├── database.py     # PostgreSQL ORM（配额/用户配置）
-│   │       └── email.py        # 邮件通知（APScheduler）
-│   ├── tests/                  # pytest 单元测试（TDD）
+│   │       ├── clickhouse.py   # ClickHouse 查询层
+│   │       ├── database.py     # PostgreSQL（配额/用户配置）
+│   │       ├── ldap_service.py # AD 认证（ldap3 纯 Python）
+│   │       └── notification.py # 邮件通知（aiosmtplib + APScheduler）
+│   ├── tests/                  # pytest 单元测试（264 cases）
 │   ├── config.yaml             # ⚠️ 部署前必须修改
-│   └── requirements.txt
+│   ├── Dockerfile              # 无 apt-get，纯 pip 构建
+│   └── pyproject.toml
 ├── frontend/                   # Vue3 + TypeScript 前端
 │   ├── src/
-│   │   ├── views/
-│   │   │   ├── LoginView.vue
-│   │   │   ├── DashboardView.vue   # 个人看板
-│   │   │   └── AdminView.vue       # 管理后台（含6个子页签）
-│   │   ├── views/admin/            # 管理后台子页面
-│   │   │   ├── GlobalTrend.vue
-│   │   │   ├── DepartmentSummary.vue
-│   │   │   ├── Leaderboard.vue
-│   │   │   └── WorkingHours.vue
-│   │   ├── components/
-│   │   │   ├── MetricCards.vue     # 今日/本周/本月指标卡片
-│   │   │   ├── QuotaProgressBar.vue
-│   │   │   ├── TrendChart.vue
-│   │   │   ├── ModelDistribution.vue
-│   │   │   ├── DetailTable.vue     # 使用明细（含CSV导出）
-│   │   │   ├── UserManager.vue
-│   │   │   ├── QuotaLevelManager.vue
-│   │   │   └── NavBar.vue
-│   │   └── stores/
-│   │       ├── auth.ts             # JWT + 用户信息
-│   │       └── timeFilter.ts       # 时段过滤全局状态
-│   └── nginx.conf
+│   │   ├── views/              # 页面组件
+│   │   └── components/         # 通用组件
+│   ├── server.cjs              # Express 静态服务 + /api 反向代理（替代 nginx）
+│   ├── Dockerfile              # node:22-alpine，无 nginx
+│   └── package.json
 ├── docs/
-│   ├── requirements.md             # 需求文档
-│   ├── requirements-changelog.md   # 需求变更日志
-│   └── requirements-mapping.md     # 需求追踪矩阵
-├── sql/                            # ClickHouse 建表/视图 SQL
+│   ├── requirements.md         # 需求文档
+│   └── specs/                  # GEARS 行为规格
+├── sql/                        # ClickHouse 建表/视图 SQL
 └── docker-compose.yml
 ```
 
 ---
 
 ## 配额级别说明
-
-系统内置三个配额等级，管理员可在「配额级别」页签调整：
 
 | 级别 | 月度 Token 上限 | 每日对话轮次上限 | 适用场景 |
 |------|----------------|----------------|---------|
@@ -210,34 +217,30 @@ aicode-usage/
 
 ## 时段过滤说明
 
-管理员在「工作时段」页签启用后，全系统支持三种统计口径：
-
 | 口径 | 说明 |
 |------|------|
 | 全天 | 不做时间限制，统计所有数据 |
 | 工作时段 | 仅统计配置的起止时间内（默认 09:00-18:00，周一至周五）|
 | 非工作时段 | 全天数据减去工作时段，含节假日/周末 |
 
-> 工作时段 + 非工作时段 = 全天，数据不重叠、不遗漏。
-
 ---
 
 ## 开发环境
 
 ```bash
-# 后端（Python 3.11+）
+# 后端（Python 3.12+）
 cd backend
-pip install -r requirements.txt
+pip install -e ".[dev]"
 uvicorn app.main:app --reload --port 8002
 
-# 前端（Node 18+）
+# 前端（Node 22+）
 cd frontend
 npm install
 npm run dev        # Vite dev server，自动代理到 backend:8002
 
 # 运行后端单元测试
 cd backend
-pytest tests/ -v
+PYTHONPATH=. pytest tests/ -v
 ```
 
 ---
@@ -245,16 +248,22 @@ pytest tests/ -v
 ## 常见问题
 
 **Q: LDAP 未配置，如何测试登录？**  
-A: 使用 `POST /api/auth/test-login`，系统只验证 ClickHouse 中存在该 userId，无需 AD 认证。
+A: 使用 `POST /api/auth/test-login`，body `{"username":"uid_001","password":"<test_password>"}`，系统只验证 ClickHouse 中存在该 userId，无需 AD 认证。
 
 **Q: ClickHouse 在宿主机而非 Docker 内，如何连接？**  
-A: `config.yaml` 中 `host` 填 `host.docker.internal`（Mac/Windows）或宿主机 IP（Linux）。
+A: `config.yaml` 中 `host` 填 `host.docker.internal`（Mac/Windows）或宿主机实际 IP（Linux）。
+
+**Q: 内网环境无法访问 DockerHub，如何构建镜像？**  
+A: 在可访问外网的机器上 `docker compose build && docker save ... | docker load` 导入到内网机器，或搭建内部 Harbor 镜像仓库。
 
 **Q: 时段过滤关闭后，用户界面如何显示？**  
-A: 切换器隐藏，显示「全天」标签，后端同步将所有请求降级为全天统计。
+A: 时段切换器隐藏，后端将所有请求降级为全天统计。
 
 **Q: 如何新增管理员账号？**  
-A: 在 `config.yaml` 的 `auth.admins` 列表中添加，生成 bcrypt hash 后重启后端容器。
+A: 在 `config.yaml` 的 `admins` 列表中添加条目（生成 bcrypt hash），然后 `docker compose restart backend`。
+
+**Q: 前端容器用的什么做静态服务？**  
+A: `Express + http-proxy-middleware v2`（替代 nginx），`/api/*` 在容器内代理到后端，无需在宿主机暴露后端端口给浏览器。
 
 ---
 
