@@ -1,14 +1,19 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: 2026 SubLang International <https://sublang.ai>
 
-"""LDAP / Active Directory authentication service."""
+"""LDAP / Active Directory authentication service.
+
+Uses ldap3 (pure Python) instead of python-ldap to avoid native library
+dependencies (libldap2-dev, libsasl2-dev) — suitable for air-gapped environments.
+"""
 
 from __future__ import annotations
 
 import logging
 from typing import Any
 
-import ldap as ldap_lib
+from ldap3 import Connection, Server, SUBTREE, ALL_ATTRIBUTES, NTLM, SIMPLE
+from ldap3.core.exceptions import LDAPException, LDAPBindError, LDAPSocketOpenError
 
 from app.config import get_config
 
@@ -35,56 +40,66 @@ def authenticate(username: str, password: str) -> dict[str, str]:
     Returns a dict with keys: user_id, username, nickname, enterprise, mail.
     """
     ldap_cfg = _get_ldap_cfg()
-    server = ldap_cfg.get("server", "")
+    server_url = ldap_cfg.get("server", "")
     base_dn = ldap_cfg.get("base_dn", "")
     user_attr = ldap_cfg.get("user_attr", "sAMAccountName")
     mail_attr = ldap_cfg.get("mail_attr", "mail")
 
-    if not server:
+    if not server_url:
         raise LdapUnavailableError("LDAP server not configured")
 
+    # Parse host from url (ldap://host:port or ldaps://host:port)
+    host = server_url.replace("ldap://", "").replace("ldaps://", "").split(":")[0]
+    port = 636 if server_url.startswith("ldaps://") else 389
+    use_ssl = server_url.startswith("ldaps://")
+
     try:
-        conn = ldap_lib.initialize(server)
-        conn.set_option(ldap_lib.OPT_NETWORK_TIMEOUT, 5)
-        conn.set_option(ldap_lib.OPT_REFERRALS, 0)
-    except ldap_lib.LDAPError as exc:
+        server = Server(host, port=port, use_ssl=use_ssl, connect_timeout=5)
+    except LDAPException as exc:
+        raise LdapUnavailableError(f"无法初始化 LDAP 服务器: {exc}") from exc
+
+    # Step 1: anonymous search to find user DN
+    try:
+        search_conn = Connection(server, auto_bind=True)
+    except (LDAPSocketOpenError, LDAPException) as exc:
         raise LdapUnavailableError(f"无法连接 LDAP 服务器: {exc}") from exc
 
-    # Search for the user by sAMAccountName
-    search_filter = f"({user_attr}={ldap_lib.filter.escape_filter_chars(username)})"
+    search_filter = f"({user_attr}={username})"
     try:
-        result = conn.search_s(base_dn, ldap_lib.SCOPE_SUBTREE, search_filter)
-    except ldap_lib.LDAPError as exc:
+        search_conn.search(
+            search_base=base_dn,
+            search_filter=search_filter,
+            search_scope=SUBTREE,
+            attributes=[user_attr, "cn", "displayName", "company", mail_attr],
+        )
+    except LDAPException as exc:
         raise LdapUnavailableError(f"LDAP 查询失败: {exc}") from exc
-
-    if not result:
-        raise LdapAuthError("用户名或密码错误")
-
-    user_dn, attrs = result[0]
-    if not user_dn:
-        raise LdapAuthError("用户名或密码错误")
-
-    # Bind with user credentials to verify password
-    try:
-        conn.simple_bind_s(user_dn, password)
-    except ldap_lib.INVALID_CREDENTIALS:
-        raise LdapAuthError("用户名或密码错误")
-    except ldap_lib.LDAPError as exc:
-        raise LdapUnavailableError(f"LDAP 认证失败: {exc}") from exc
     finally:
         try:
-            conn.unbind_s()
+            search_conn.unbind()
         except Exception:
             pass
 
+    if not search_conn.entries:
+        raise LdapAuthError("用户名或密码错误")
+
+    entry = search_conn.entries[0]
+    user_dn = entry.entry_dn
+
+    # Step 2: bind with user credentials to verify password
+    try:
+        auth_conn = Connection(server, user=user_dn, password=password, auto_bind=True)
+        auth_conn.unbind()
+    except LDAPBindError:
+        raise LdapAuthError("用户名或密码错误")
+    except (LDAPSocketOpenError, LDAPException) as exc:
+        raise LdapUnavailableError(f"LDAP 认证失败: {exc}") from exc
+
     def _attr(key: str) -> str:
-        val = attrs.get(key, [b""])
-        if isinstance(val, list) and val:
-            item = val[0]
-            if isinstance(item, bytes):
-                return item.decode("utf-8", errors="replace")
-            return str(item)
-        return ""
+        val = getattr(entry, key, None)
+        if val is None:
+            return ""
+        return str(val) if str(val) != "[]" else ""
 
     return {
         "user_id": _attr(user_attr),

@@ -9,9 +9,13 @@ import zhCn from 'element-plus/es/locale/lang/zh-cn'
 
 import App from './App.vue'
 import router from './router'
+import { initApi } from './api'
 
-const app = createApp(App)
-app.use(createPinia())
-app.use(router)
-app.use(ElementPlus, { locale: zhCn })
-app.mount('#app')
+// 读取运行时 config.json（由 docker-entrypoint.sh 写入），更新后端地址
+initApi().then(() => {
+  const app = createApp(App)
+  app.use(createPinia())
+  app.use(router)
+  app.use(ElementPlus, { locale: zhCn })
+  app.mount('#app')
+})

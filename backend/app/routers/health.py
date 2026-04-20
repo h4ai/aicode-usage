@@ -57,18 +57,22 @@ def _check_postgres(cfg: dict[str, Any]) -> dict[str, Any]:
 
 
 def _check_ldap(cfg: dict[str, Any]) -> dict[str, Any]:
-    """Attempt a lightweight LDAP connection test."""
+    """Attempt a lightweight LDAP connection test using ldap3 (pure Python)."""
     ldap_cfg = cfg.get("ldap", {})
-    server = ldap_cfg.get("server", "")
-    if not server:
+    server_url = ldap_cfg.get("server", "")
+    if not server_url:
         return {"status": "not_configured"}
     try:
-        import ldap as ldap_lib
+        from ldap3 import Server, Connection
+        from ldap3.core.exceptions import LDAPSocketOpenError
 
-        conn = ldap_lib.initialize(server)
-        conn.set_option(ldap_lib.OPT_NETWORK_TIMEOUT, 3)
-        conn.simple_bind_s("", "")
-        conn.unbind_s()
+        host = server_url.replace("ldap://", "").replace("ldaps://", "").split(":")[0]
+        port = 636 if server_url.startswith("ldaps://") else 389
+        use_ssl = server_url.startswith("ldaps://")
+
+        srv = Server(host, port=port, use_ssl=use_ssl, connect_timeout=3)
+        conn = Connection(srv, auto_bind=True)
+        conn.unbind()
         return {"status": "ok"}
     except Exception:
         logger.exception("LDAP health check failed")

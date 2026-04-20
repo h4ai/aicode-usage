@@ -6,13 +6,8 @@ from __future__ import annotations
 import sys
 from unittest.mock import MagicMock, patch
 
-# python-ldap requires native libs not available in CI; stub the module so
-# that app.services.ldap_service can be imported in every test environment.
-if "ldap" not in sys.modules:
-    _ldap_mock = MagicMock()
-    _ldap_mock.filter = MagicMock()
-    sys.modules["ldap"] = _ldap_mock
-    sys.modules["ldap.filter"] = _ldap_mock.filter
+# ldap3 is pure Python and requires no native libraries.
+# No stub needed — ldap3 installs cleanly in all environments including CI.
 
 import bcrypt
 import pytest
