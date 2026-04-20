@@ -6,9 +6,11 @@
 Uses ldap3 (pure Python) — no native libraries required (no libldap2-dev/gcc).
 Suitable for air-gapped / financial intranet environments.
 
-Authentication flow (standard AD two-step bind):
-  Step 1: Bind with service account (bind_dn/bind_password) → search user DN
-  Step 2: Re-bind with user DN + user password → verify credentials
+Authentication flow:
+  1. Bind with user credentials (domain\\username + password) via NTLM
+  2. Search user attributes using the authenticated connection
+  If bind_dn/bind_password are configured, use service account for search
+  to ensure consistent attribute access regardless of user AD permissions.
 """
 
 from __future__ import annotations
@@ -25,15 +27,22 @@ logger = logging.getLogger(__name__)
 
 
 class LdapUnavailableError(Exception):
-    """Raised when the LDAP server cannot be reached."""
+    """Raised when the LDAP server cannot be reached or is misconfigured."""
 
 
 class LdapAuthError(Exception):
     """Raised when LDAP authentication fails (wrong credentials / account locked)."""
 
+    INVALID_CREDENTIALS = "invalid_credentials"
+
+    def __init__(self, message: str = "账号或密码错误，或者账号被锁定了"):
+        self.error_type = self.INVALID_CREDENTIALS
+        self.message = message
+        super().__init__(self.message)
+
 
 class LDAPService:
-    """LDAP 认证服务（两步 bind：服务账号查询 + 用户账号验证）。"""
+    """LDAP 认证服务，处理连接、验证、用户信息获取。"""
 
     def __init__(
         self,
@@ -45,6 +54,17 @@ class LDAPService:
         use_tls: bool = False,
         ldap_domain: str = "",
     ) -> None:
+        """初始化 LDAP 服务配置。
+
+        Args:
+            server: LDAP 服务器地址，如 ldap://company.com:389
+            base_dn: 基础 DN，如 dc=company,dc=com
+            bind_dn: 服务账号 DN（可选，用于搜索用户属性）
+            bind_password: 服务账号密码（可选）
+            use_ssl: 是否使用 SSL（ldaps://）
+            use_tls: 是否使用 STARTTLS
+            ldap_domain: NTLM 域名，如 CORP（用于 domain\\username 格式）
+        """
         self.server = server
         self.base_dn = base_dn
         self.bind_dn = bind_dn
@@ -54,69 +74,87 @@ class LDAPService:
         self.ldap_domain = ldap_domain
 
     def _create_server(self) -> Server:
+        """创建 LDAP Server 对象。"""
         return Server(self.server, use_ssl=self.use_ssl, get_info=ALL)
 
-    def _service_conn(self) -> Connection:
-        """建立服务账号连接（用于搜索用户 DN）。"""
-        server = self._create_server()
-        if not self.bind_dn:
-            raise LdapUnavailableError("LDAP bind_dn 未配置，无法查询用户")
-        conn = Connection(
-            server,
-            user=self.bind_dn,
-            password=self.bind_password,
-            auto_bind=True,
-            raise_exceptions=True,
-        )
-        return conn
-
-    def _find_user_dn(self, conn: Connection, username: str) -> str:
-        """通过服务账号连接搜索用户 DN。"""
-        search_filter = f"(&(sAMAccountName={username})(objectClass=person))"
-        conn.search(
-            search_base=self.base_dn,
-            search_filter=search_filter,
-            search_scope=SUBTREE,
-            attributes=["distinguishedName", "cn", "sAMAccountName",
-                        "mail", "company", "displayName", "mobile",
-                        "userAccountControl"],
-        )
-        if not conn.entries:
-            raise LdapAuthError("用户名或密码错误")
-        return str(conn.entries[0].entry_dn)
-
     def authenticate(self, username: str, password: str) -> dict[str, Any]:
-        """Authenticate user via two-step AD bind.
+        """验证用户凭证并返回用户信息。
 
-        Step 1: service account bind → search user DN + attributes
-        Step 2: user DN bind → verify password
+        流程：
+          1. 用用户账号（domain\\username + password）绑定 — 验证密码
+          2. 搜索用户属性（优先用服务账号，确保属性读取权限）
+
+        Args:
+            username: AD 账号（sAMAccountName，不含域名）
+            password: 用户密码
+
+        Returns:
+            用户信息字典：user_id / username / nickname / enterprise / mail
 
         Raises:
-            LdapAuthError: wrong credentials or account locked.
-            LdapUnavailableError: cannot reach the LDAP server.
+            LdapAuthError: 认证失败（密码错误 / 账号锁定）
+            LdapUnavailableError: LDAP 服务不可达
         """
         if not username or not password:
-            raise LdapAuthError("用户名或密码错误")
+            raise LdapAuthError()
+
+        server = self._create_server()
 
         try:
-            # Step 1: 服务账号查询用户信息
-            svc_conn = self._service_conn()
+            # Step 1: 用用户账号验证密码（NTLM: domain\username）
+            user = f"{self.ldap_domain}\\{username}" if self.ldap_domain else username
+            user_conn = Connection(
+                server,
+                user=user,
+                password=password,
+                auto_bind=True,
+                raise_exceptions=True,
+            )
+            user_conn.unbind()
+
+            # Step 2: 搜索用户属性
+            # 优先用服务账号（bind_dn），保证属性读取权限一致
+            # 若未配置服务账号，则复用用户账号连接搜索
+            if self.bind_dn and self.bind_password:
+                search_conn = Connection(
+                    server,
+                    user=self.bind_dn,
+                    password=self.bind_password,
+                    auto_bind=True,
+                    raise_exceptions=True,
+                )
+            else:
+                # fallback: 重新用用户账号连接搜索
+                search_conn = Connection(
+                    server,
+                    user=user,
+                    password=password,
+                    auto_bind=True,
+                    raise_exceptions=True,
+                )
+
             search_filter = f"(&(sAMAccountName={username})(objectClass=person))"
-            svc_conn.search(
+            search_conn.search(
                 search_base=self.base_dn,
                 search_filter=search_filter,
                 search_scope=SUBTREE,
-                attributes=["distinguishedName", "cn", "sAMAccountName",
-                            "mail", "company", "displayName", "mobile",
-                            "userAccountControl"],
+                attributes=[
+                    "cn",
+                    "sAMAccountName",
+                    "mail",
+                    "company",
+                    "userAccountControl",
+                    "mobile",
+                    "displayName",
+                ],
             )
 
-            if not svc_conn.entries:
-                svc_conn.unbind()
-                raise LdapAuthError("用户名或密码错误")
+            if not search_conn.entries:
+                search_conn.unbind()
+                raise LdapAuthError()
 
-            entry = svc_conn.entries[0]
-            user_dn = str(entry.entry_dn)
+            entry = search_conn.entries[0]
+            search_conn.unbind()
 
             def _val(attr: str) -> str:
                 v = getattr(entry, attr, None)
@@ -125,33 +163,19 @@ class LDAPService:
                 s = str(v)
                 return "" if s == "[]" else s
 
-            user_info = {
+            return {
                 "user_id": _val("sAMAccountName") or username,
                 "username": _val("cn"),
                 "nickname": _val("displayName"),
                 "enterprise": _val("company"),
                 "mail": _val("mail"),
             }
-            svc_conn.unbind()
-
-            # Step 2: 用用户 DN + 密码重新绑定验证密码
-            server = self._create_server()
-            user_conn = Connection(
-                server,
-                user=user_dn,
-                password=password,
-                auto_bind=True,
-                raise_exceptions=True,
-            )
-            user_conn.unbind()
-
-            return user_info
 
         except LdapAuthError:
             raise
         except LDAPException as exc:
             logger.warning("LDAP auth failed for %s: %s", username, exc)
-            raise LdapAuthError("用户名或密码错误") from exc
+            raise LdapAuthError() from exc
         except LdapUnavailableError:
             raise
         except Exception as exc:
@@ -159,9 +183,19 @@ class LDAPService:
             raise LdapUnavailableError(f"LDAP 服务异常: {exc}") from exc
 
     def check_health(self) -> bool:
-        """Check whether LDAP server is reachable using service account bind."""
+        """检查 LDAP 服务是否可用（使用服务账号绑定，AD 通常拒绝匿名）。"""
+        server = self._create_server()
         try:
-            conn = self._service_conn()
+            if self.bind_dn and self.bind_password:
+                conn = Connection(
+                    server,
+                    user=self.bind_dn,
+                    password=self.bind_password,
+                    auto_bind=True,
+                )
+            else:
+                # 未配置服务账号时降级为匿名绑定
+                conn = Connection(server, auto_bind=True)
             conn.unbind()
             return True
         except Exception as exc:
@@ -170,7 +204,7 @@ class LDAPService:
 
 
 def _get_ldap_service() -> LDAPService:
-    """Build LDAPService from config.yaml."""
+    """从 config.yaml 构建 LDAPService 实例。"""
     cfg = get_config()
     ldap_cfg: dict[str, Any] = cfg.get("ldap", {})
     server_url = ldap_cfg.get("server", "")
@@ -185,7 +219,7 @@ def _get_ldap_service() -> LDAPService:
 
 
 # ---------------------------------------------------------------------------
-# Module-level functions (kept for backward compatibility with auth.py)
+# Module-level functions（向后兼容 auth.py）
 # ---------------------------------------------------------------------------
 
 def authenticate(username: str, password: str) -> dict[str, Any]:
@@ -197,7 +231,7 @@ def authenticate(username: str, password: str) -> dict[str, Any]:
 
 
 def check_health() -> bool:
-    """Return True if LDAP is reachable (service account bind)."""
+    """Return True if LDAP is reachable."""
     cfg = get_config()
     if not cfg.get("ldap", {}).get("server", ""):
         return False
