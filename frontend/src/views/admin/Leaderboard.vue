@@ -91,17 +91,17 @@
           </template>
         </el-table-column>
         <el-table-column
-          prop="monthly_requests"
-          label="请求数"
-          sortable
-          width="110"
-        />
-        <el-table-column
           prop="monthly_chats"
           label="对话轮次"
           sortable
           width="120"
           align="right"
+        />
+        <el-table-column
+          prop="monthly_requests"
+          label="请求数"
+          sortable
+          width="110"
         />
       </el-table>
       <div style="margin-top:12px;display:flex;justify-content:flex-end">

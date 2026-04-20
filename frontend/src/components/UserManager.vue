@@ -100,11 +100,6 @@
         min-width="90"
       />
       <el-table-column
-        prop="user_id"
-        label="userId"
-        min-width="100"
-      />
-      <el-table-column
         prop="enterprise"
         label="分组"
         min-width="90"
