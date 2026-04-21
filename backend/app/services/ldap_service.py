@@ -19,7 +19,7 @@ import logging
 from typing import Any
 
 from ldap3 import ALL, SUBTREE, Connection, Server
-from ldap3.core.exceptions import LDAPException
+from ldap3.core.exceptions import LDAPException, LDAPSocketOpenError, LDAPSocketSendError
 
 from app.config import get_config
 
@@ -174,6 +174,10 @@ class LDAPService:
 
         except LdapAuthError:
             raise
+        except (LDAPSocketOpenError, LDAPSocketSendError) as exc:
+            # Socket-level errors = LDAP server unreachable, not auth failure
+            logger.warning("LDAP socket error for %s: %s", username, exc)
+            raise LdapUnavailableError(f"LDAP 服务不可达: {exc}") from exc
         except LDAPException as exc:
             logger.warning("LDAP auth failed for %s: %s", username, exc)
             raise LdapAuthError() from exc

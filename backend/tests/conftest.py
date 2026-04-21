@@ -49,3 +49,22 @@ def admin_config_patch():
     """Patch app.deps.get_config so admin token fingerprint validation passes."""
     with patch("app.deps.get_config", return_value=MOCK_CONFIG):
         yield
+
+
+@pytest.fixture(autouse=True)
+def reset_rate_limiter():
+    """Reset all rate limiter storages before each test to prevent 429 bleeding."""
+    def _reset():
+        try:
+            from app.routers.auth import _limiter as auth_lim
+            auth_lim._limiter.storage.reset()
+        except Exception:
+            pass
+        try:
+            from app.main import limiter as main_lim
+            main_lim._limiter.storage.reset()
+        except Exception:
+            pass
+    _reset()
+    yield
+    _reset()
