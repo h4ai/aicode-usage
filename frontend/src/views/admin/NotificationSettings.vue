@@ -189,7 +189,7 @@ async function copyPlaceholder(name: string) {
 
 async function loadConfig() {
   try {
-    const resp = await api.get('/api/admin/notification-config')
+    const resp = await api.get('/admin/notification-config')
     const d = resp.data
     form.value.enabled = d.enabled ?? true
     form.value.checkInterval = d.check_interval_minutes ?? 60
@@ -202,7 +202,7 @@ async function loadConfig() {
 
 async function handleSaveConfig() {
   try {
-    await api.put('/api/admin/notification-config', {
+    await api.put('/admin/notification-config', {
       enabled: form.value.enabled,
       check_interval_minutes: form.value.checkInterval,
       thresholds: form.value.thresholds,
@@ -216,7 +216,7 @@ async function handleSaveConfig() {
 
 async function loadTemplate() {
   try {
-    const resp = await api.get('/api/admin/email-template')
+    const resp = await api.get('/admin/email-template')
     template.value.subject = resp.data.subject
     template.value.bodyHtml = resp.data.body_html
   } catch (e: unknown) {
@@ -231,7 +231,7 @@ async function loadTemplate() {
 
 async function loadVariables() {
   try {
-    const resp = await api.get('/api/admin/email-template/variables')
+    const resp = await api.get('/admin/email-template/variables')
     variables.value = resp.data
   } catch {
     // ignore
@@ -240,7 +240,7 @@ async function loadVariables() {
 
 async function handlePreview() {
   try {
-    const resp = await api.post('/api/admin/email-template/preview', {
+    const resp = await api.post('/admin/email-template/preview', {
       subject: template.value.subject,
       body_html: template.value.bodyHtml,
     })
@@ -254,7 +254,7 @@ async function handlePreview() {
 
 async function handleSave() {
   try {
-    await api.put('/api/admin/email-template', {
+    await api.put('/admin/email-template', {
       subject: template.value.subject,
       body_html: template.value.bodyHtml,
     })
