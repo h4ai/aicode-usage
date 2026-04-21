@@ -69,15 +69,28 @@ def _safe_float(value: Any, default: float = 0.0) -> float:
 # ClickHouse client
 # ---------------------------------------------------------------------------
 
-def _get_client():
-    cfg = get_config().get("clickhouse", {})
-    return _ch_get_client(
-        host=cfg.get("host", "localhost"),
-        port=cfg.get("port", 8123),       # HTTP port
-        database=cfg.get("database", "otel"),
-        username=cfg.get("user", "default"),  # clickhouse_connect uses 'username'
-        password=cfg.get("password", ""),
-    )
+_ch_client: Any = None
+
+
+def _get_client() -> Any:
+    """Return a module-level singleton ClickHouse client (reuse HTTP connection pool)."""
+    global _ch_client
+    if _ch_client is None:
+        cfg = get_config().get("clickhouse", {})
+        _ch_client = _ch_get_client(
+            host=cfg.get("host", "localhost"),
+            port=cfg.get("port", 8123),       # HTTP port
+            database=cfg.get("database", "otel"),
+            username=cfg.get("user", "default"),  # clickhouse_connect uses 'username'
+            password=cfg.get("password", ""),
+        )
+    return _ch_client
+
+
+def _reset_client() -> None:
+    """Force reconnect on next call (used in tests / config reload)."""
+    global _ch_client
+    _ch_client = None
 
 
 # 5-minute TTL cache, max 1024 entries
@@ -119,8 +132,8 @@ def _user_filter(user: dict[str, Any]) -> tuple[str, dict[str, Any]]:
     if sam:
         conditions.append(f"{USERNAME} = {{_u_sam:String}}")
         params["_u_sam"] = sam
-        conditions.append(f"{USERNAME} LIKE {{_u_like:String}}")
-        params["_u_like"] = f"%({sam})"
+        conditions.append(f"endsWith({USERNAME}, concat('(', {{_u_sam:String}}, ')'))")
+        params["_u_sam"] = sam
 
     if cn and cn != sam:
         conditions.append(f"{USERNAME} = {{_u_cn:String}}")
@@ -213,8 +226,8 @@ def get_monthly_token_usage(user: dict[str, Any], time_filter: str = "all") -> i
     client = _get_client()
     sql = (
         f"SELECT sum({TOTAL_TOKEN}) FROM events"
+        f" PREWHERE event_date >= {{start:String}}"
         f" WHERE {user_cond}"
-        f" AND event_date >= {{start:String}}"
         f" AND {_BASE_FILTER}"
         + _working_hours_filter(time_filter)
     )
@@ -237,8 +250,8 @@ def get_monthly_request_count(user: dict[str, Any], time_filter: str = "all") ->
     client = _get_client()
     sql = (
         f"SELECT count() FROM events"
+        f" PREWHERE event_date >= {{start:String}}"
         f" WHERE {user_cond}"
-        f" AND event_date >= {{start:String}}"
         f" AND {_BASE_FILTER}"
         + _working_hours_filter(time_filter)
     )
@@ -309,7 +322,8 @@ def get_monthly_active_days(user: dict[str, Any]) -> int:
     client = _get_client()
     sql = (
         f"SELECT count(DISTINCT {EVENT_DATE}) FROM events"
-        f" WHERE {user_cond} AND event_date >= {{start:String}}"
+        f" PREWHERE event_date >= {{start:String}}"
+        f" WHERE {user_cond}"
         f" AND {_BASE_FILTER}"
     )
     params = {**user_params, "start": month_start}
@@ -330,8 +344,8 @@ def get_today_token_usage(user: dict[str, Any], time_filter: str = "auto") -> in
     client = _get_client()
     sql = (
         f"SELECT sum({TOTAL_TOKEN}) FROM events"
+        f" PREWHERE event_date = {{today:String}}"
         f" WHERE {user_cond}"
-        f" AND event_date = {{today:String}}"
         f" AND {_BASE_FILTER}"
         + _working_hours_filter(time_filter)
     )
@@ -353,7 +367,8 @@ def get_daily_request_count(user: dict[str, Any], time_filter: str = "auto") -> 
     client = _get_client()
     sql = (
         f"SELECT count() FROM events"
-        f" WHERE {user_cond} AND event_date = {{today:String}}"
+        f" PREWHERE event_date = {{today:String}}"
+        f" WHERE {user_cond}"
         f" AND {_BASE_FILTER}"
     )
     params = {**user_params, "today": today}
@@ -438,8 +453,8 @@ def get_all_users_monthly_tokens(time_filter: str = "all") -> dict[str, int]:
     client = _get_client()
     sql = (
         f"SELECT {USERNAME}, sum({TOTAL_TOKEN})"
-        f" FROM events WHERE event_date >= {{start:String}}"
-        f" AND {_BASE_FILTER} AND {USERNAME} != ''"
+        f" FROM events PREWHERE event_date >= {{start:String}}"
+        f" WHERE {_BASE_FILTER} AND {USERNAME} != ''"
         + _working_hours_filter(time_filter)
         + f" GROUP BY {USERNAME}"
     )
@@ -861,5 +876,122 @@ def get_all_users_from_clickhouse() -> list[dict[str, Any]]:
         for row in rows
         if row[0]
     ]
+    _cache[cache_key] = result
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Batch admin query: replace 6 separate calls with 1 SQL
+# ---------------------------------------------------------------------------
+
+class AdminUserStats(dict):
+    """
+    Dict with keys per userNickname, each value is a dict:
+      {
+        monthly_token: int,
+        monthly_token_all: int,
+        monthly_chats: int,
+        monthly_chats_all: int,
+        monthly_requests: int,
+        today_token: int,
+        today_token_all: int,
+        today_chats: int,
+        today_chats_all: int,
+        daily_requests: int,
+      }
+    """
+
+
+def get_all_users_batch(
+    year: int,
+    month: int,
+    time_filter: str = "all",
+    is_current_month: bool = True,
+) -> "AdminUserStats":
+    """One-shot query returning all per-user stats needed for admin list_users.
+
+    Replaces: get_all_users_{monthly,today}_{tokens,chats} + daily_requests (6 queries → 1).
+
+    Returns:
+        AdminUserStats: dict[userNickname → stats dict]
+    """
+    import calendar as _cal
+    start = date(year, month, 1).isoformat()
+    last_day = _cal.monthrange(year, month)[1]
+    end = date(year, month, last_day).isoformat()
+    today = _today_shanghai()
+    cache_key = f"admin_batch:{start}:{end}:{time_filter}:{is_current_month}"
+    if cache_key in _cache:
+        return AdminUserStats(_cache[cache_key])
+
+    wh = _working_hours_filter(time_filter)
+    client = _get_client()
+
+    # Monthly stats (+ all-day variant when time_filter != "all")
+    sql_monthly = (
+        f"SELECT {USERNAME},"
+        f" sumIf({TOTAL_TOKEN}, {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}{wh}) AS monthly_token,"
+        f" sumIf({TOTAL_TOKEN}, {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}) AS monthly_token_all,"
+        f" countIf({EVENT_CODE} = 'chat_request_response' AND totalToken > 0 AND {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}{wh}) AS monthly_chats,"
+        f" countIf({EVENT_CODE} = 'chat_request_response' AND totalToken > 0 AND {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}) AS monthly_chats_all,"
+        f" countIf({EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}{wh}) AS monthly_requests"
+        f" FROM events"
+        f" PREWHERE {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}"
+        f" WHERE {_BASE_FILTER} AND {USERNAME} != ''"
+        f" GROUP BY {USERNAME}"
+    )
+    monthly_rows = client.query(sql_monthly, parameters={"start": start, "end": end}).result_rows
+
+    result: AdminUserStats = AdminUserStats()
+    for row in monthly_rows:
+        uid = str(row[0])
+        if not uid:
+            continue
+        result[uid] = {
+            "monthly_token": _safe_int(row[1]),
+            "monthly_token_all": _safe_int(row[2]),
+            "monthly_chats": _safe_int(row[3]),
+            "monthly_chats_all": _safe_int(row[4]),
+            "monthly_requests": _safe_int(row[5]),
+            "today_token": 0,
+            "today_token_all": 0,
+            "today_chats": 0,
+            "today_chats_all": 0,
+            "daily_requests": 0,
+        }
+
+    if is_current_month:
+        sql_today = (
+            f"SELECT {USERNAME},"
+            f" sumIf({TOTAL_TOKEN}, True{wh}) AS today_token,"
+            f" sum({TOTAL_TOKEN}) AS today_token_all,"
+            f" countIf({EVENT_CODE} = 'chat_request_response' AND totalToken > 0{wh}) AS today_chats,"
+            f" countIf({EVENT_CODE} = 'chat_request_response' AND totalToken > 0) AS today_chats_all,"
+            f" count() AS daily_requests"
+            f" FROM events"
+            f" PREWHERE {EVENT_DATE} = {{today:String}}"
+            f" WHERE {_BASE_FILTER} AND {USERNAME} != ''"
+            f" GROUP BY {USERNAME}"
+        )
+        today_rows = client.query(sql_today, parameters={"today": today}).result_rows
+        for row in today_rows:
+            uid = str(row[0])
+            if not uid:
+                continue
+            if uid not in result:
+                result[uid] = {
+                    "monthly_token": 0, "monthly_token_all": 0,
+                    "monthly_chats": 0, "monthly_chats_all": 0, "monthly_requests": 0,
+                    "today_token": 0, "today_token_all": 0,
+                    "today_chats": 0, "today_chats_all": 0, "daily_requests": 0,
+                }
+            result[uid].update({
+                "today_token": _safe_int(row[1]),
+                "today_token_all": _safe_int(row[2]),
+                "today_chats": _safe_int(row[3]),
+                "today_chats_all": _safe_int(row[4]),
+                "daily_requests": _safe_int(row[5]),
+            })
+
     _cache[cache_key] = result
     return result

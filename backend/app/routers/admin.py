@@ -15,6 +15,7 @@ from pydantic import BaseModel
 
 from app.deps import require_admin
 from app.services.clickhouse import (
+    get_all_users_batch,
     get_all_users_chats_in_range,
     get_all_users_chats_in_month,
     get_all_users_daily_requests,
@@ -150,39 +151,25 @@ def list_users(
 
     # 从 ClickHouse 获取完整用户列表（PG 可能不完整）
     ch_users = get_all_users_from_clickhouse()
-    # 从 PG 获取配额设置（可能为空，不影响用户列表展示）
+    # 从 PG 获取配额设置
     pg_users = get_all_users()
     pg_quota_map = {u["user_id"]: u.get("quota_level", "L1") for u in pg_users}
 
-    # 按月查询 Token / 对话 / 请求
-    monthly_tokens = get_all_users_tokens_in_month(q_year, q_month, time_filter)
-    monthly_chats = get_all_users_chats_in_month(q_year, q_month, time_filter)
-    monthly_tokens_all = get_all_users_tokens_in_month(q_year, q_month, "all") if time_filter != "all" else monthly_tokens
-    today_chats_all_map = get_all_users_today_chats("all") if (is_current_month and time_filter != "all") else {}
-
-    if is_current_month:
-        today_tokens = get_all_users_today_tokens(time_filter)
-        today_chats = get_all_users_today_chats(time_filter)
-        daily_reqs = get_all_users_daily_requests()
-        today_chats_all = today_chats_all_map
-    else:
-        # 历史月份：今日相关字段置空（-1 表示前端显示 --）
-        today_tokens = {}
-        today_chats = {}
-        daily_reqs = {}
-        today_chats_all = {}
+    # 单次批量查询替代 6 次独立查询
+    stats = get_all_users_batch(q_year, q_month, time_filter, is_current_month)
 
     quota_cache: dict[str, dict] = {}
     result: list[UserItem] = []
     for u in ch_users:
         uid = u["username"]   # ClickHouse username 字段（userNickname）
         display_name = u.get("nickname") or uid
-        level = pg_quota_map.get(uid, "L1")  # PG 为空时默认 L1
+        level = pg_quota_map.get(uid, "L1")
         if level not in quota_cache:
             quota_cache[level] = get_quota_limits(level)
         limits = quota_cache[level]
-        mt = monthly_tokens.get(uid, 0)
-        tc = today_chats.get(uid, 0)
+        s = stats.get(uid, {})
+        mt = s.get("monthly_token", 0)
+        tc = s.get("today_chats", 0)
         result.append(
             UserItem(
                 user_id=uid,
@@ -190,12 +177,12 @@ def list_users(
                 enterprise=u.get("enterprise") or "未知",
                 quota_level=level,
                 monthly_token=mt,
-                today_token=today_tokens.get(uid, 0),
+                today_token=s.get("today_token", 0),
                 today_chats=tc,
-                monthly_chats=monthly_chats.get(uid, 0),
-                monthly_token_all=monthly_tokens_all.get(uid, 0),
-                today_chats_all=today_chats_all.get(uid, 0),
-                daily_requests=daily_reqs.get(uid, 0),
+                monthly_chats=s.get("monthly_chats", 0),
+                monthly_token_all=s.get("monthly_token_all", mt),
+                today_chats_all=s.get("today_chats_all", 0),
+                daily_requests=s.get("daily_requests", 0),
                 status_token=_token_status(mt, int(limits.get("monthly_token", 0))),
                 status_chat=_chat_status(tc, int(limits.get("daily_chats", 0))),
             )

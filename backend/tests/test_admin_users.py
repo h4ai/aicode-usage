@@ -84,29 +84,42 @@ _MOCK_CH_USERS = [
 _MOCK_QUOTA_LIMITS = {"monthly_token": 5000000, "daily_chats": 50, "daily_requests": 500}
 
 
+_MOCK_BATCH_STATS = {
+    "Zhang San": {
+        "monthly_token": 0, "monthly_token_all": 0,
+        "monthly_chats": 0, "monthly_chats_all": 0, "monthly_requests": 0,
+        "today_token": 0, "today_token_all": 0,
+        "today_chats": 0, "today_chats_all": 0, "daily_requests": 0,
+    },
+    "Li Si": {
+        "monthly_token": 0, "monthly_token_all": 0,
+        "monthly_chats": 0, "monthly_chats_all": 0, "monthly_requests": 0,
+        "today_token": 0, "today_token_all": 0,
+        "today_chats": 0, "today_chats_all": 0, "daily_requests": 0,
+    },
+}
+
+
 def _patch_list_users(fn, **kwargs):
+    batch = dict(_MOCK_BATCH_STATS)
+    if "get_all_users_tokens_in_month" in kwargs:
+        for uid, val in kwargs.pop("get_all_users_tokens_in_month").items():
+            batch.setdefault(uid, dict(_MOCK_BATCH_STATS.get(uid, {})))
+            batch[uid]["monthly_token"] = val
+    if "get_all_users_batch" in kwargs:
+        batch = kwargs.pop("get_all_users_batch")
     defaults = dict(
         get_all_users_from_clickhouse=_MOCK_CH_USERS,
         get_all_users=_MOCK_USERS,
-        get_all_users_tokens_in_month={},
-        get_all_users_today_tokens={},
-        get_all_users_today_chats={},
-        get_all_users_chats_in_month={},
-        get_all_users_requests_in_month={},
-        get_all_users_daily_requests={},
+        get_all_users_batch=batch,
         get_quota_limits=_MOCK_QUOTA_LIMITS,
     )
-    defaults.update(kwargs)
+    defaults.update({k: v for k, v in kwargs.items() if k in defaults})
 
     with (
         patch("app.routers.admin.get_all_users_from_clickhouse", return_value=defaults["get_all_users_from_clickhouse"]),
         patch("app.routers.admin.get_all_users", return_value=defaults["get_all_users"]),
-        patch("app.routers.admin.get_all_users_tokens_in_month", return_value=defaults["get_all_users_tokens_in_month"]),
-        patch("app.routers.admin.get_all_users_today_tokens", return_value=defaults["get_all_users_today_tokens"]),
-        patch("app.routers.admin.get_all_users_today_chats", return_value=defaults["get_all_users_today_chats"]),
-        patch("app.routers.admin.get_all_users_chats_in_month", return_value=defaults["get_all_users_chats_in_month"]),
-        patch("app.routers.admin.get_all_users_requests_in_month", return_value=defaults.get("get_all_users_requests_in_month", {})),
-        patch("app.routers.admin.get_all_users_daily_requests", return_value=defaults["get_all_users_daily_requests"]),
+        patch("app.routers.admin.get_all_users_batch", return_value=defaults["get_all_users_batch"]),
         patch("app.routers.admin.get_quota_limits", return_value=defaults["get_quota_limits"]),
     ):
         return fn()
@@ -228,23 +241,31 @@ def test_change_user_level_success(client, admin_token, admin_config_patch):
 # ---------------------------------------------------------------------------
 
 def _patch_list_users_month(fn, **kwargs):
-    """Patch for historical month query — uses _in_month functions."""
+    """Patch for month query — uses get_all_users_batch."""
+    batch = dict(_MOCK_BATCH_STATS)
+    # Support legacy kwarg names for convenience
+    if "get_all_users_tokens_in_month" in kwargs:
+        for uid, val in kwargs.pop("get_all_users_tokens_in_month").items():
+            batch.setdefault(uid, {**_MOCK_BATCH_STATS.get(uid, {k: 0 for k in _MOCK_BATCH_STATS.get("Zhang San", {})})})
+            batch[uid]["monthly_token"] = val
+    if "get_all_users_chats_in_month" in kwargs:
+        for uid, val in kwargs.pop("get_all_users_chats_in_month").items():
+            batch.setdefault(uid, {k: 0 for k in _MOCK_BATCH_STATS.get("Zhang San", {})})
+            batch[uid]["monthly_chats"] = val
+    if "get_all_users_batch" in kwargs:
+        batch = kwargs.pop("get_all_users_batch")
     defaults = dict(
         get_all_users_from_clickhouse=_MOCK_CH_USERS,
         get_all_users=_MOCK_USERS,
-        get_all_users_tokens_in_month={},
-        get_all_users_requests_in_month={},
-        get_all_users_chats_in_month={},
+        get_all_users_batch=batch,
         get_quota_limits=_MOCK_QUOTA_LIMITS,
     )
-    defaults.update(kwargs)
+    defaults.update({k: v for k, v in kwargs.items() if k in defaults})
 
     with (
         patch("app.routers.admin.get_all_users_from_clickhouse", return_value=defaults["get_all_users_from_clickhouse"]),
         patch("app.routers.admin.get_all_users", return_value=defaults["get_all_users"]),
-        patch("app.routers.admin.get_all_users_tokens_in_month", return_value=defaults["get_all_users_tokens_in_month"]),
-        patch("app.routers.admin.get_all_users_requests_in_month", return_value=defaults.get("get_all_users_requests_in_month", {})),
-        patch("app.routers.admin.get_all_users_chats_in_month", return_value=defaults["get_all_users_chats_in_month"]),
+        patch("app.routers.admin.get_all_users_batch", return_value=defaults["get_all_users_batch"]),
         patch("app.routers.admin.get_quota_limits", return_value=defaults["get_quota_limits"]),
     ):
         return fn()
