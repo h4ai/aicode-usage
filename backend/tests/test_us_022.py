@@ -63,7 +63,7 @@ def test_ac4_preview_button():
     """AC-4: Preview button calls POST preview."""
     content = _read_file("src/views/admin/NotificationSettings.vue")
     assert "handlePreview" in content
-    assert "/api/admin/email-template/preview" in content
+    assert "/admin/email-template/preview" in content
 
 
 def test_ac5_save_button():

@@ -53,11 +53,12 @@ def test_init_db_seeds_default_template():
 
 # ─── AC-5: has_sent_notification() ───
 
-@patch("app.services.database._get_conn")
+@patch("app.services.database._get_conn_ctx")
 def test_has_sent_notification_returns_true_when_exists(mock_conn):
     """AC-5: has_sent_notification returns True when record exists."""
     conn = MagicMock()
-    mock_conn.return_value = conn
+    mock_conn.return_value.__enter__ = MagicMock(return_value=conn)
+    mock_conn.return_value.__exit__ = MagicMock(return_value=False)
     cur = MagicMock()
     conn.cursor.return_value.__enter__ = MagicMock(return_value=cur)
     conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
@@ -68,11 +69,12 @@ def test_has_sent_notification_returns_true_when_exists(mock_conn):
     assert result is True
 
 
-@patch("app.services.database._get_conn")
+@patch("app.services.database._get_conn_ctx")
 def test_has_sent_notification_returns_false_when_not_exists(mock_conn):
     """AC-5: has_sent_notification returns False when no record."""
     conn = MagicMock()
-    mock_conn.return_value = conn
+    mock_conn.return_value.__enter__ = MagicMock(return_value=conn)
+    mock_conn.return_value.__exit__ = MagicMock(return_value=False)
     cur = MagicMock()
     conn.cursor.return_value.__enter__ = MagicMock(return_value=cur)
     conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
@@ -85,11 +87,12 @@ def test_has_sent_notification_returns_false_when_not_exists(mock_conn):
 
 # ─── AC-6: mark_notification_sent() ───
 
-@patch("app.services.database._get_conn")
+@patch("app.services.database._get_conn_ctx")
 def test_mark_notification_sent_inserts_record(mock_conn):
     """AC-6: mark_notification_sent writes record to email_notifications."""
     conn = MagicMock()
-    mock_conn.return_value = conn
+    mock_conn.return_value.__enter__ = MagicMock(return_value=conn)
+    mock_conn.return_value.__exit__ = MagicMock(return_value=False)
     cur = MagicMock()
     conn.cursor.return_value.__enter__ = MagicMock(return_value=cur)
     conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
@@ -112,11 +115,12 @@ def test_mark_notification_sent_inserts_record(mock_conn):
 
 # ─── AC-7: get_email_template() ───
 
-@patch("app.services.database._get_conn")
+@patch("app.services.database._get_conn_ctx")
 def test_get_email_template_returns_from_db(mock_conn):
     """AC-7: get_email_template returns template from DB when exists."""
     conn = MagicMock()
-    mock_conn.return_value = conn
+    mock_conn.return_value.__enter__ = MagicMock(return_value=conn)
+    mock_conn.return_value.__exit__ = MagicMock(return_value=False)
     cur = MagicMock()
     conn.cursor.return_value.__enter__ = MagicMock(return_value=cur)
     conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
@@ -128,11 +132,12 @@ def test_get_email_template_returns_from_db(mock_conn):
     assert result["body_html"] == "<p>hi</p>"
 
 
-@patch("app.services.database._get_conn")
+@patch("app.services.database._get_conn_ctx")
 def test_get_email_template_returns_builtin_default_when_not_found(mock_conn):
     """AC-7: get_email_template returns built-in default when not in DB."""
     conn = MagicMock()
-    mock_conn.return_value = conn
+    mock_conn.return_value.__enter__ = MagicMock(return_value=conn)
+    mock_conn.return_value.__exit__ = MagicMock(return_value=False)
     cur = MagicMock()
     conn.cursor.return_value.__enter__ = MagicMock(return_value=cur)
     conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
@@ -146,11 +151,12 @@ def test_get_email_template_returns_builtin_default_when_not_found(mock_conn):
 
 # ─── AC-8: save_email_template() ───
 
-@patch("app.services.database._get_conn")
+@patch("app.services.database._get_conn_ctx")
 def test_save_email_template_upserts(mock_conn):
     """AC-8: save_email_template does upsert on name."""
     conn = MagicMock()
-    mock_conn.return_value = conn
+    mock_conn.return_value.__enter__ = MagicMock(return_value=conn)
+    mock_conn.return_value.__exit__ = MagicMock(return_value=False)
     cur = MagicMock()
     conn.cursor.return_value.__enter__ = MagicMock(return_value=cur)
     conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
