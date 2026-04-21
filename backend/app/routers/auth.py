@@ -114,11 +114,12 @@ def test_login(body: LoginRequest) -> LoginResponse:
     if body.password != "test123":
         raise HTTPException(status_code=401, detail="密码错误")
     # 检查用户是否存在于 ClickHouse（支持 userId 或 userNickname 登录）
-    rows = _get_client().execute(
+    result = _get_client().query(
         "SELECT userId, userNickname, username, enterprise FROM otel.events"
-        " WHERE userId = %(q)s OR userNickname = %(q)s LIMIT 1",
-        {"q": body.username},
+        " WHERE userId = {q:String} OR userNickname = {q:String} LIMIT 1",
+        parameters={"q": body.username},
     )
+    rows = result.result_rows
     if not rows:
         raise HTTPException(status_code=401, detail="用户不存在")
     uid, nickname, uname, enterprise = rows[0]
