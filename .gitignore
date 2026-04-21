@@ -27,7 +27,7 @@ qa/screenshots/
 qa/playwright-report/
 qa/test-cases.md
 qa/e2e-report*.md
-tests/
+/tests/
 docs/screenshots/
 docs/po-*.md
 docs/po-*.html

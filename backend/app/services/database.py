@@ -43,6 +43,37 @@ CREATE TABLE IF NOT EXISTS email_alerts (
     sent_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
     PRIMARY KEY (user_id, month_key)
 );
+
+CREATE TABLE IF NOT EXISTS email_notifications (
+    id          SERIAL PRIMARY KEY,
+    user_id     TEXT NOT NULL,
+    quota_type  TEXT NOT NULL,
+    threshold   INTEGER NOT NULL,
+    period_key  TEXT NOT NULL,
+    sent_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+    over_limit  BOOLEAN NOT NULL DEFAULT false,
+    UNIQUE (user_id, quota_type, threshold, period_key)
+);
+
+CREATE TABLE IF NOT EXISTS email_templates (
+    id          SERIAL PRIMARY KEY,
+    name        TEXT NOT NULL UNIQUE,
+    subject     TEXT NOT NULL,
+    body_html   TEXT NOT NULL,
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+INSERT INTO email_templates (name, subject, body_html)
+VALUES (
+    'default',
+    '【AI Code Usage】您的{{quota_type_label}}用量已达 {{threshold}}',
+    '<p>您好 {{username}}（{{user_id}}），</p>
+<p>您的 <strong>{{quota_type_label}}</strong> 在 {{period}} 已使用 <strong>{{percent}}</strong>（{{used}} / {{limit}}）。</p>
+<p>当前触发阈值：{{threshold}}。</p>
+<p>配额将于 {{reset_time}} 自动重置，如需提升配额请联系管理员。</p>
+<p>— AI Code Usage 系统</p>'
+)
+ON CONFLICT (name) DO NOTHING;
 """
 
 
@@ -234,6 +265,92 @@ def mark_alert_sent(user_id: str, month_key: str) -> None:
             cur.execute(
                 "INSERT INTO email_alerts (user_id, month_key) VALUES (%s, %s) ON CONFLICT DO NOTHING",
                 (user_id, month_key),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+# ─── email_notifications (new dedup table) ───
+
+
+def has_sent_notification(user_id: str, quota_type: str, threshold: int, period_key: str) -> bool:
+    """Return True if notification already sent for this user/type/threshold/period."""
+    conn = _get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT 1 FROM email_notifications WHERE user_id = %s AND quota_type = %s AND threshold = %s AND period_key = %s",
+                (user_id, quota_type, threshold, period_key),
+            )
+            return cur.fetchone() is not None
+    finally:
+        conn.close()
+
+
+def mark_notification_sent(
+    user_id: str, quota_type: str, threshold: int, period_key: str, over_limit: bool = False
+) -> None:
+    """Record that a notification was sent."""
+    conn = _get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO email_notifications (user_id, quota_type, threshold, period_key, over_limit) "
+                "VALUES (%s, %s, %s, %s, %s) ON CONFLICT DO NOTHING",
+                (user_id, quota_type, threshold, period_key, over_limit),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+# ─── email_templates ───
+
+_DEFAULT_TEMPLATE_SUBJECT = "【AI Code Usage】您的{{quota_type_label}}用量已达 {{threshold}}"
+_DEFAULT_TEMPLATE_BODY = (
+    "<p>您好 {{username}}，</p>\n"
+    "<p>您的 <strong>{{quota_type_label}}</strong> 在 {{period}} 已使用 <strong>{{percent}}</strong>"
+    "（{{used}} / {{limit}}）。</p>\n"
+    "<p>当前触发阈值：{{threshold}}。</p>\n"
+    "<p>配额将于 {{reset_time}} 自动重置，如需提升配额请联系管理员。</p>\n"
+    "<p>— AI Code Usage 系统</p>"
+)
+
+
+def get_email_template(name: str) -> dict[str, Any]:
+    """Get email template by name. Returns built-in default if not found."""
+    conn = _get_conn()
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                "SELECT name, subject, body_html, updated_at FROM email_templates WHERE name = %s",
+                (name,),
+            )
+            row = cur.fetchone()
+            if row:
+                return dict(row)
+    finally:
+        conn.close()
+    # Return built-in default
+    return {
+        "name": name,
+        "subject": _DEFAULT_TEMPLATE_SUBJECT,
+        "body_html": _DEFAULT_TEMPLATE_BODY,
+        "updated_at": None,
+    }
+
+
+def save_email_template(name: str, subject: str, body_html: str) -> None:
+    """Upsert an email template."""
+    conn = _get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO email_templates (name, subject, body_html, updated_at) "
+                "VALUES (%s, %s, %s, now()) "
+                "ON CONFLICT (name) DO UPDATE SET subject = EXCLUDED.subject, body_html = EXCLUDED.body_html, updated_at = now()",
+                (name, subject, body_html),
             )
         conn.commit()
     finally:
