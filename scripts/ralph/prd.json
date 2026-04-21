@@ -355,7 +355,7 @@
         "pytest 全量通过"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "依赖 US-019",
       "source": "requirements-quota-email-v2.md §2.6 §2.10"
     },
