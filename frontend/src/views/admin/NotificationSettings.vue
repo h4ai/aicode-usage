@@ -27,9 +27,9 @@
 
         <!-- 触发阈值 -->
         <el-form-item label="触发阈值">
-          <el-input-number v-model="form.thresholds[0]" :min="0" :max="100" style="width: 100px" />%
-          <el-input-number v-model="form.thresholds[1]" :min="0" :max="100" style="width: 100px; margin-left: 10px" />%
-          <el-input-number v-model="form.thresholds[2]" :min="0" :max="100" style="width: 100px; margin-left: 10px" />%
+          <el-input-number v-model="form.thresholds[0]" :min="0" :max="100" style="width: 120px" />%
+          <el-input-number v-model="form.thresholds[1]" :min="0" :max="100" style="width: 120px; margin-left: 10px" />%
+          <el-input-number v-model="form.thresholds[2]" :min="0" :max="100" style="width: 120px; margin-left: 10px" />%
           <span style="margin-left: 8px; color: #909399; font-size: 12px">（0 表示忽略该档）</span>
         </el-form-item>
 
