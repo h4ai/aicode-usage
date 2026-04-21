@@ -1,6 +1,6 @@
 admins:
 - username: admin
-  password_hash: $2b$12$6o8L9wXKEWXino6JEx55/.QvqAkWhTYnnztELmM/9eV53Qls8XEBi
+  password_hash: $2b$12$uOK6hizY.Ici9VuLaRJIe.EHY/QrZsXgLTwFYpPItoMGN9I34nJki
 ldap:
   server: ldap://localhost:389
   base_dn: dc=company,dc=com
