@@ -1,3 +1,14 @@
+# ---------------------------------------------------------------------------
+# 安全配置
+# ---------------------------------------------------------------------------
+security:
+  # CORS 允许来源白名单。生产环境请替换为实际前端域名，禁止保留 "*"。
+  # 本地开发：http://localhost:3002
+  # 内网部署示例：http://192.168.1.100:3002
+  # 域名部署示例：https://ai-usage.your-company.com
+  cors_origins:
+    - "http://localhost:3002"
+
 admins:
 - password_hash: $2b$12$uOK6hizY.Ici9VuLaRJIe.EHY/QrZsXgLTwFYpPItoMGN9I34nJki
   username: admin
