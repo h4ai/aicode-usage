@@ -287,8 +287,14 @@ class DeptSummaryItem(BaseModel):
 
 
 def get_department_summary(time_filter: str = "all", start: str | None = None, end: str | None = None) -> list[dict[str, Any]]:
-    """Compute department summary by merging PostgreSQL users with ClickHouse token data."""
-    users = get_all_users()
+    """Compute department summary by merging ClickHouse users with token/request data.
+
+    Uses ClickHouse as the authoritative user source (225 users) instead of PostgreSQL
+    (only 27 registered users) to ensure all active users are counted.
+    """
+    # ClickHouse 是用户主数据源（含 enterprise 字段）
+    ch_users = get_all_users_from_clickhouse()
+
     if start and end:
         monthly_tokens = get_all_users_tokens_in_range(start, end, time_filter)
         monthly_requests = get_all_users_requests_in_range(start, end, time_filter)
@@ -300,11 +306,10 @@ def get_department_summary(time_filter: str = "all", start: str | None = None, e
 
     # Group users by enterprise
     dept_users: dict[str, list[str]] = {}
-    for u in users:
-        dept = u.get("enterprise") or "未知"
-        if not dept.strip():
-            dept = "未知"
-        dept_users.setdefault(dept, []).append(u["user_id"])
+    for u in ch_users:
+        dept = (u.get("enterprise") or "").strip() or "未知"
+        uid = u["username"]  # CH 中 username = userNickname，与 token dict 的 key 一致
+        dept_users.setdefault(dept, []).append(uid)
 
     result: list[dict[str, Any]] = []
     for dept, user_ids in sorted(dept_users.items()):
