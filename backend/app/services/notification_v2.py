@@ -12,7 +12,7 @@ import time
 from datetime import datetime, timezone
 
 from app.config import get_config
-from app.services.clickhouse import get_monthly_token_usage, get_daily_request_count
+from app.services.clickhouse import get_monthly_token_usage, get_daily_request_count, get_all_users_from_clickhouse
 from app.services.database import (
     get_all_users,
     get_quota_limits,
@@ -89,7 +89,24 @@ def check_quota_alerts() -> None:
     month_key = f"{now.year}-{now.month:02d}"
     day_key = f"{now.year}-{now.month:02d}-{now.day:02d}"
 
-    users = get_all_users()
+    # 从 ClickHouse 获取完整用户列表（PG 只有登录过的用户，可能不完整）
+    ch_users = get_all_users_from_clickhouse()
+    pg_users = get_all_users()
+    pg_map = {u["user_id"]: u for u in pg_users}
+
+    # 合并：CH 用户列表为主，PG 补充 quota_level 和 mail 信息，不在 PG 里的默认 L1
+    users = []
+    for cu in ch_users:
+        uid = cu["username"]  # userNickname
+        pg_u = pg_map.get(uid, {})
+        users.append({
+            "user_id": uid,
+            "username": uid,
+            "nickname": cu.get("nickname") or uid,
+            # PG 里的 mail 优先，没有则用 CH 里的（兼容测试数据和 LDAP 已同步 mail 的情况）
+            "mail": pg_u.get("mail") or cu.get("mail") or "",
+            "quota_level": pg_u.get("quota_level", "L1"),
+        })
     for user in users:
         user_id = user["user_id"]
         mail = user.get("mail") or ""

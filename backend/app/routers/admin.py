@@ -58,7 +58,19 @@ def list_quota_levels(
     _user: dict[str, Any] = Depends(require_admin),
 ) -> list[QuotaLevelItem]:
     rows = get_all_quota_levels()
-    return [QuotaLevelItem(**row) for row in rows]
+    # user_count 只统计了 PG 里已登录的用户，需补齐 CH 里有数据但不在 PG 的（默认 L1）
+    ch_users = get_all_users_from_clickhouse()
+    pg_users = get_all_users()
+    pg_ids = {u["user_id"] for u in pg_users}
+    # CH 里有但 PG 里没有的用户 → 默认 L1
+    ch_only_count = sum(1 for u in ch_users if u["username"] not in pg_ids)
+    result = []
+    for row in rows:
+        d = dict(row)
+        if d["level"] == "L1":
+            d["user_count"] = d["user_count"] + ch_only_count
+        result.append(QuotaLevelItem(**d))
+    return result
 
 
 class QuotaLevelUpdate(BaseModel):
