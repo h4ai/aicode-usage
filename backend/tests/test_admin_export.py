@@ -23,12 +23,7 @@ def _patch_users(fn):
     with (
         patch("app.routers.admin.get_all_users_from_clickhouse", return_value=_MOCK_CH_USERS),
         patch("app.routers.admin.get_all_users", return_value=_MOCK_USERS),
-        patch("app.routers.admin.get_all_users_tokens_in_month", return_value={}),
-        patch("app.routers.admin.get_all_users_today_tokens", return_value={}),
-        patch("app.routers.admin.get_all_users_today_chats", return_value={}),
-        patch("app.routers.admin.get_all_users_chats_in_month", return_value={}),
-        patch("app.routers.admin.get_all_users_requests_in_month", return_value={}),
-        patch("app.routers.admin.get_all_users_daily_requests", return_value={}),
+        patch("app.routers.admin.get_all_users_batch", return_value={}),
         patch("app.routers.admin.get_quota_limits", return_value=_MOCK_QUOTA_LIMITS),
     ):
         return fn()
@@ -149,9 +144,7 @@ def test_users_export_csv_with_year_month_passes_params(client, admin_token, adm
     with (
         patch("app.routers.admin.get_all_users_from_clickhouse", return_value=_MOCK_CH_USERS),
         patch("app.routers.admin.get_all_users", return_value=_MOCK_USERS),
-        patch("app.routers.admin.get_all_users_tokens_in_month", return_value={}),
-        patch("app.routers.admin.get_all_users_requests_in_month", return_value={}),
-        patch("app.routers.admin.get_all_users_chats_in_month", return_value={}),
+        patch("app.routers.admin.get_all_users_batch", return_value={}),
         patch("app.routers.admin.get_quota_limits", return_value=_MOCK_QUOTA_LIMITS),
     ):
         resp = client.get(
@@ -168,9 +161,7 @@ def test_users_export_csv_historical_month_column_label(client, admin_token, adm
     with (
         patch("app.routers.admin.get_all_users_from_clickhouse", return_value=_MOCK_CH_USERS),
         patch("app.routers.admin.get_all_users", return_value=_MOCK_USERS),
-        patch("app.routers.admin.get_all_users_tokens_in_month", return_value={}),
-        patch("app.routers.admin.get_all_users_requests_in_month", return_value={}),
-        patch("app.routers.admin.get_all_users_chats_in_month", return_value={}),
+        patch("app.routers.admin.get_all_users_batch", return_value={}),
         patch("app.routers.admin.get_quota_limits", return_value=_MOCK_QUOTA_LIMITS),
     ):
         resp = client.get(

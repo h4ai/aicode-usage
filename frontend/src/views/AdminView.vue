@@ -44,6 +44,12 @@
       >
         <QuotaLevelManager />
       </el-tab-pane>
+      <el-tab-pane
+        label="通知设置"
+        name="notification"
+      >
+        <NotificationSettings />
+      </el-tab-pane>
     </el-tabs>
   </div>
 </template>
@@ -57,6 +63,7 @@ import UserManager from '@/components/UserManager.vue'
 import GlobalTrend from '@/views/admin/GlobalTrend.vue'
 import DepartmentSummary from '@/views/admin/DepartmentSummary.vue'
 import Leaderboard from '@/views/admin/Leaderboard.vue'
+import NotificationSettings from '@/views/admin/NotificationSettings.vue'
 
 const activeTab = ref('users')
 

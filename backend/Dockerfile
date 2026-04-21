@@ -5,7 +5,7 @@
 # - python-ldap → ldap3（纯 Python，无需 libldap2-dev/libsasl2-dev）
 # - psycopg2-binary（预编译 wheel，无需 libpq-dev/gcc）
 
-FROM python:3.11-slim
+FROM python:3.11.12-slim
 
 WORKDIR /app
 COPY pyproject.toml .

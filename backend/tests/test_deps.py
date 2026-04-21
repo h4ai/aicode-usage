@@ -117,7 +117,9 @@ def test_require_admin_rejects_non_admin(client):
 
 def test_require_admin_allows_admin(client, admin_token, admin_config_patch):
     """Admin token on admin endpoint → allowed."""
-    with patch("app.routers.admin.get_all_quota_levels", return_value=[]):
+    with patch("app.routers.admin.get_all_quota_levels", return_value=[]), \
+         patch("app.routers.admin.get_all_users_from_clickhouse", return_value=[]), \
+         patch("app.routers.admin.get_all_users", return_value=[]):
         resp = client.get(
             "/api/admin/quota-levels",
             headers={"Authorization": f"Bearer {admin_token}"},

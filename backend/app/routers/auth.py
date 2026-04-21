@@ -14,12 +14,17 @@ import logging
 from typing import Any
 
 import bcrypt
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from app.config import get_config
 from app.services.auth import create_token
 from app.services.database import upsert_user
+
+# 登录限速：每IP每分钟最多10次
+_limiter = Limiter(key_func=get_remote_address)
 from app.services.ldap_service import (
     LdapAuthError,
     LdapUnavailableError,
@@ -51,7 +56,8 @@ def _find_admin(username: str, cfg: dict[str, Any]) -> dict[str, Any] | None:
 
 
 @router.post("/login", response_model=LoginResponse)
-def login(body: LoginRequest) -> LoginResponse:
+@_limiter.limit("20/minute")
+def login(request: Request, body: LoginRequest) -> LoginResponse:
     """Unified login: try admin auth first, then fall back to LDAP/AD."""
     cfg = get_config()
 
@@ -107,26 +113,42 @@ def login(body: LoginRequest) -> LoginResponse:
 
 @router.post("/test-login", response_model=LoginResponse)
 def test_login(body: LoginRequest) -> LoginResponse:
-    """临时测试端点：允许 ClickHouse 中存在的用户直接登录（仅测试用，勿在生产使用）。"""
+    """临时测试端点：允许 ClickHouse 中存在的用户直接登录（仅测试用，勿在生产使用）。
+
+    仅当 config.yaml 中 auth.allow_test_login: true 时生效，生产环境应设为 false（默认）。
+    """
+    cfg = get_config()
+    if not cfg.get("auth", {}).get("allow_test_login", False):
+        raise HTTPException(status_code=404, detail="Not Found")
+
     from app.services.clickhouse import _get_client  # noqa: PLC0415
 
     # 密码固定为 test123
     if body.password != "test123":
         raise HTTPException(status_code=401, detail="密码错误")
-    # 检查用户是否存在于 ClickHouse
-    rows = _get_client().execute(
-        "SELECT userId, userNickname, username, enterprise FROM otel.events WHERE userId = %(uid)s LIMIT 1",
-        {"uid": body.username},
+    # 检查用户是否存在于 ClickHouse（支持 userId 或 userNickname 登录）
+    result = _get_client().query(
+        "SELECT userId, userNickname, username, enterprise FROM otel.events"
+        " WHERE userId = {q:String} OR userNickname = {q:String} LIMIT 1",
+        parameters={"q": body.username},
     )
+    rows = result.result_rows
     if not rows:
         raise HTTPException(status_code=401, detail="用户不存在")
     uid, nickname, uname, enterprise = rows[0]
     display = nickname or uname or uid
     upsert_user(user_id=uid, username=uname, nickname=nickname, enterprise=enterprise)
+    # sub = userNickname（与 _user_filter 对齐），sam/cn/nickname 辅助 OR 匹配
     token = create_token(
-        username=uid,
+        username=nickname or uid,
         role="user",
         password_hash="test-user-fixed-hash",
-        extra={"display_name": display, "enterprise": enterprise},
+        extra={
+            "display_name": display,
+            "enterprise": enterprise,
+            "sam": uid,
+            "cn": uname or uid,
+            "nickname": nickname or "",
+        },
     )
     return LoginResponse(token=token, role="user")
