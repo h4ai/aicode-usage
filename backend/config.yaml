@@ -1,36 +1,42 @@
 admins:
-- username: admin
-  password_hash: $2b$12$uOK6hizY.Ici9VuLaRJIe.EHY/QrZsXgLTwFYpPItoMGN9I34nJki
-ldap:
-  server: ldap://localhost:389
-  base_dn: dc=company,dc=com
-  domain: ''              # NTLM 域名，如 CORP（用于 domain\username 格式登录）
-  bind_dn: ''             # 服务账号 DN（可选）如 CN=svc-ldap,OU=SA,DC=corp,DC=com
-  bind_password: ''       # 服务账号密码（可选）
-  user_attr: sAMAccountName
-  mail_attr: mail
+- password_hash: $2b$12$uOK6hizY.Ici9VuLaRJIe.EHY/QrZsXgLTwFYpPItoMGN9I34nJki
+  username: admin
 clickhouse:
-  host: host.docker.internal
-  port: 8123
   database: otel
-  user: default
+  host: host.docker.internal
   password: ''
+  port: 8123
+  user: default
 database:
   url: postgresql://postgres:postgres@postgres:5432/ai_usage
+ldap:
+  base_dn: dc=company,dc=com
+  bind_dn: ''
+  bind_password: ''
+  domain: ''
+  mail_attr: mail
+  server: ldap://localhost:389
+  user_attr: sAMAccountName
+notification:
+  check_interval_minutes: 60
+  email_domain: ''
+  enabled: true
+  thresholds:
+  - 50
+  - 80
+  - 100
 smtp:
+  from_email: ''
+  from_name: AI 使用助手
   host: ''
+  password: ''
   port: 587
   username: ''
-  password: ''
-  from_name: AI 使用助手
-  from_email: ''
 working_hours:
   enabled: true
-  start: 08:00
   end: '18:00'
+  start: 08:00
   weekday_only: true
-notification:
-  enabled: true
-  check_interval_minutes: 60
-  thresholds: [50, 80, 100]
-  email_domain: ""
+
+auth:
+  allow_test_login: true

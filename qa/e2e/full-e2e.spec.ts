@@ -23,7 +23,7 @@ test.describe('AI Code Usage full E2E screenshots', () => {
     // Try admin login UI
     // NOTE: selectors are best-effort; if app changes, update selectors in this file.
     await page.locator('input').first().fill('admin');
-    await page.locator('input[type="password"]').fill('8rOcpnvEUSBCG8d#');
+    await page.locator('input[type="password"]').fill('admin123');
     await page.getByRole('button', { name: /log in|login|登录/i }).click();
     await page.waitForTimeout(1500);
     await screenshot(page, '02-admin-login-success.png');

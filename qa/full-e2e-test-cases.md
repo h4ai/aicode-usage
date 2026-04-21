@@ -3,7 +3,7 @@
 - 覆盖：requirements.md v0.7（模块 M1~M10） + requirements-quota-email-v2.md v0.3（邮件增强 US-017~022）
 - 环境：FE http://74.226.48.15:3002 | BE http://74.226.48.15:8002
 - 账号：
-  - Admin：admin / 8rOcpnvEUSBCG8d#（POST /api/auth/login）
+  - Admin：admin / admin123（POST /api/auth/login）
   - Test user：uid_001 / test123（POST /api/auth/test-login）
 
 > 说明：
@@ -17,7 +17,7 @@
 ### TC-001 管理员登录成功（API）
 - 前置：无
 - 步骤：POST /api/auth/login
-- 请求：`{"username":"admin","password":"8rOcpnvEUSBCG8d#"}`
+- 请求：`{"username":"admin","password":"admin123"}`
 - 期望：200；返回 JWT（token/access_token 之一非空）；后续携带可访问 admin API
 
 ### TC-002 测试用户登录成功（API）
