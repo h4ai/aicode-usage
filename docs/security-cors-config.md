@@ -51,3 +51,17 @@ docker compose restart backend
 - 读取逻辑：`backend/app/main.py` 第 33–38 行
 - 配置加载：`backend/app/config.py`
 - 测试用例：`backend/tests/test_p0_security.py`
+
+---
+
+## OpenShift Helm 部署
+
+在 `deploy/openshift/helm/ai-code-usage/values.yaml` 中配置：
+
+```yaml
+security:
+  corsOrigins:
+    - "https://your-route-host.apps.cluster.example.com"
+```
+
+Helm template 会自动将此列表写入后端 ConfigMap，挂载到 `config.yaml`。

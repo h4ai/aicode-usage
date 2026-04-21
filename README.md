@@ -34,6 +34,7 @@
 ```
 
 > **内网离线说明**：前后端镜像均无 `apt-get` 调用。LDAP 使用纯 Python 的 `ldap3` 库，邮件使用 `aiosmtplib`，构建时只需 pip wheel，适合无外网访问的金融内网环境。
+> **基础镜像**：后端基于 `python:3.11.12-slim`，前端基于 `node:22.14-alpine`。
 
 ---
 
@@ -99,9 +100,16 @@ notification:
   thresholds: [50, 80, 100]             # 触发阈值（%），0 表示忽略该档
   email_domain: ""                      # AD mail 为空时自动拼接 sam@email_domain
 
+security:
+  cors_origins:
+    - "http://localhost:3002"    # 生产环境改为实际前端域名，禁止保留 "*"
+    # - "https://ai-usage.company.com"
+
 auth:
   allow_test_login: false               # ⚠️ 生产环境必须为 false！true 仅用于测试环境（LDAP 不可用时绕过认证）
 ```
+
+> **注意**：`auth.allow_test_login` 在 config.yaml 中默认值为 `true`（开发默认），部署生产时必须改为 `false`。
 
 **生成管理员密码 hash（bcrypt）：**
 
@@ -191,13 +199,17 @@ aicode-usage/
 │   │   │   ├── quota.py        # 配额查询
 │   │   │   └── admin.py        # 管理后台接口
 │   │   └── services/
-│   │       ├── clickhouse.py   # ClickHouse 查询层
-│   │       ├── database.py     # PostgreSQL（配额/用户配置）
-│   │       ├── ldap_service.py # AD 认证（ldap3 纯 Python）
-│   │       ├── notification.py # 邮件通知 v1（兼容保留）
-│   │       ├── notification_v2.py # 邮件通知 v2（多阈值/多配额项）
-│   │       └── template_renderer.py # 邮件模板渲染（9个占位符）
-│   ├── tests/                  # pytest 单元测试（353 cases）
+│   │       ├── clickhouse.py          # ClickHouse 查询层（re-export，向后兼容）
+│   │       ├── clickhouse_client.py   # 连接池 + 缓存（TTL 5min）+ 安全数值转换
+│   │       ├── clickhouse_filters.py  # 查询过滤器（时段/用户/基础条件）
+│   │       ├── clickhouse_user.py     # 单用户查询函数
+│   │       ├── clickhouse_admin.py    # 管理端批量查询函数
+│   │       ├── database.py            # PostgreSQL（配额/用户配置）
+│   │       ├── ldap_service.py        # AD 认证（ldap3 纯 Python）
+│   │       ├── notification.py        # 邮件通知 v1（已废弃，兼容保留）
+│   │       ├── notification_v2.py     # 邮件通知 v2（多阈值/多配额项，当前使用）
+│   │       └── template_renderer.py   # 邮件模板渲染（9个占位符）
+│   ├── tests/                  # pytest 单元测试（362 cases）
 │   ├── config.yaml             # ⚠️ 部署前必须修改
 │   ├── Dockerfile              # 无 apt-get，纯 pip 构建
 │   └── pyproject.toml
@@ -254,6 +266,34 @@ npm run dev        # Vite dev server，自动代理到 backend:8002
 cd backend
 PYTHONPATH=. pytest tests/ -v
 ```
+
+---
+
+## 安全配置
+
+### CORS
+
+生产部署前，务必修改 `backend/config.yaml` 中的 `security.cors_origins`，替换为实际前端域名：
+
+```yaml
+security:
+  cors_origins:
+    - "https://ai-usage.your-company.com"   # 替换为实际地址
+```
+
+通配符 `["*"]` 仅保留为代码兼容 fallback，**不得用于生产**。详见 `docs/security-cors-config.md`。
+
+### Rate Limiting
+
+API 已内置限速（slowapi）：
+- 全局默认：200 次/分钟（per IP）
+- 登录接口：20 次/分钟（per IP）
+
+无需额外配置，限速头会随 HTTP 响应返回（`X-RateLimit-*`）。
+
+### test-login
+
+`auth.allow_test_login: true` 仅用于测试环境（LDAP 不可用时）。**生产必须设为 `false`**。
 
 ---
 
