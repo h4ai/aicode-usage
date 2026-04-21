@@ -7,14 +7,19 @@ from __future__ import annotations
 
 import csv
 import io
+import logging
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 from app.deps import require_admin
 from app.services.clickhouse import (
+    get_all_users_batch,
+    get_leaderboard_batch,
     get_all_users_chats_in_range,
     get_all_users_chats_in_month,
     get_all_users_daily_requests,
@@ -56,13 +61,25 @@ def list_quota_levels(
     _user: dict[str, Any] = Depends(require_admin),
 ) -> list[QuotaLevelItem]:
     rows = get_all_quota_levels()
-    return [QuotaLevelItem(**row) for row in rows]
+    # user_count 只统计了 PG 里已登录的用户，需补齐 CH 里有数据但不在 PG 的（默认 L1）
+    ch_users = get_all_users_from_clickhouse()
+    pg_users = get_all_users()
+    pg_ids = {u["user_id"] for u in pg_users}
+    # CH 里有但 PG 里没有的用户 → 默认 L1
+    ch_only_count = sum(1 for u in ch_users if u["username"] not in pg_ids)
+    result = []
+    for row in rows:
+        d = dict(row)
+        if d["level"] == "L1":
+            d["user_count"] = d["user_count"] + ch_only_count
+        result.append(QuotaLevelItem(**d))
+    return result
 
 
 class QuotaLevelUpdate(BaseModel):
-    monthly_token: int
-    daily_chats: int
-    daily_requests: int
+    monthly_token: int = Field(gt=0, description="月度Token上限，必须大于0")
+    daily_chats: int = Field(gt=0, description="日对话上限，必须大于0")
+    daily_requests: int = Field(gt=0, description="日请求上限，必须大于0")
 
 
 @router.put("/quota-levels/{level}", response_model=QuotaLevelItem)
@@ -72,10 +89,14 @@ def edit_quota_level(
     _user: dict[str, Any] = Depends(require_admin),
 ) -> QuotaLevelItem:
     if level not in ("L1", "L2", "L3"):
+        logger.warning("edit_quota_level: invalid level=%s", level)
         raise HTTPException(status_code=400, detail="仅支持 L1/L2/L3 级别")
     row = update_quota_level(level, body.monthly_token, body.daily_chats, body.daily_requests)
     if row is None:
+        logger.warning("edit_quota_level: level=%s not found", level)
         raise HTTPException(status_code=404, detail="级别不存在")
+    logger.info("edit_quota_level: level=%s monthly_token=%d daily_chats=%d daily_requests=%d",
+                level, body.monthly_token, body.daily_chats, body.daily_requests)
     # Fetch user count separately since UPDATE RETURNING doesn't include it
     all_levels = get_all_quota_levels()
     for lv in all_levels:
@@ -148,59 +169,49 @@ def list_users(
     q_month = month or now.month
     is_current_month = (q_year == now.year and q_month == now.month)
 
-    # 从 ClickHouse 获取完整用户列表（PG 可能不完整）
-    ch_users = get_all_users_from_clickhouse()
-    # 从 PG 获取配额设置（可能为空，不影响用户列表展示）
-    pg_users = get_all_users()
-    pg_quota_map = {u["user_id"]: u.get("quota_level", "L1") for u in pg_users}
+    try:
+        # 从 ClickHouse 获取完整用户列表（PG 可能不完整）
+        ch_users = get_all_users_from_clickhouse()
+        # 从 PG 获取配额设置
+        pg_users = get_all_users()
+        pg_quota_map = {u["user_id"]: u.get("quota_level", "L1") for u in pg_users}
 
-    # 按月查询 Token / 对话 / 请求
-    monthly_tokens = get_all_users_tokens_in_month(q_year, q_month, time_filter)
-    monthly_chats = get_all_users_chats_in_month(q_year, q_month, time_filter)
-    monthly_tokens_all = get_all_users_tokens_in_month(q_year, q_month, "all") if time_filter != "all" else monthly_tokens
-    today_chats_all_map = get_all_users_today_chats("all") if (is_current_month and time_filter != "all") else {}
+        # 单次批量查询替代 6 次独立查询
+        stats = get_all_users_batch(q_year, q_month, time_filter, is_current_month)
 
-    if is_current_month:
-        today_tokens = get_all_users_today_tokens(time_filter)
-        today_chats = get_all_users_today_chats(time_filter)
-        daily_reqs = get_all_users_daily_requests()
-        today_chats_all = today_chats_all_map
-    else:
-        # 历史月份：今日相关字段置空（-1 表示前端显示 --）
-        today_tokens = {}
-        today_chats = {}
-        daily_reqs = {}
-        today_chats_all = {}
-
-    quota_cache: dict[str, dict] = {}
-    result: list[UserItem] = []
-    for u in ch_users:
-        uid = u["username"]   # ClickHouse username 字段（userNickname）
-        display_name = u.get("nickname") or uid
-        level = pg_quota_map.get(uid, "L1")  # PG 为空时默认 L1
-        if level not in quota_cache:
-            quota_cache[level] = get_quota_limits(level)
-        limits = quota_cache[level]
-        mt = monthly_tokens.get(uid, 0)
-        tc = today_chats.get(uid, 0)
-        result.append(
-            UserItem(
-                user_id=uid,
-                display_name=display_name,
-                enterprise=u.get("enterprise") or "未知",
-                quota_level=level,
-                monthly_token=mt,
-                today_token=today_tokens.get(uid, 0),
-                today_chats=tc,
-                monthly_chats=monthly_chats.get(uid, 0),
-                monthly_token_all=monthly_tokens_all.get(uid, 0),
-                today_chats_all=today_chats_all.get(uid, 0),
-                daily_requests=daily_reqs.get(uid, 0),
-                status_token=_token_status(mt, int(limits.get("monthly_token", 0))),
-                status_chat=_chat_status(tc, int(limits.get("daily_chats", 0))),
+        quota_cache: dict[str, dict] = {}
+        result: list[UserItem] = []
+        for u in ch_users:
+            uid = u["username"]   # ClickHouse username 字段（userNickname）
+            display_name = u.get("nickname") or uid
+            level = pg_quota_map.get(uid, "L1")
+            if level not in quota_cache:
+                quota_cache[level] = get_quota_limits(level)
+            limits = quota_cache[level]
+            s = stats.get(uid, {})
+            mt = s.get("monthly_token", 0)
+            tc = s.get("today_chats", 0)
+            result.append(
+                UserItem(
+                    user_id=uid,
+                    display_name=display_name,
+                    enterprise=u.get("enterprise") or "未知",
+                    quota_level=level,
+                    monthly_token=mt,
+                    today_token=s.get("today_token", 0),
+                    today_chats=tc,
+                    monthly_chats=s.get("monthly_chats", 0),
+                    monthly_token_all=s.get("monthly_token_all", mt),
+                    today_chats_all=s.get("today_chats_all", 0),
+                    daily_requests=s.get("daily_requests", 0),
+                    status_token=_token_status(mt, int(limits.get("monthly_token", 0))),
+                    status_chat=_chat_status(tc, int(limits.get("daily_chats", 0))),
+                )
             )
-        )
-    return result
+        return result
+    except Exception:
+        logger.error("list_users failed", exc_info=True)
+        raise HTTPException(status_code=500, detail="数据查询失败，请稍后重试")
 
 
 class UserLevelUpdate(BaseModel):
@@ -214,10 +225,13 @@ def change_user_level(
     _user: dict[str, Any] = Depends(require_admin),
 ) -> UserItem:
     if body.level not in ("L1", "L2", "L3"):
+        logger.warning("change_user_level: invalid level=%s for user_id=%s", body.level, user_id)
         raise HTTPException(status_code=400, detail="仅支持 L1/L2/L3 级别")
     updated = update_user_level(user_id, body.level)
     if updated is None:
+        logger.warning("change_user_level: user_id=%s not found", user_id)
         raise HTTPException(status_code=404, detail="用户不存在")
+    logger.info("change_user_level: user_id=%s new_level=%s", user_id, body.level)
     monthly_tokens = get_all_users_monthly_tokens()
     daily_reqs = get_all_users_daily_requests()
     display_name = updated.get("nickname") or updated.get("username") or updated["user_id"]
@@ -267,11 +281,15 @@ def global_trend(
     """Return global daily token trend, optionally grouped by model or department."""
     if not start or not end:
         start, end = _default_date_range()
-    if group_by == "model":
-        return get_global_trend_by_model(start, end, time_filter)
-    if group_by == "department":
-        return get_global_trend_by_dept(start, end, time_filter)
-    return get_global_trend(start, end, time_filter)
+    try:
+        if group_by == "model":
+            return get_global_trend_by_model(start, end, time_filter)
+        if group_by == "department":
+            return get_global_trend_by_dept(start, end, time_filter)
+        return get_global_trend(start, end, time_filter)
+    except Exception:
+        logger.error("global_trend failed", exc_info=True)
+        raise HTTPException(status_code=500, detail="数据查询失败，请稍后重试")
 
 
 # ---- Department summary -----------------------------------------------------
@@ -287,8 +305,14 @@ class DeptSummaryItem(BaseModel):
 
 
 def get_department_summary(time_filter: str = "all", start: str | None = None, end: str | None = None) -> list[dict[str, Any]]:
-    """Compute department summary by merging PostgreSQL users with ClickHouse token data."""
-    users = get_all_users()
+    """Compute department summary by merging ClickHouse users with token/request data.
+
+    Uses ClickHouse as the authoritative user source (225 users) instead of PostgreSQL
+    (only 27 registered users) to ensure all active users are counted.
+    """
+    # ClickHouse 是用户主数据源（含 enterprise 字段）
+    ch_users = get_all_users_from_clickhouse()
+
     if start and end:
         monthly_tokens = get_all_users_tokens_in_range(start, end, time_filter)
         monthly_requests = get_all_users_requests_in_range(start, end, time_filter)
@@ -300,11 +324,10 @@ def get_department_summary(time_filter: str = "all", start: str | None = None, e
 
     # Group users by enterprise
     dept_users: dict[str, list[str]] = {}
-    for u in users:
-        dept = u.get("enterprise") or "未知"
-        if not dept.strip():
-            dept = "未知"
-        dept_users.setdefault(dept, []).append(u["user_id"])
+    for u in ch_users:
+        dept = (u.get("enterprise") or "").strip() or "未知"
+        uid = u["username"]  # CH 中 username = userNickname，与 token dict 的 key 一致
+        dept_users.setdefault(dept, []).append(uid)
 
     result: list[dict[str, Any]] = []
     for dept, user_ids in sorted(dept_users.items()):
@@ -354,50 +377,35 @@ class LeaderboardItem(BaseModel):
 
 def get_leaderboard(top: int | None = None, time_filter: str = "all", start: str | None = None, end: str | None = None) -> list[dict[str, Any]]:
     """Return all users sorted by token consumption in the given range."""
-    # 主数据源：ClickHouse（key = userNickname）
-    ch_users = get_all_users_from_clickhouse()
+    # 单次批量查询：token + requests + chats（3 次 → 1 次）
+    rows = get_leaderboard_batch(time_filter=time_filter, start_date=start, end_date=end)
+
     # PG 用于获取 quota_level
     pg_users = get_all_users()
     pg_quota_map = {u["user_id"]: u.get("quota_level", "L1") for u in pg_users}
-
-    if start and end:
-        tokens_map = get_all_users_tokens_in_range(start, end, time_filter)
-        reqs_map = get_all_users_requests_in_range(start, end, time_filter)
-        chats_map = get_all_users_chats_in_range(start, end, time_filter)
-    else:
-        tokens_map = get_all_users_monthly_tokens(time_filter)
-        reqs_map = get_all_users_monthly_requests(time_filter)
-        chats_map = get_all_users_monthly_chats(time_filter)
-
     quota_levels_data = get_all_quota_levels()
     level_limits = {lv["level"]: lv["monthly_token"] for lv in quota_levels_data}
 
-    # ch_users key = username（userNickname），与 tokens_map key 一致
-    ranked = sorted(
-        ch_users,
-        key=lambda u: tokens_map.get(u["username"], 0),
-        reverse=True,
-    )
     if top:
-        ranked = ranked[:top]
+        rows = rows[:top]
 
     result: list[dict[str, Any]] = []
-    for i, u in enumerate(ranked, start=1):
-        uid = u["username"]   # userNickname
+    for i, row in enumerate(rows, start=1):
+        uid = row["username"]
         level = pg_quota_map.get(uid, "L1")
         limit = level_limits.get(level, 1) or 1
-        mt = tokens_map.get(uid, 0)
+        mt = row["monthly_token"]
         pct = round(mt / limit * 100, 1)
         result.append(
             {
                 "rank": i,
                 "user_id": uid,
-                "display_name": u.get("nickname") or uid,
-                "enterprise": u.get("enterprise") or "未知",
+                "display_name": row.get("nickname") or uid,
+                "enterprise": row.get("enterprise") or "未知",
                 "quota_level": level,
                 "monthly_token": mt,
-                "monthly_requests": reqs_map.get(uid, 0),
-                "monthly_chats": chats_map.get(uid, 0),
+                "monthly_requests": row.get("monthly_requests", 0),
+                "monthly_chats": row.get("monthly_chats", 0),
                 "quota_usage_pct": pct,
             }
         )
@@ -432,6 +440,7 @@ def export_users_csv(
     q_year = year or now.year
     q_month = month or now.month
     users_data = list_users(time_filter=time_filter, year=q_year, month=q_month, _user=_user)
+    logger.info("export_users_csv: period=%s-%02d rows=%d", q_year, q_month, len(users_data))
     is_current_month = (q_year == now.year and q_month == now.month)
     period_label = f"{q_year}-{q_month:02d}"
     token_col = f"{period_label} Token(全天)" if not is_current_month else "本月总Token(全天)"
@@ -522,8 +531,8 @@ def export_leaderboard_csv(
 
 class WorkingHoursConfig(BaseModel):
     enabled: bool
-    start: str  # "HH:MM"
-    end: str  # "HH:MM"
+    start: str = Field(pattern=r"^\d{2}:\d{2}$", description="开始时间 HH:MM")
+    end: str = Field(pattern=r"^\d{2}:\d{2}$", description="结束时间 HH:MM")
     weekday_only: bool = True  # True=仅周一至周五，False=不限星期
 
 
@@ -548,21 +557,18 @@ def update_working_hours(
     _user: dict[str, Any] = Depends(require_admin),
 ) -> WorkingHoursConfig:
     """Update working hours config (writes back to config.yaml)."""
-    import re
     from pathlib import Path
 
     import yaml
 
     from app.config import load_config
 
-    # validate HH:MM format
-    pat = re.compile(r"^\d{2}:\d{2}$")
-    if not pat.match(body.start) or not pat.match(body.end):
-        raise HTTPException(status_code=400, detail="时间格式必须为 HH:MM")
-
     config_path = Path(__file__).resolve().parent.parent.parent / "config.yaml"
     with open(config_path) as f:
         cfg = yaml.safe_load(f) or {}
+
+    old_wh = cfg.get("working_hours", {})
+    logger.info("update_working_hours: old=%s new=%s", old_wh, body.model_dump())
 
     cfg["working_hours"] = {
         "enabled": body.enabled,
@@ -579,3 +585,122 @@ def update_working_hours(
 
     _ch_module._cache.clear()
     return body
+
+
+# ─── Email Template Management ───
+
+from app.services.database import get_email_template, save_email_template
+from app.services.template_renderer import render_template, build_context
+
+
+class EmailTemplateUpdate(BaseModel):
+    subject: str
+    body_html: str
+
+
+@router.get("/email-template")
+def get_template(admin: Any = Depends(require_admin)) -> dict[str, Any]:
+    """Get the current email template."""
+    return get_email_template("default")
+
+
+@router.put("/email-template")
+def update_template(body: EmailTemplateUpdate, admin: Any = Depends(require_admin)) -> dict[str, Any]:
+    """Update the email template."""
+    save_email_template("default", body.subject, body.body_html)
+    return get_email_template("default")
+
+
+@router.post("/email-template/preview")
+def preview_template(body: EmailTemplateUpdate, admin: Any = Depends(require_admin)) -> dict[str, str]:
+    """Preview template with sample data."""
+    sample_context = build_context(
+        username="张三",
+        user_id="zhangsan",
+        quota_type="monthly_token",
+        used=8000000,
+        limit=10000000,
+        threshold=80,
+        period_key="2026-04",
+    )
+    return {
+        "subject": render_template(body.subject, sample_context),
+        "body_html": render_template(body.body_html, sample_context),
+    }
+
+
+_TEMPLATE_VARIABLES = [
+    {"name": "username", "description": "用户显示名"},
+    {"name": "user_id", "description": "用户账号（sAMAccountName）"},
+    {"name": "quota_type_label", "description": "配额类型中文名（月度Token/日对话轮次）"},
+    {"name": "used", "description": "已用量（千分位格式）"},
+    {"name": "limit", "description": "上限值（千分位格式）"},
+    {"name": "percent", "description": "当前使用百分比"},
+    {"name": "threshold", "description": "触发阈值"},
+    {"name": "period", "description": "周期描述"},
+    {"name": "reset_time", "description": "重置时间说明"},
+]
+
+
+@router.get("/email-template/variables")
+def get_template_variables(admin: Any = Depends(require_admin)) -> list[dict[str, str]]:
+    """Return all available template placeholders."""
+    return _TEMPLATE_VARIABLES
+
+
+# ─── Notification Config Management ───
+
+from app.config import update_notification_config
+from pydantic import field_validator
+
+
+class NotificationConfigUpdate(BaseModel):
+    enabled: bool | None = None
+    check_interval_minutes: int | None = Field(None, description="检查间隔（分钟），仅限 30/60/120")
+
+    @field_validator("check_interval_minutes")
+    @classmethod
+    def _valid_interval(cls, v: int | None) -> int | None:
+        if v is not None and v not in (30, 60, 120):
+            raise ValueError("check_interval_minutes must be 30, 60, or 120")
+        return v
+    thresholds: list[int] | None = Field(None, description="阈值列表，每个值1-100")
+    email_domain: str | None = None
+
+    @field_validator("thresholds")
+    @classmethod
+    def validate_thresholds(cls, v: list[int] | None) -> list[int] | None:
+        if v is not None:
+            for t in v:
+                if t < 1 or t > 100:
+                    raise ValueError(f"阈值必须在 1-100 之间，收到 {t}")
+        return v
+
+
+@router.get("/notification-config")
+def get_notification_config(_user: dict[str, Any] = Depends(require_admin)) -> dict[str, Any]:
+    """Get current notification config."""
+    from app.config import get_config
+    cfg = get_config()
+    return cfg.get("notification", {
+        "enabled": True,
+        "check_interval_minutes": 60,
+        "thresholds": [50, 80, 100],
+        "email_domain": "",
+    })
+
+
+@router.put("/notification-config")
+def update_notif_config(
+    body: NotificationConfigUpdate,
+    _user: dict[str, Any] = Depends(require_admin),
+) -> dict[str, Any]:
+    """Update notification config (persisted to config.yaml; interval/enabled require restart)."""
+    logger.info("update_notif_config: %s", body.model_dump(exclude_none=True))
+    result = update_notification_config(
+        enabled=body.enabled,
+        check_interval_minutes=body.check_interval_minutes,
+        thresholds=body.thresholds,
+        email_domain=body.email_domain,
+    )
+    return result

@@ -7,7 +7,7 @@
 backend:
   image:
     repository: <REGISTRY>/ai-code-usage-backend  # ← 修改
-    tag: latest
+    tag: latest                                    # 推荐锁定为具体版本如 1.0.0
     pullPolicy: IfNotPresent
   replicas: 1
   resources:
@@ -21,7 +21,7 @@ backend:
 frontend:
   image:
     repository: <REGISTRY>/ai-code-usage-frontend  # ← 修改
-    tag: latest
+    tag: latest                                     # 推荐锁定为具体版本如 1.0.0
     pullPolicy: IfNotPresent
   replicas: 1
   resources:
@@ -65,10 +65,17 @@ smtp:
   from_email: noreply@example.com
   from_name: AI Code Usage
 
+# ── Security ─────────────────────────────────────────────────────────────────
+security:
+  # CORS 允许来源，生产环境必须替换为实际前端域名
+  corsOrigins:
+    - "https://<FRONTEND_ROUTE_HOST>"   # ← 修改，禁止保留 "*"
+
 # ── Auth ─────────────────────────────────────────────────────────────────────
 auth:
   secret_key: "change-me-in-production-use-a-long-random-string"  # ← 修改
   access_token_expire_minutes: 480
+  allow_test_login: false   # ⚠️ 生产必须为 false
 
 # ── Route（OpenShift）────────────────────────────────────────────────────────
 route:

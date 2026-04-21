@@ -31,7 +31,9 @@ def test_list_quota_levels_requires_admin(client):
 
 
 def test_list_quota_levels_returns_list(client, admin_token, admin_config_patch):
-    with patch("app.routers.admin.get_all_quota_levels", return_value=_MOCK_QUOTA_LEVELS):
+    with patch("app.routers.admin.get_all_quota_levels", return_value=_MOCK_QUOTA_LEVELS), \
+         patch("app.routers.admin.get_all_users_from_clickhouse", return_value=[]), \
+         patch("app.routers.admin.get_all_users", return_value=[]):
         resp = client.get(
             "/api/admin/quota-levels",
             headers={"Authorization": f"Bearer {admin_token}"},
@@ -43,7 +45,9 @@ def test_list_quota_levels_returns_list(client, admin_token, admin_config_patch)
 
 
 def test_list_quota_levels_has_required_fields(client, admin_token, admin_config_patch):
-    with patch("app.routers.admin.get_all_quota_levels", return_value=_MOCK_QUOTA_LEVELS):
+    with patch("app.routers.admin.get_all_quota_levels", return_value=_MOCK_QUOTA_LEVELS), \
+         patch("app.routers.admin.get_all_users_from_clickhouse", return_value=[]), \
+         patch("app.routers.admin.get_all_users", return_value=[]):
         resp = client.get(
             "/api/admin/quota-levels",
             headers={"Authorization": f"Bearer {admin_token}"},
@@ -54,7 +58,9 @@ def test_list_quota_levels_has_required_fields(client, admin_token, admin_config
 
 
 def test_list_quota_levels_empty_list(client, admin_token, admin_config_patch):
-    with patch("app.routers.admin.get_all_quota_levels", return_value=[]):
+    with patch("app.routers.admin.get_all_quota_levels", return_value=[]), \
+         patch("app.routers.admin.get_all_users_from_clickhouse", return_value=[]), \
+         patch("app.routers.admin.get_all_users", return_value=[]):
         resp = client.get(
             "/api/admin/quota-levels",
             headers={"Authorization": f"Bearer {admin_token}"},

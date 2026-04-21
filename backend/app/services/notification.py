@@ -1,13 +1,18 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: 2026 SubLang International <https://sublang.ai>
 
-"""Email quota alert notification service.
+"""Email quota alert notification service (v1 — DEPRECATED).
 
-Checks all users' monthly token usage and sends a one-time alert
-when usage first reaches 80% of the monthly limit.
+.. deprecated::
+    This module is superseded by :mod:`app.services.notification_v2`.
+    New code should import from ``notification_v2``.
 
-Uses aiosmtplib (async SMTP) instead of smtplib — no blocking I/O,
-suitable for environments where relay server requires no-auth SMTP.
+    Kept for:
+    - ``mail_send``: low-level async SMTP helper, still used by notification_v2
+    - ``check_quota_alerts`` / ``send_quota_email``: referenced by legacy tests (test_us_016)
+
+    The application entrypoint (``main.py``) uses ``notification_v2.check_quota_alerts``
+    exclusively; this module's ``check_quota_alerts`` is NOT called at runtime.
 """
 
 from __future__ import annotations
