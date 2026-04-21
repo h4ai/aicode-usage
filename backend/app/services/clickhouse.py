@@ -456,7 +456,7 @@ def get_all_users_monthly_tokens(time_filter: str = "all") -> dict[str, int]:
         f" FROM events PREWHERE event_date >= {{start:String}}"
         f" WHERE {_BASE_FILTER} AND {USERNAME} != ''"
         + _working_hours_filter(time_filter)
-        + f" GROUP BY assumeNotNull({USERNAME})"
+        + f" GROUP BY {USERNAME}"
     )
     rows = client.query(sql, parameters={"start": month_start}).result_rows
     result = {str(row[0]): _safe_int(row[1]) for row in rows}
@@ -475,7 +475,7 @@ def get_all_users_daily_requests() -> dict[str, int]:
         f"SELECT {USERNAME}, count() FROM events"
         f" WHERE {EVENT_DATE} = {{today:String}}"
         f" AND {_BASE_FILTER} AND {USERNAME} != ''"
-        f" GROUP BY assumeNotNull({USERNAME})"
+        f" GROUP BY {USERNAME}"
     )
     rows = client.query(sql, parameters={"today": today}).result_rows
     result = {str(row[0]): _safe_int(row[1]) for row in rows}
@@ -648,7 +648,7 @@ def get_all_users_monthly_requests(time_filter: str = "all") -> dict[str, int]:
         f" WHERE {EVENT_DATE} >= {{start:String}}"
         f" AND {_BASE_FILTER} AND {USERNAME} != ''"
         + _working_hours_filter(time_filter)
-        + f" GROUP BY assumeNotNull({USERNAME})"
+        + f" GROUP BY {USERNAME}"
     )
     rows = client.query(sql, parameters={"start": month_start}).result_rows
     result: dict[str, int] = {str(row[0]): _safe_int(row[1]) for row in rows}
@@ -712,7 +712,7 @@ def get_all_users_today_tokens(time_filter: str = "auto") -> dict[str, int]:
         f" WHERE {EVENT_DATE} = {{today:String}}"
         f" AND {_BASE_FILTER} AND {USERNAME} != ''"
         + _working_hours_filter(time_filter)
-        + f" GROUP BY assumeNotNull({USERNAME})"
+        + f" GROUP BY {USERNAME}"
     )
     rows = client.query(sql, parameters={"today": today}).result_rows
     result = {str(r[0]): _safe_int(r[1]) for r in rows if r[0]}
@@ -733,7 +733,7 @@ def get_all_users_today_chats(time_filter: str = "auto") -> dict[str, int]:
         f" AND {EVENT_CODE} = 'chat_request_response'"
         f" AND totalToken > 0 AND {USERNAME} != ''"
         + _working_hours_filter(time_filter)
-        + f" GROUP BY assumeNotNull({USERNAME})"
+        + f" GROUP BY {USERNAME}"
     )
     rows = client.query(sql, parameters={"today": today}).result_rows
     result = {str(r[0]): _safe_int(r[1]) for r in rows if r[0]}
@@ -755,7 +755,7 @@ def get_all_users_monthly_chats(time_filter: str = "all") -> dict[str, int]:
         f" AND {EVENT_CODE} = 'chat_request_response'"
         f" AND totalToken > 0 AND {USERNAME} != ''"
         + _working_hours_filter(time_filter)
-        + f" GROUP BY assumeNotNull({USERNAME})"
+        + f" GROUP BY {USERNAME}"
     )
     rows = client.query(sql, parameters={}).result_rows
     result = {str(r[0]): _safe_int(r[1]) for r in rows if r[0]}
@@ -801,7 +801,7 @@ def get_all_users_tokens_in_range(start_date: str, end_date: str, time_filter: s
         f" FROM events WHERE {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}"
         f" AND {_BASE_FILTER} AND {USERNAME} != ''"
         + _working_hours_filter(time_filter)
-        + f" GROUP BY assumeNotNull({USERNAME})"
+        + f" GROUP BY {USERNAME}"
     )
     rows = client.query(sql, parameters={"start": start_date, "end": end_date}).result_rows
     result = {str(row[0]): _safe_int(row[1]) for row in rows}
@@ -820,7 +820,7 @@ def get_all_users_requests_in_range(start_date: str, end_date: str, time_filter:
         f" FROM events WHERE {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}"
         f" AND {_BASE_FILTER} AND {USERNAME} != ''"
         + _working_hours_filter(time_filter)
-        + f" GROUP BY assumeNotNull({USERNAME})"
+        + f" GROUP BY {USERNAME}"
     )
     rows = client.query(sql, parameters={"start": start_date, "end": end_date}).result_rows
     result = {str(row[0]): _safe_int(row[1]) for row in rows}
@@ -839,7 +839,7 @@ def get_all_users_chats_in_range(start_date: str, end_date: str, time_filter: st
         f" WHERE {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}"
         f" AND {EVENT_CODE} = 'chat_request_response' AND totalToken > 0 AND {USERNAME} != ''"
         + _working_hours_filter(time_filter)
-        + f" GROUP BY assumeNotNull({USERNAME})"
+        + f" GROUP BY {USERNAME}"
     )
     rows = client.query(sql, parameters={"start": start_date, "end": end_date}).result_rows
     result = {str(row[0]): _safe_int(row[1]) for row in rows}
@@ -859,13 +859,13 @@ def get_all_users_from_clickhouse() -> list[dict[str, Any]]:
 
     client = _get_client()
     sql = (
-        f"SELECT assumeNotNull({USERNAME}),"
+        f"SELECT {USERNAME},"
         f" anyLast(enterprise) as enterprise"
         f" FROM events"
         f" PREWHERE event_date >= toDate(toStartOfMonth(today()))"
         f" WHERE {_BASE_FILTER} AND {USERNAME} != ''"
-        f" GROUP BY assumeNotNull({USERNAME})"
-        f" ORDER BY assumeNotNull({USERNAME})"
+        f" GROUP BY {USERNAME}"
+        f" ORDER BY {USERNAME}"
     )
     rows = client.query(sql, parameters={}).result_rows
     result: list[dict[str, Any]] = [
@@ -939,7 +939,7 @@ def get_all_users_batch(
         f" FROM events"
         f" PREWHERE {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}"
         f" WHERE {_BASE_FILTER} AND {USERNAME} != ''"
-        f" GROUP BY assumeNotNull({USERNAME})"
+        f" GROUP BY {USERNAME}"
     )
     monthly_rows = client.query(sql_monthly, parameters={"start": start, "end": end}).result_rows
 
@@ -972,7 +972,7 @@ def get_all_users_batch(
             f" FROM events"
             f" PREWHERE {EVENT_DATE} = {{today:String}}"
             f" WHERE {_BASE_FILTER} AND {USERNAME} != ''"
-            f" GROUP BY assumeNotNull({USERNAME})"
+            f" GROUP BY {USERNAME}"
         )
         today_rows = client.query(sql_today, parameters={"today": today}).result_rows
         for row in today_rows:
@@ -1028,7 +1028,7 @@ def get_leaderboard_batch(
     wh = _working_hours_filter(time_filter)
     client = _get_client()
     sql = (
-        f"SELECT assumeNotNull({USERNAME}),"
+        f"SELECT {USERNAME},"
         f" anyLast({ENTERPRISE}) AS enterprise,"
         f" sum({TOTAL_TOKEN}) AS total_token,"
         f" count() AS total_requests,"
@@ -1037,7 +1037,7 @@ def get_leaderboard_batch(
         f" PREWHERE {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}"
         f" WHERE {_BASE_FILTER} AND {USERNAME} != ''"
         + wh
-        + f" GROUP BY assumeNotNull({USERNAME})"
+        + f" GROUP BY {USERNAME}"
         f" ORDER BY total_token DESC"
     )
     rows = client.query(sql, parameters={"start": s, "end": e}).result_rows
