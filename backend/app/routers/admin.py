@@ -552,3 +552,64 @@ def update_working_hours(
 
     _ch_module._cache.clear()
     return body
+
+
+# ─── Email Template Management ───
+
+from app.services.database import get_email_template, save_email_template
+from app.services.template_renderer import render_template, build_context
+
+
+class EmailTemplateUpdate(BaseModel):
+    subject: str
+    body_html: str
+
+
+@router.get("/email-template")
+def get_template(admin: Any = Depends(require_admin)) -> dict[str, Any]:
+    """Get the current email template."""
+    return get_email_template("default")
+
+
+@router.put("/email-template")
+def update_template(body: EmailTemplateUpdate, admin: Any = Depends(require_admin)) -> dict[str, Any]:
+    """Update the email template."""
+    save_email_template("default", body.subject, body.body_html)
+    return get_email_template("default")
+
+
+@router.post("/email-template/preview")
+def preview_template(body: EmailTemplateUpdate, admin: Any = Depends(require_admin)) -> dict[str, str]:
+    """Preview template with sample data."""
+    sample_context = build_context(
+        username="张三",
+        user_id="zhangsan",
+        quota_type="monthly_token",
+        used=8000000,
+        limit=10000000,
+        threshold=80,
+        period_key="2026-04",
+    )
+    return {
+        "subject": render_template(body.subject, sample_context),
+        "body_html": render_template(body.body_html, sample_context),
+    }
+
+
+_TEMPLATE_VARIABLES = [
+    {"name": "username", "description": "用户显示名"},
+    {"name": "user_id", "description": "用户账号（sAMAccountName）"},
+    {"name": "quota_type_label", "description": "配额类型中文名（月度Token/日对话轮次）"},
+    {"name": "used", "description": "已用量（千分位格式）"},
+    {"name": "limit", "description": "上限值（千分位格式）"},
+    {"name": "percent", "description": "当前使用百分比"},
+    {"name": "threshold", "description": "触发阈值"},
+    {"name": "period", "description": "周期描述"},
+    {"name": "reset_time", "description": "重置时间说明"},
+]
+
+
+@router.get("/email-template/variables")
+def get_template_variables(admin: Any = Depends(require_admin)) -> list[dict[str, str]]:
+    """Return all available template placeholders."""
+    return _TEMPLATE_VARIABLES
