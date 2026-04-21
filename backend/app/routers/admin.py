@@ -613,3 +613,44 @@ _TEMPLATE_VARIABLES = [
 def get_template_variables(admin: Any = Depends(require_admin)) -> list[dict[str, str]]:
     """Return all available template placeholders."""
     return _TEMPLATE_VARIABLES
+
+
+# ─── Notification Config Management ───
+
+from app.config import update_notification_config
+from pydantic import field_validator
+
+
+class NotificationConfigUpdate(BaseModel):
+    enabled: bool | None = None
+    check_interval_minutes: int | None = None
+    thresholds: list[int] | None = None
+    email_domain: str | None = None
+
+
+@router.get("/notification-config")
+def get_notification_config(_user: dict[str, Any] = Depends(require_admin)) -> dict[str, Any]:
+    """Get current notification config."""
+    from app.config import get_config
+    cfg = get_config()
+    return cfg.get("notification", {
+        "enabled": True,
+        "check_interval_minutes": 60,
+        "thresholds": [50, 80, 100],
+        "email_domain": "",
+    })
+
+
+@router.put("/notification-config")
+def update_notif_config(
+    body: NotificationConfigUpdate,
+    _user: dict[str, Any] = Depends(require_admin),
+) -> dict[str, Any]:
+    """Update notification config (persisted to config.yaml; interval/enabled require restart)."""
+    result = update_notification_config(
+        enabled=body.enabled,
+        check_interval_minutes=body.check_interval_minutes,
+        thresholds=body.thresholds,
+        email_domain=body.email_domain,
+    )
+    return result

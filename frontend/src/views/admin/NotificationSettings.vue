@@ -6,6 +6,7 @@
     <el-card>
       <template #header>
         <span>邮件通知设置</span>
+        <el-button type="primary" size="small" style="float: right" @click="handleSaveConfig">保存配置</el-button>
       </template>
 
       <el-form label-width="120px">
@@ -21,6 +22,7 @@
             <el-option :value="60" label="60 分钟" />
             <el-option :value="120" label="120 分钟" />
           </el-select>
+          <span style="margin-left: 8px; color: #909399; font-size: 12px">（修改后需重启服务生效）</span>
         </el-form-item>
 
         <!-- 触发阈值 -->
@@ -28,11 +30,12 @@
           <el-input-number v-model="form.thresholds[0]" :min="0" :max="100" style="width: 100px" />%
           <el-input-number v-model="form.thresholds[1]" :min="0" :max="100" style="width: 100px; margin-left: 10px" />%
           <el-input-number v-model="form.thresholds[2]" :min="0" :max="100" style="width: 100px; margin-left: 10px" />%
+          <span style="margin-left: 8px; color: #909399; font-size: 12px">（0 表示忽略该档）</span>
         </el-form-item>
 
         <!-- 邮件域名 -->
         <el-form-item label="邮件域名">
-          <el-input v-model="form.emailDomain" placeholder="example.com" style="width: 300px" />
+          <el-input v-model="form.emailDomain" placeholder="example.com（AD mail 为空时自动拼接）" style="width: 300px" />
         </el-form-item>
       </el-form>
     </el-card>
@@ -111,6 +114,33 @@ const DEFAULT_BODY = `<p>您好 {{username}}（{{user_id}}），</p>
 <p>配额将于 {{reset_time}} 自动重置，如需提升配额请联系管理员。</p>
 <p>— AI Code Usage 系统</p>`
 
+async function loadConfig() {
+  try {
+    const resp = await api.get('/api/admin/notification-config')
+    const d = resp.data
+    form.value.enabled = d.enabled ?? true
+    form.value.checkInterval = d.check_interval_minutes ?? 60
+    form.value.thresholds = d.thresholds ?? [50, 80, 100]
+    form.value.emailDomain = d.email_domain ?? ''
+  } catch {
+    // use defaults
+  }
+}
+
+async function handleSaveConfig() {
+  try {
+    await api.put('/api/admin/notification-config', {
+      enabled: form.value.enabled,
+      check_interval_minutes: form.value.checkInterval,
+      thresholds: form.value.thresholds,
+      email_domain: form.value.emailDomain,
+    })
+    ElMessage.success('配置已保存（间隔/开关修改需重启服务生效）')
+  } catch {
+    ElMessage.error('保存配置失败')
+  }
+}
+
 async function loadTemplate() {
   try {
     const resp = await api.get('/api/admin/email-template')
@@ -162,6 +192,7 @@ function handleReset() {
 }
 
 onMounted(() => {
+  loadConfig()
   loadTemplate()
   loadVariables()
 })
