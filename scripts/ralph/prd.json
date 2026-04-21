@@ -373,7 +373,7 @@
         "所有操作有 ElMessage 成功/失败提示"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "依赖 US-021，前端收尾",
       "source": "requirements-quota-email-v2.md §2.10"
     }
