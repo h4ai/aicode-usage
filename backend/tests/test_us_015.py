@@ -46,16 +46,16 @@ def test_ac1_leaderboard_sorted_by_token(client, admin_token, admin_config_patch
     assert data[0]["monthly_token"] >= data[1]["monthly_token"]
 
 
-def test_ac1_top_param_limits_results(client, admin_token, admin_config_patch):
-    """AC-1: top parameter is passed to leaderboard function."""
-    with patch("app.routers.admin.get_leaderboard", return_value=_MOCK_LEADERBOARD[:1]) as mock_fn:
+def test_ac1_returns_all_users(client, admin_token, admin_config_patch):
+    """AC-1: leaderboard returns all users (no top limit); frontend handles pagination."""
+    with patch("app.routers.admin.get_leaderboard", return_value=_MOCK_LEADERBOARD) as mock_fn:
         resp = client.get(
-            "/api/admin/leaderboard", headers={"Authorization": f"Bearer {admin_token}"}, params={"top": 1}
+            "/api/admin/leaderboard", headers={"Authorization": f"Bearer {admin_token}"}
         )
     assert resp.status_code == 200
-    # Verify top param was forwarded
+    # Verify top=None (all users)
     mock_fn.assert_called_once()
-    assert mock_fn.call_args.kwargs.get("top") == 1 or mock_fn.call_args.args[0] == 1
+    assert mock_fn.call_args.kwargs.get("top") is None
 
 
 def test_ac2_response_has_required_fields(client, admin_token, admin_config_patch):

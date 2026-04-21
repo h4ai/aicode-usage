@@ -41,6 +41,22 @@
               value="gray"
             />
           </el-select>
+          <el-radio-group v-model="monthMode" size="small" style="margin-left:8px" @change="onMonthModeChange">
+            <el-radio-button value="current">本月</el-radio-button>
+            <el-radio-button value="last">上月</el-radio-button>
+            <el-radio-button value="custom">历史</el-radio-button>
+          </el-radio-group>
+          <el-date-picker
+            v-if="monthMode === 'custom'"
+            v-model="selectedMonth"
+            type="month"
+            size="small"
+            style="margin-left:8px;width:130px"
+            placeholder="选择月份"
+            format="YYYY-MM"
+            value-format="YYYY-MM"
+            @change="fetchUsers"
+          />
           <el-button
             size="small"
             :loading="exporting"
@@ -82,11 +98,6 @@
         prop="display_name"
         label="姓名"
         min-width="90"
-      />
-      <el-table-column
-        prop="user_id"
-        label="userId"
-        min-width="100"
       />
       <el-table-column
         prop="enterprise"
@@ -160,7 +171,7 @@
         :sort-method="(a: UserItem, b: UserItem) => a.today_token - b.today_token"
       >
         <template #default="{ row }">
-          <span>{{ formatWan(row.today_token) }}</span>
+          <span>{{ isCurrentMonth ? formatWan(row.today_token) : '--' }}</span>
         </template>
       </el-table-column>
 
@@ -172,29 +183,32 @@
         :sort-method="(a: UserItem, b: UserItem) => a.today_chats - b.today_chats"
       >
         <template #default="{ row }">
-          <span :class="'text-' + row.status_chat">{{ row.today_chats }}</span>
-          <el-tag
-            v-if="row.status_chat === 'red'"
-            type="danger"
-            size="small"
-            style="margin-left:4px"
-          >
-            超限
-          </el-tag>
-          <el-tag
-            v-else-if="row.status_chat === 'yellow'"
-            type="warning"
-            size="small"
-            style="margin-left:4px"
-          >
-            警告
-          </el-tag>
+          <template v-if="isCurrentMonth">
+            <span :class="'text-' + row.status_chat">{{ row.today_chats }}</span>
+            <el-tag
+              v-if="row.status_chat === 'red'"
+              type="danger"
+              size="small"
+              style="margin-left:4px"
+            >
+              超限
+            </el-tag>
+            <el-tag
+              v-else-if="row.status_chat === 'yellow'"
+              type="warning"
+              size="small"
+              style="margin-left:4px"
+            >
+              警告
+            </el-tag>
+          </template>
+          <span v-else>--</span>
         </template>
       </el-table-column>
 
-      <!-- 本月对话轮次 -->
+      <!-- 当月对话轮次 -->
       <el-table-column
-        label="本月对话"
+        label="当月对话"
         width="100"
         sortable
         :sort-method="(a: UserItem, b: UserItem) => a.monthly_chats - b.monthly_chats"
@@ -203,9 +217,9 @@
           <span>{{ row.monthly_chats }}</span>
         </template>
       </el-table-column>
-      <!-- 本月总Token（全天，不受时段过滤） -->
+      <!-- 当月总Token（全天，不受时段过滤） -->
       <el-table-column
-        label="本月总Token"
+        label="当月总Token"
         min-width="120"
         sortable
         :sort-method="(a: UserItem, b: UserItem) => a.monthly_token_all - b.monthly_token_all"
@@ -222,7 +236,7 @@
         :sort-method="(a: UserItem, b: UserItem) => (a.today_chats_all ?? a.today_chats) - (b.today_chats_all ?? b.today_chats)"
       >
         <template #default="{ row }">
-          <span>{{ row.today_chats_all ?? row.today_chats }}</span>
+          <span>{{ isCurrentMonth ? (row.today_chats_all ?? row.today_chats) : '--' }}</span>
         </template>
       </el-table-column>
     </el-table>
@@ -271,6 +285,28 @@ const searchText = ref('')
 const filterStatus = ref('')
 const currentPage = ref(1)
 const pageSize = ref(20)
+const monthMode = ref<'current' | 'last' | 'custom'>('current')
+const selectedMonth = ref<string | null>(null)  // 'YYYY-MM'
+
+// 计算当前查询的 year/month
+function _queryYearMonth(): { year: number; month: number; isCurrent: boolean } {
+  const now = new Date()
+  if (monthMode.value === 'current') {
+    return { year: now.getFullYear(), month: now.getMonth() + 1, isCurrent: true }
+  } else if (monthMode.value === 'last') {
+    const d = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    return { year: d.getFullYear(), month: d.getMonth() + 1, isCurrent: false }
+  } else if (selectedMonth.value) {
+    const [y, m] = selectedMonth.value.split('-').map(Number)
+    const isCurrent = y === now.getFullYear() && m === now.getMonth() + 1
+    return { year: y, month: m, isCurrent }
+  }
+  return { year: now.getFullYear(), month: now.getMonth() + 1, isCurrent: true }
+}
+
+function onMonthModeChange() {
+  if (monthMode.value !== 'custom') fetchUsers()
+}
 
 function formatWan(n: number): string {
   if (n >= 100000000) return (n / 100000000).toFixed(1) + '亿'
@@ -315,10 +351,14 @@ const pagedUsers = computed(() => {
   return filteredUsers.value.slice(start, start + pageSize.value)
 })
 
+const isCurrentMonth = computed(() => _queryYearMonth().isCurrent)
+
 async function fetchUsers() {
   loading.value = true
   try {
-    const { data } = await api.get<UserItem[]>(`/admin/users?time_filter=all`)
+    const { year, month } = _queryYearMonth()
+    const url = `/admin/users?time_filter=all&year=${year}&month=${month}`
+    const { data } = await api.get<UserItem[]>(url)
     // 默认按状态+月 Token 排序
     const order = { red: 0, yellow: 1, green: 2, gray: 3 }
     data.sort((a, b) => {
@@ -347,11 +387,13 @@ async function changeLevel(userId: string, level: string) {
 async function exportCsv() {
   exporting.value = true
   try {
-    const { data } = await api.get(`/admin/users/export-csv?time_filter=all`, { responseType: 'blob' })
+    const { year, month } = _queryYearMonth()
+    const url_path = `/admin/users/export-csv?time_filter=all&year=${year}&month=${month}`
+    const { data } = await api.get(url_path, { responseType: 'blob' })
     const url = URL.createObjectURL(data as Blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `users_export_${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `users_export_${year}-${String(month).padStart(2, '0')}.csv`
     a.click()
     URL.revokeObjectURL(url)
   } catch {

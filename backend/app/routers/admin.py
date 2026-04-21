@@ -15,13 +15,19 @@ from pydantic import BaseModel
 
 from app.deps import require_admin
 from app.services.clickhouse import (
+    get_all_users_chats_in_range,
+    get_all_users_chats_in_month,
     get_all_users_daily_requests,
     get_all_users_from_clickhouse,
     get_all_users_monthly_chats,
     get_all_users_monthly_requests,
     get_all_users_monthly_tokens,
+    get_all_users_requests_in_range,
+    get_all_users_requests_in_month,
     get_all_users_today_chats,
     get_all_users_today_tokens,
+    get_all_users_tokens_in_range,
+    get_all_users_tokens_in_month,
     get_global_trend,
     get_global_trend_by_dept,
     get_global_trend_by_model,
@@ -132,26 +138,44 @@ def _chat_status(used: int, limit: int) -> str:
 @router.get("/users", response_model=list[UserItem])
 def list_users(
     time_filter: str = Query("all", description="all|work|non_work"),
+    year: int | None = Query(None, description="年份，不传则当前年"),
+    month: int | None = Query(None, description="月份 1-12，不传则当前月"),
     _user: dict[str, Any] = Depends(require_admin),
 ) -> list[UserItem]:
+    from datetime import datetime as _dt
+    now = _dt.now()
+    q_year = year or now.year
+    q_month = month or now.month
+    is_current_month = (q_year == now.year and q_month == now.month)
+
     # 从 ClickHouse 获取完整用户列表（PG 可能不完整）
     ch_users = get_all_users_from_clickhouse()
     # 从 PG 获取配额设置（可能为空，不影响用户列表展示）
     pg_users = get_all_users()
     pg_quota_map = {u["user_id"]: u.get("quota_level", "L1") for u in pg_users}
 
-    monthly_tokens = get_all_users_monthly_tokens(time_filter)
-    today_tokens = get_all_users_today_tokens(time_filter)
-    today_chats = get_all_users_today_chats(time_filter)
-    monthly_chats = get_all_users_monthly_chats(time_filter)
-    daily_reqs = get_all_users_daily_requests()
-    # 全天数据（不受 time_filter 影响，用于"总量"列展示）
-    monthly_tokens_all = get_all_users_monthly_tokens("all") if time_filter != "all" else monthly_tokens
-    today_chats_all = get_all_users_today_chats("all") if time_filter != "all" else today_chats
+    # 按月查询 Token / 对话 / 请求
+    monthly_tokens = get_all_users_tokens_in_month(q_year, q_month, time_filter)
+    monthly_chats = get_all_users_chats_in_month(q_year, q_month, time_filter)
+    monthly_tokens_all = get_all_users_tokens_in_month(q_year, q_month, "all") if time_filter != "all" else monthly_tokens
+    today_chats_all_map = get_all_users_today_chats("all") if (is_current_month and time_filter != "all") else {}
+
+    if is_current_month:
+        today_tokens = get_all_users_today_tokens(time_filter)
+        today_chats = get_all_users_today_chats(time_filter)
+        daily_reqs = get_all_users_daily_requests()
+        today_chats_all = today_chats_all_map
+    else:
+        # 历史月份：今日相关字段置空（-1 表示前端显示 --）
+        today_tokens = {}
+        today_chats = {}
+        daily_reqs = {}
+        today_chats_all = {}
+
     quota_cache: dict[str, dict] = {}
     result: list[UserItem] = []
     for u in ch_users:
-        uid = u["username"]   # ClickHouse username 字段（三种格式之一）
+        uid = u["username"]   # ClickHouse username 字段（userNickname）
         display_name = u.get("nickname") or uid
         level = pg_quota_map.get(uid, "L1")  # PG 为空时默认 L1
         if level not in quota_cache:
@@ -262,12 +286,17 @@ class DeptSummaryItem(BaseModel):
     avg_token_per_user: int
 
 
-def get_department_summary(time_filter: str = "all") -> list[dict[str, Any]]:
+def get_department_summary(time_filter: str = "all", start: str | None = None, end: str | None = None) -> list[dict[str, Any]]:
     """Compute department summary by merging PostgreSQL users with ClickHouse token data."""
     users = get_all_users()
-    monthly_tokens = get_all_users_monthly_tokens(time_filter)
-    monthly_requests = get_all_users_monthly_requests(time_filter)
-    monthly_chats_data = get_all_users_monthly_chats(time_filter)
+    if start and end:
+        monthly_tokens = get_all_users_tokens_in_range(start, end, time_filter)
+        monthly_requests = get_all_users_requests_in_range(start, end, time_filter)
+        monthly_chats_data = get_all_users_chats_in_range(start, end, time_filter)
+    else:
+        monthly_tokens = get_all_users_monthly_tokens(time_filter)
+        monthly_requests = get_all_users_monthly_requests(time_filter)
+        monthly_chats_data = get_all_users_monthly_chats(time_filter)
 
     # Group users by enterprise
     dept_users: dict[str, list[str]] = {}
@@ -299,10 +328,12 @@ def get_department_summary(time_filter: str = "all") -> list[dict[str, Any]]:
 @router.get("/departments", response_model=list[DeptSummaryItem])
 def list_departments(
     time_filter: str = Query("all", description="all|work|non_work"),
+    start: str | None = Query(None, description="开始日期 YYYY-MM-DD"),
+    end: str | None = Query(None, description="结束日期 YYYY-MM-DD"),
     _user: dict[str, Any] = Depends(require_admin),
 ) -> list[DeptSummaryItem]:
     """Return token usage summary grouped by enterprise/department."""
-    rows = get_department_summary(time_filter)
+    rows = get_department_summary(time_filter, start, end)
     return [DeptSummaryItem(**row) for row in rows]
 
 
@@ -321,36 +352,52 @@ class LeaderboardItem(BaseModel):
     quota_usage_pct: float
 
 
-def get_leaderboard(top: int = 10, time_filter: str = "all") -> list[dict[str, Any]]:
-    """Return top N users sorted by monthly token consumption."""
-    users = get_all_users()
-    monthly_tokens = get_all_users_monthly_tokens(time_filter)
-    monthly_reqs = get_all_users_monthly_requests(time_filter)
-    monthly_chats_data = get_all_users_monthly_chats(time_filter)
+def get_leaderboard(top: int | None = None, time_filter: str = "all", start: str | None = None, end: str | None = None) -> list[dict[str, Any]]:
+    """Return all users sorted by token consumption in the given range."""
+    # 主数据源：ClickHouse（key = userNickname）
+    ch_users = get_all_users_from_clickhouse()
+    # PG 用于获取 quota_level
+    pg_users = get_all_users()
+    pg_quota_map = {u["user_id"]: u.get("quota_level", "L1") for u in pg_users}
+
+    if start and end:
+        tokens_map = get_all_users_tokens_in_range(start, end, time_filter)
+        reqs_map = get_all_users_requests_in_range(start, end, time_filter)
+        chats_map = get_all_users_chats_in_range(start, end, time_filter)
+    else:
+        tokens_map = get_all_users_monthly_tokens(time_filter)
+        reqs_map = get_all_users_monthly_requests(time_filter)
+        chats_map = get_all_users_monthly_chats(time_filter)
+
     quota_levels_data = get_all_quota_levels()
     level_limits = {lv["level"]: lv["monthly_token"] for lv in quota_levels_data}
 
+    # ch_users key = username（userNickname），与 tokens_map key 一致
     ranked = sorted(
-        users,
-        key=lambda u: monthly_tokens.get(u["user_id"], 0),
+        ch_users,
+        key=lambda u: tokens_map.get(u["username"], 0),
         reverse=True,
-    )[:top]
+    )
+    if top:
+        ranked = ranked[:top]
 
     result: list[dict[str, Any]] = []
     for i, u in enumerate(ranked, start=1):
-        mt = monthly_tokens.get(u["user_id"], 0)
-        limit = level_limits.get(u.get("quota_level", "L1"), 1) or 1
+        uid = u["username"]   # userNickname
+        level = pg_quota_map.get(uid, "L1")
+        limit = level_limits.get(level, 1) or 1
+        mt = tokens_map.get(uid, 0)
         pct = round(mt / limit * 100, 1)
         result.append(
             {
                 "rank": i,
-                "user_id": u["user_id"],
-                "display_name": u.get("nickname") or u.get("username") or u["user_id"],
+                "user_id": uid,
+                "display_name": u.get("nickname") or uid,
                 "enterprise": u.get("enterprise") or "未知",
-                "quota_level": u.get("quota_level", "L1"),
+                "quota_level": level,
                 "monthly_token": mt,
-                "monthly_requests": monthly_reqs.get(u["user_id"], 0),
-                "monthly_chats": monthly_chats_data.get(u["user_id"], 0),
+                "monthly_requests": reqs_map.get(uid, 0),
+                "monthly_chats": chats_map.get(uid, 0),
                 "quota_usage_pct": pct,
             }
         )
@@ -359,12 +406,13 @@ def get_leaderboard(top: int = 10, time_filter: str = "all") -> list[dict[str, A
 
 @router.get("/leaderboard", response_model=list[LeaderboardItem])
 def list_leaderboard(
-    top: int = Query(10, ge=1, le=100),
     time_filter: str = Query("all", description="all|work|non_work"),
+    start: str | None = Query(None, description="开始日期 YYYY-MM-DD"),
+    end: str | None = Query(None, description="结束日期 YYYY-MM-DD"),
     _user: dict[str, Any] = Depends(require_admin),
 ) -> list[LeaderboardItem]:
-    """Return top N users by monthly token usage."""
-    rows = get_leaderboard(top=top, time_filter=time_filter)
+    """Return all users sorted by token usage (frontend handles pagination)."""
+    rows = get_leaderboard(top=None, time_filter=time_filter, start=start, end=end)
     return [LeaderboardItem(**row) for row in rows]
 
 
@@ -374,10 +422,22 @@ def list_leaderboard(
 @router.get("/users/export-csv")
 def export_users_csv(
     time_filter: str = Query("all", description="all|work|non_work"),
+    year: int | None = Query(None, description="年份"),
+    month: int | None = Query(None, description="月份 1-12"),
     _user: dict[str, Any] = Depends(require_admin),
 ) -> StreamingResponse:
     """Export user list as CSV."""
-    users_data = list_users(time_filter=time_filter, _user=_user)
+    from datetime import datetime as _dt
+    now = _dt.now()
+    q_year = year or now.year
+    q_month = month or now.month
+    users_data = list_users(time_filter=time_filter, year=q_year, month=q_month, _user=_user)
+    is_current_month = (q_year == now.year and q_month == now.month)
+    period_label = f"{q_year}-{q_month:02d}"
+    token_col = f"{period_label} Token(全天)" if not is_current_month else "本月总Token(全天)"
+    chat_col = f"{period_label} 对话轮次" if not is_current_month else "本月对话轮次"
+    filename = f"users_export_{period_label}.csv"
+
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(
@@ -387,11 +447,11 @@ def export_users_csv(
             "部门",
             "配额级别",
             "本月限额Token",
-            "本月总Token(全天)",
+            token_col,
             "今日Token",
             "今日限额对话",
             "今日总对话(全天)",
-            "本月对话轮次",
+            chat_col,
             "今日请求次数",
             "Token状态",
             "对话状态",
@@ -419,7 +479,41 @@ def export_users_csv(
     return StreamingResponse(
         iter([output.getvalue()]),
         media_type="text/csv; charset=utf-8-sig",
-        headers={"Content-Disposition": "attachment; filename=users_export.csv"},
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
+
+@router.get("/leaderboard/export-csv")
+def export_leaderboard_csv(
+    top: int = Query(100, ge=1, le=500),
+    time_filter: str = Query("all", description="all|work|non_work"),
+    start: str | None = Query(None, description="开始日期 YYYY-MM-DD"),
+    end: str | None = Query(None, description="结束日期 YYYY-MM-DD"),
+    _user: dict[str, Any] = Depends(require_admin),
+) -> StreamingResponse:
+    """Export leaderboard as CSV."""
+    rows = get_leaderboard(top=top, time_filter=time_filter, start=start, end=end)
+    has_range = bool(start and end)
+    period_label = f"{start}~{end}" if has_range else "本月"
+    filename = f"leaderboard_export_{start}_{end}.csv" if has_range else "leaderboard_export.csv"
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(
+        ["排名", "姓名", "分组", "配额级别",
+         f"Token({period_label})", f"请求数({period_label})", f"对话轮次({period_label})", "配额使用%"]
+    )
+    for r in rows:
+        writer.writerow([
+            r["rank"], r["display_name"], r["enterprise"], r["quota_level"],
+            r["monthly_token"], r["monthly_requests"], r["monthly_chats"], r["quota_usage_pct"],
+        ])
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv; charset=utf-8-sig",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
 
 
