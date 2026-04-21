@@ -11,9 +11,10 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.config import get_config
 from app.routers import admin, auth, health, metrics, quota
 from app.services.database import init_db
-from app.services.notification import check_quota_alerts
+from app.services.notification_v2 import check_quota_alerts
 
 logger = logging.getLogger(__name__)
 
@@ -39,9 +40,15 @@ _scheduler = BackgroundScheduler()
 @app.on_event("startup")
 def _startup() -> None:
     init_db()
-    _scheduler.add_job(check_quota_alerts, "interval", hours=1, id="quota_alerts")
+    cfg = get_config()
+    notif_cfg = cfg.get("notification", {})
+    if notif_cfg.get("enabled", True) is False:
+        logger.info("Notification disabled, skipping scheduler")
+        return
+    interval = notif_cfg.get("check_interval_minutes", 60)
+    _scheduler.add_job(check_quota_alerts, "interval", minutes=interval, id="quota_alerts")
     _scheduler.start()
-    logger.info("APScheduler started: quota_alerts job scheduled every 1h")
+    logger.info("APScheduler started: quota_alerts job scheduled every %d min", interval)
 
 
 @app.on_event("shutdown")
