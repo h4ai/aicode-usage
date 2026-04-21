@@ -183,7 +183,21 @@ async function copyPlaceholder(name: string) {
     await navigator.clipboard.writeText(text)
     ElMessage.success(`已复制 ${text}`)
   } catch {
-    ElMessage.info(`占位符：${text}`)
+    // Clipboard API 在非 HTTPS 环境不可用，降级到 execCommand
+    const el = document.createElement('textarea')
+    el.value = text
+    el.style.position = 'fixed'
+    el.style.opacity = '0'
+    document.body.appendChild(el)
+    el.focus()
+    el.select()
+    const ok = document.execCommand('copy')
+    document.body.removeChild(el)
+    if (ok) {
+      ElMessage.success(`已复制 ${text}`)
+    } else {
+      ElMessage.warning(`请手动复制：${text}`)
+    }
   }
 }
 
