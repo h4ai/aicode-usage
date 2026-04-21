@@ -1,6 +1,6 @@
 {
   "project": "ai-code-usage",
-  "branchName": "ralph/ai-code-usage-dashboard",
+  "branchName": "feature/quota-email-v2",
   "description": "AI Code Usage 数据看板 — 企业内部 AI 编码工具用量统计与配额管理平台，包含认证模块、个人看板、管理员后台三大功能块。",
   "userStories": [
     {
@@ -265,6 +265,117 @@
       "passes": true,
       "notes": "",
       "source": "requirements.md §五邮件通知"
+    },
+    {
+      "id": "US-017",
+      "title": "邮件通知数据库表迁移（email_notifications + email_templates）",
+      "description": "系统需要新的 PG 表支持多阈值、多配额项的发送去重记录和可配置邮件模板。",
+      "acceptanceCriteria": [
+        "新建 email_notifications 表：(id, user_id, quota_type, threshold, period_key, sent_at, over_limit)，UNIQUE(user_id, quota_type, threshold, period_key)",
+        "新建 email_templates 表：(id, name, subject, body_html, updated_at)，name 唯一",
+        "init_db() 自动创建上述两张表（IF NOT EXISTS）",
+        "内置默认模板写入 email_templates（name='default'），含全部 9 个占位符",
+        "has_sent_notification(user_id, quota_type, threshold, period_key) 函数返回 bool",
+        "mark_notification_sent(user_id, quota_type, threshold, period_key, over_limit) 函数写入记录",
+        "get_email_template(name) 函数从 PG 查询模板，不存在时返回内置默认",
+        "save_email_template(name, subject, body_html) 函数 upsert 模板",
+        "旧 email_alerts 表保留，代码不再写入（向前兼容）",
+        "pytest 全量通过"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "先建表和 DB 函数，后续 US 依赖此基础",
+      "source": "requirements-quota-email-v2.md §2.6"
+    },
+    {
+      "id": "US-018",
+      "title": "多阈值多配额项邮件通知核心逻辑",
+      "description": "重写 check_quota_alerts()，支持 monthly_token 和 daily_chats 双配额项、多阈值（50/80/100%），配额为 0 时跳过，逐个发送，最多重试 3 次。",
+      "acceptanceCriteria": [
+        "check_quota_alerts() 同时检查 monthly_token 和 daily_chats 两个配额项",
+        "配额值为 0 的配额项直接跳过",
+        "从 config.yaml notification.thresholds 读取阈值列表，值为 0 的阈值跳过",
+        "月度 Token period_key 格式为 'YYYY-MM'，日对话轮次 period_key 格式为 'YYYY-MM-DD'",
+        "同一 (user_id, quota_type, threshold, period_key) 只发一次",
+        "threshold=100 时调用 on_over_limit(user_id, quota_type) 钩子（当前仅 logger.warning）",
+        "SMTP 发送失败时重试最多 3 次（指数退避 1s/2s/4s），3 次失败后记录错误日志跳过",
+        "发送成功后写入 email_notifications 表",
+        "notification.enabled=false 时直接返回",
+        "pytest 全量通过（mock SMTP 和 ClickHouse）"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "依赖 US-017",
+      "source": "requirements-quota-email-v2.md §2.1 §2.2 §2.5 §2.8"
+    },
+    {
+      "id": "US-019",
+      "title": "邮件模板变量替换与地址构成",
+      "description": "发送前将模板占位符替换为实际数据；AD mail 为空时按 {sam}@{domain} 自动拼接。",
+      "acceptanceCriteria": [
+        "render_template(template_body, context_dict) 替换全部 9 个占位符：{{username}} {{user_id}} {{quota_type_label}} {{used}} {{limit}} {{percent}} {{threshold}} {{period}} {{reset_time}}",
+        "月度Token：quota_type_label='月度Token'，period='YYYY年M月'，reset_time='每月1日重置'",
+        "日对话轮次：quota_type_label='日对话轮次'，period='今日（M月D日）'，reset_time='次日00:00重置'",
+        "used/limit 格式化为千分位（如 8,000,000），percent 格式为 '80.5%'",
+        "AD mail 有值时直接使用，为空时拼接 {sam}@{notification.email_domain}",
+        "email_domain 未配置且 mail 为空时跳过用户并记录 debug 日志",
+        "pytest 全量通过"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "依赖 US-017 US-018",
+      "source": "requirements-quota-email-v2.md §2.4 §2.5"
+    },
+    {
+      "id": "US-020",
+      "title": "定时任务间隔可配置",
+      "description": "APScheduler 定时任务间隔从 config.yaml 读取，支持配置化。",
+      "acceptanceCriteria": [
+        "从 config.yaml notification.check_interval_minutes 读取间隔，默认 60",
+        "APScheduler job 使用该配置值（单位 minutes）",
+        "notification.enabled=false 时不启动 scheduler job",
+        "字段缺失时使用默认值 60，不抛异常",
+        "pytest 全量通过"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "依赖 US-018",
+      "source": "requirements-quota-email-v2.md §2.3"
+    },
+    {
+      "id": "US-021",
+      "title": "邮件模板管理 API",
+      "description": "管理后台 API：获取/更新/预览邮件模板，所有管理员可操作。",
+      "acceptanceCriteria": [
+        "GET /api/admin/email-template 返回 {name, subject, body_html, updated_at}",
+        "PUT /api/admin/email-template 更新模板 {subject, body_html}，需管理员权限",
+        "POST /api/admin/email-template/preview 接受 {subject, body_html} 返回渲染后 HTML，需管理员权限",
+        "GET /api/admin/email-template/variables 返回所有占位符列表（name + description）",
+        "模板中未知占位符保持原样不报错",
+        "pytest 全量通过"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "依赖 US-019",
+      "source": "requirements-quota-email-v2.md §2.6 §2.10"
+    },
+    {
+      "id": "US-022",
+      "title": "通知设置前端页面",
+      "description": "管理后台新增「通知设置」页面，支持配置开关/间隔/阈值/域名/模板编辑预览。",
+      "acceptanceCriteria": [
+        "管理后台侧边栏新增「通知设置」菜单项，仅 admin 可见",
+        "页面包含：邮件通知开关、检查间隔下拉（30/60/120分钟）、触发阈值3档输入、邮件域名输入",
+        "模板编辑区：标题输入框 + 正文 HTML 文本框 + 占位符列表提示（只读）",
+        "预览按钮调用 POST /api/admin/email-template/preview，对话框展示渲染结果",
+        "保存模板按钮调用 PUT /api/admin/email-template",
+        "重置默认模板按钮：恢复内置默认内容到输入框（不自动保存）",
+        "所有操作有 ElMessage 成功/失败提示"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "依赖 US-021，前端收尾",
+      "source": "requirements-quota-email-v2.md §2.10"
     }
   ]
 }
