@@ -304,7 +304,7 @@
         "pytest 全量通过（mock SMTP 和 ClickHouse）"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "依赖 US-017",
       "source": "requirements-quota-email-v2.md §2.1 §2.2 §2.5 §2.8"
     },
