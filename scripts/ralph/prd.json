@@ -283,7 +283,7 @@
         "pytest 全量通过"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "notes": "先建表和 DB 函数，后续 US 依赖此基础",
       "source": "requirements-quota-email-v2.md §2.6"
     },
