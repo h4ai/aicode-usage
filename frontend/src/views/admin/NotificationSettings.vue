@@ -66,7 +66,7 @@
             style="margin-right: 8px; margin-bottom: 4px"
             type="info"
           >
-            {{ '{{' + v.name + '}}' }} - {{ v.description }}
+            <span v-text="`{{${v.name}}}`"></span> - {{ v.description }}
           </el-tag>
         </el-form-item>
 
