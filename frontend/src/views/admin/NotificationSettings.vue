@@ -107,12 +107,15 @@ const variables = ref<{ name: string; description: string }[]>([])
 const previewVisible = ref(false)
 const previewData = ref({ subject: '', bodyHtml: '' })
 
-const DEFAULT_SUBJECT = '【AI Code Usage】您的{{quota_type_label}}用量已达 {{threshold}}'
-const DEFAULT_BODY = `<p>您好 {{username}}（{{user_id}}），</p>
-<p>您的 <strong>{{quota_type_label}}</strong> 在 {{period}} 已使用 <strong>{{percent}}</strong>（{{used}} / {{limit}}）。</p>
-<p>当前触发阈值：{{threshold}}。</p>
-<p>配额将于 {{reset_time}} 自动重置，如需提升配额请联系管理员。</p>
-<p>— AI Code Usage 系统</p>`
+const PH = (k: string) => `\x7b\x7b${k}\x7d\x7d`
+const DEFAULT_SUBJECT = `【AI Code Usage】您的${PH('quota_type_label')}用量已达 ${PH('threshold')}`
+const DEFAULT_BODY = [
+  `<p>您好 ${PH('username')}（${PH('user_id')}），</p>`,
+  `<p>您的 <strong>${PH('quota_type_label')}</strong> 在 ${PH('period')} 已使用 <strong>${PH('percent')}</strong>（${PH('used')} / ${PH('limit')}）。</p>`,
+  `<p>当前触发阈值：${PH('threshold')}。</p>`,
+  `<p>配额将于 ${PH('reset_time')} 自动重置，如需提升配额请联系管理员。</p>`,
+  `<p>— AI Code Usage 系统</p>`,
+].join('\n')
 
 async function loadConfig() {
   try {
