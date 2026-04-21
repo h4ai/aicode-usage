@@ -8,8 +8,11 @@ from __future__ import annotations
 import logging
 
 from apscheduler.schedulers.background import BackgroundScheduler
-from fastapi import FastAPI
+from fastapi import FastAPI, Request  # noqa: F401
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from app.config import get_config
 from app.routers import admin, auth, health, metrics, quota
@@ -18,11 +21,20 @@ from app.services.notification_v2 import check_quota_alerts
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="AI Code Usage API", version="0.1.0")
+# ---------------------------------------------------------------------------
+# Rate limiter (shared instance, imported by routers)
+# ---------------------------------------------------------------------------
+limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
 
+app = FastAPI(title="AI Code Usage API", version="0.1.0")
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
+
+# CORS: read from config.yaml security.cors_origins; default ["*"] for backward-compat
+_cors_origins = get_config().get("security", {}).get("cors_origins", ["*"])
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

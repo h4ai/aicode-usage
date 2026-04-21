@@ -14,12 +14,17 @@ import logging
 from typing import Any
 
 import bcrypt
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from app.config import get_config
 from app.services.auth import create_token
 from app.services.database import upsert_user
+
+# 登录限速：每IP每分钟最多10次
+_limiter = Limiter(key_func=get_remote_address)
 from app.services.ldap_service import (
     LdapAuthError,
     LdapUnavailableError,
@@ -51,7 +56,8 @@ def _find_admin(username: str, cfg: dict[str, Any]) -> dict[str, Any] | None:
 
 
 @router.post("/login", response_model=LoginResponse)
-def login(body: LoginRequest) -> LoginResponse:
+@_limiter.limit("10/minute")
+def login(request: Request, body: LoginRequest) -> LoginResponse:
     """Unified login: try admin auth first, then fall back to LDAP/AD."""
     cfg = get_config()
 
