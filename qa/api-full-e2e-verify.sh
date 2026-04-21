@@ -63,7 +63,7 @@ echo "HTTP $CODE"
 
 # 1 admin login
 step "1. POST /api/auth/login (admin)"
-req POST /api/auth/login '{"username":"admin","password":"8rOcpnvEUSBCG8d#"}'
+req POST /api/auth/login '{"username":"admin","password":"admin123"}'
 CODE=$(cat /tmp/last_code)
 echo "HTTP $CODE"
 ADMIN_TOKEN=$(extract_token || true)
@@ -71,7 +71,7 @@ if [[ -n "${ADMIN_TOKEN:-}" ]]; then grn "admin token ok"; else yel "admin token
 
 # 2 test user login
 step "2. POST /api/auth/test-login (uid_001)"
-req POST /api/auth/test-login '{"user_id":"uid_001","password":"test123"}'
+req POST /api/auth/test-login '{"username":"uid_001","password":"test123"}'
 CODE=$(cat /tmp/last_code)
 echo "HTTP $CODE"
 USER_TOKEN=$(extract_token || true)
@@ -102,8 +102,8 @@ req GET "/api/metrics/trend?range=7d"
 CODE=$(cat /tmp/last_code)
 echo "HTTP $CODE"
 
-step "6. GET /api/metrics/details"
-req GET /api/metrics/details
+step "6. GET /api/metrics/detail"
+req GET /api/metrics/detail
 CODE=$(cat /tmp/last_code)
 echo "HTTP $CODE"
 
@@ -146,12 +146,12 @@ CODE=$(cat /tmp/last_code)
 echo "HTTP $CODE"
 
 step "15. POST /api/admin/email-template/preview"
-req POST /api/admin/email-template/preview '{"sample":true}'
+req POST /api/admin/email-template/preview '{"subject":"Hello {{username}}","body_html":"<p>Dear {{username}}, your token usage is {{monthly_token}}.</p>","sample":true}'
 CODE=$(cat /tmp/last_code)
 echo "HTTP $CODE"
 
 step "16. PUT /api/admin/email-template"
-req PUT /api/admin/email-template '{"title":"QA test {{username}}","body":"<p>Hello {{username}}</p>"}'
+req PUT /api/admin/email-template '{"subject":"QA Test {{username}}","body_html":"<p>Hello {{username}}, token: {{monthly_token}}</p>"}'
 CODE=$(cat /tmp/last_code)
 echo "HTTP $CODE"
 

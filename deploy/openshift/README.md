@@ -115,9 +115,21 @@ oc logs -l component=backend --tail=50
 oc logs -l component=frontend --tail=20
 ```
 
----
+### 安全配置验证
 
-## 常见问题
+```bash
+# 验证 CORS 不是通配符
+oc exec deployment/ai-code-usage-backend -- python3 -c \
+  "from app.config import get_config; print(get_config().get('security', {}))"
+
+# 验证 test-login 已关闭
+curl -X POST https://$ROUTE/api/auth/test-login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"test","password":"test"}'
+  # 应返回 404（endpoint 已禁用）或 403
+```
+
+---
 
 ### Pod 启动失败：permission denied on /var/lib/postgresql/data
 

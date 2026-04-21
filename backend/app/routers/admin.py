@@ -7,11 +7,14 @@ from __future__ import annotations
 
 import csv
 import io
+import logging
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 from app.deps import require_admin
 from app.services.clickhouse import (
@@ -74,9 +77,9 @@ def list_quota_levels(
 
 
 class QuotaLevelUpdate(BaseModel):
-    monthly_token: int
-    daily_chats: int
-    daily_requests: int
+    monthly_token: int = Field(gt=0, description="月度Token上限，必须大于0")
+    daily_chats: int = Field(gt=0, description="日对话上限，必须大于0")
+    daily_requests: int = Field(gt=0, description="日请求上限，必须大于0")
 
 
 @router.put("/quota-levels/{level}", response_model=QuotaLevelItem)
@@ -86,10 +89,14 @@ def edit_quota_level(
     _user: dict[str, Any] = Depends(require_admin),
 ) -> QuotaLevelItem:
     if level not in ("L1", "L2", "L3"):
+        logger.warning("edit_quota_level: invalid level=%s", level)
         raise HTTPException(status_code=400, detail="仅支持 L1/L2/L3 级别")
     row = update_quota_level(level, body.monthly_token, body.daily_chats, body.daily_requests)
     if row is None:
+        logger.warning("edit_quota_level: level=%s not found", level)
         raise HTTPException(status_code=404, detail="级别不存在")
+    logger.info("edit_quota_level: level=%s monthly_token=%d daily_chats=%d daily_requests=%d",
+                level, body.monthly_token, body.daily_chats, body.daily_requests)
     # Fetch user count separately since UPDATE RETURNING doesn't include it
     all_levels = get_all_quota_levels()
     for lv in all_levels:
@@ -162,45 +169,49 @@ def list_users(
     q_month = month or now.month
     is_current_month = (q_year == now.year and q_month == now.month)
 
-    # 从 ClickHouse 获取完整用户列表（PG 可能不完整）
-    ch_users = get_all_users_from_clickhouse()
-    # 从 PG 获取配额设置
-    pg_users = get_all_users()
-    pg_quota_map = {u["user_id"]: u.get("quota_level", "L1") for u in pg_users}
+    try:
+        # 从 ClickHouse 获取完整用户列表（PG 可能不完整）
+        ch_users = get_all_users_from_clickhouse()
+        # 从 PG 获取配额设置
+        pg_users = get_all_users()
+        pg_quota_map = {u["user_id"]: u.get("quota_level", "L1") for u in pg_users}
 
-    # 单次批量查询替代 6 次独立查询
-    stats = get_all_users_batch(q_year, q_month, time_filter, is_current_month)
+        # 单次批量查询替代 6 次独立查询
+        stats = get_all_users_batch(q_year, q_month, time_filter, is_current_month)
 
-    quota_cache: dict[str, dict] = {}
-    result: list[UserItem] = []
-    for u in ch_users:
-        uid = u["username"]   # ClickHouse username 字段（userNickname）
-        display_name = u.get("nickname") or uid
-        level = pg_quota_map.get(uid, "L1")
-        if level not in quota_cache:
-            quota_cache[level] = get_quota_limits(level)
-        limits = quota_cache[level]
-        s = stats.get(uid, {})
-        mt = s.get("monthly_token", 0)
-        tc = s.get("today_chats", 0)
-        result.append(
-            UserItem(
-                user_id=uid,
-                display_name=display_name,
-                enterprise=u.get("enterprise") or "未知",
-                quota_level=level,
-                monthly_token=mt,
-                today_token=s.get("today_token", 0),
-                today_chats=tc,
-                monthly_chats=s.get("monthly_chats", 0),
-                monthly_token_all=s.get("monthly_token_all", mt),
-                today_chats_all=s.get("today_chats_all", 0),
-                daily_requests=s.get("daily_requests", 0),
-                status_token=_token_status(mt, int(limits.get("monthly_token", 0))),
-                status_chat=_chat_status(tc, int(limits.get("daily_chats", 0))),
+        quota_cache: dict[str, dict] = {}
+        result: list[UserItem] = []
+        for u in ch_users:
+            uid = u["username"]   # ClickHouse username 字段（userNickname）
+            display_name = u.get("nickname") or uid
+            level = pg_quota_map.get(uid, "L1")
+            if level not in quota_cache:
+                quota_cache[level] = get_quota_limits(level)
+            limits = quota_cache[level]
+            s = stats.get(uid, {})
+            mt = s.get("monthly_token", 0)
+            tc = s.get("today_chats", 0)
+            result.append(
+                UserItem(
+                    user_id=uid,
+                    display_name=display_name,
+                    enterprise=u.get("enterprise") or "未知",
+                    quota_level=level,
+                    monthly_token=mt,
+                    today_token=s.get("today_token", 0),
+                    today_chats=tc,
+                    monthly_chats=s.get("monthly_chats", 0),
+                    monthly_token_all=s.get("monthly_token_all", mt),
+                    today_chats_all=s.get("today_chats_all", 0),
+                    daily_requests=s.get("daily_requests", 0),
+                    status_token=_token_status(mt, int(limits.get("monthly_token", 0))),
+                    status_chat=_chat_status(tc, int(limits.get("daily_chats", 0))),
+                )
             )
-        )
-    return result
+        return result
+    except Exception:
+        logger.error("list_users failed", exc_info=True)
+        raise HTTPException(status_code=500, detail="数据查询失败，请稍后重试")
 
 
 class UserLevelUpdate(BaseModel):
@@ -214,10 +225,13 @@ def change_user_level(
     _user: dict[str, Any] = Depends(require_admin),
 ) -> UserItem:
     if body.level not in ("L1", "L2", "L3"):
+        logger.warning("change_user_level: invalid level=%s for user_id=%s", body.level, user_id)
         raise HTTPException(status_code=400, detail="仅支持 L1/L2/L3 级别")
     updated = update_user_level(user_id, body.level)
     if updated is None:
+        logger.warning("change_user_level: user_id=%s not found", user_id)
         raise HTTPException(status_code=404, detail="用户不存在")
+    logger.info("change_user_level: user_id=%s new_level=%s", user_id, body.level)
     monthly_tokens = get_all_users_monthly_tokens()
     daily_reqs = get_all_users_daily_requests()
     display_name = updated.get("nickname") or updated.get("username") or updated["user_id"]
@@ -267,11 +281,15 @@ def global_trend(
     """Return global daily token trend, optionally grouped by model or department."""
     if not start or not end:
         start, end = _default_date_range()
-    if group_by == "model":
-        return get_global_trend_by_model(start, end, time_filter)
-    if group_by == "department":
-        return get_global_trend_by_dept(start, end, time_filter)
-    return get_global_trend(start, end, time_filter)
+    try:
+        if group_by == "model":
+            return get_global_trend_by_model(start, end, time_filter)
+        if group_by == "department":
+            return get_global_trend_by_dept(start, end, time_filter)
+        return get_global_trend(start, end, time_filter)
+    except Exception:
+        logger.error("global_trend failed", exc_info=True)
+        raise HTTPException(status_code=500, detail="数据查询失败，请稍后重试")
 
 
 # ---- Department summary -----------------------------------------------------
@@ -422,6 +440,7 @@ def export_users_csv(
     q_year = year or now.year
     q_month = month or now.month
     users_data = list_users(time_filter=time_filter, year=q_year, month=q_month, _user=_user)
+    logger.info("export_users_csv: period=%s-%02d rows=%d", q_year, q_month, len(users_data))
     is_current_month = (q_year == now.year and q_month == now.month)
     period_label = f"{q_year}-{q_month:02d}"
     token_col = f"{period_label} Token(全天)" if not is_current_month else "本月总Token(全天)"
@@ -512,8 +531,8 @@ def export_leaderboard_csv(
 
 class WorkingHoursConfig(BaseModel):
     enabled: bool
-    start: str  # "HH:MM"
-    end: str  # "HH:MM"
+    start: str = Field(pattern=r"^\d{2}:\d{2}$", description="开始时间 HH:MM")
+    end: str = Field(pattern=r"^\d{2}:\d{2}$", description="结束时间 HH:MM")
     weekday_only: bool = True  # True=仅周一至周五，False=不限星期
 
 
@@ -538,21 +557,18 @@ def update_working_hours(
     _user: dict[str, Any] = Depends(require_admin),
 ) -> WorkingHoursConfig:
     """Update working hours config (writes back to config.yaml)."""
-    import re
     from pathlib import Path
 
     import yaml
 
     from app.config import load_config
 
-    # validate HH:MM format
-    pat = re.compile(r"^\d{2}:\d{2}$")
-    if not pat.match(body.start) or not pat.match(body.end):
-        raise HTTPException(status_code=400, detail="时间格式必须为 HH:MM")
-
     config_path = Path(__file__).resolve().parent.parent.parent / "config.yaml"
     with open(config_path) as f:
         cfg = yaml.safe_load(f) or {}
+
+    old_wh = cfg.get("working_hours", {})
+    logger.info("update_working_hours: old=%s new=%s", old_wh, body.model_dump())
 
     cfg["working_hours"] = {
         "enabled": body.enabled,
@@ -640,9 +656,25 @@ from pydantic import field_validator
 
 class NotificationConfigUpdate(BaseModel):
     enabled: bool | None = None
-    check_interval_minutes: int | None = None
-    thresholds: list[int] | None = None
+    check_interval_minutes: int | None = Field(None, description="检查间隔（分钟），仅限 30/60/120")
+
+    @field_validator("check_interval_minutes")
+    @classmethod
+    def _valid_interval(cls, v: int | None) -> int | None:
+        if v is not None and v not in (30, 60, 120):
+            raise ValueError("check_interval_minutes must be 30, 60, or 120")
+        return v
+    thresholds: list[int] | None = Field(None, description="阈值列表，每个值1-100")
     email_domain: str | None = None
+
+    @field_validator("thresholds")
+    @classmethod
+    def validate_thresholds(cls, v: list[int] | None) -> list[int] | None:
+        if v is not None:
+            for t in v:
+                if t < 1 or t > 100:
+                    raise ValueError(f"阈值必须在 1-100 之间，收到 {t}")
+        return v
 
 
 @router.get("/notification-config")
@@ -664,6 +696,7 @@ def update_notif_config(
     _user: dict[str, Any] = Depends(require_admin),
 ) -> dict[str, Any]:
     """Update notification config (persisted to config.yaml; interval/enabled require restart)."""
+    logger.info("update_notif_config: %s", body.model_dump(exclude_none=True))
     result = update_notification_config(
         enabled=body.enabled,
         check_interval_minutes=body.check_interval_minutes,

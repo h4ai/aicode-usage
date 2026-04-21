@@ -56,7 +56,7 @@ def _find_admin(username: str, cfg: dict[str, Any]) -> dict[str, Any] | None:
 
 
 @router.post("/login", response_model=LoginResponse)
-@_limiter.limit("10/minute")
+@_limiter.limit("20/minute")
 def login(request: Request, body: LoginRequest) -> LoginResponse:
     """Unified login: try admin auth first, then fall back to LDAP/AD."""
     cfg = get_config()
