@@ -98,6 +98,9 @@ notification:
   check_interval_minutes: 60            # 轮询间隔分钟，修改后需重启服务
   thresholds: [50, 80, 100]             # 触发阈值（%），0 表示忽略该档
   email_domain: ""                      # AD mail 为空时自动拼接 sam@email_domain
+
+auth:
+  allow_test_login: false               # ⚠️ 生产环境必须为 false！true 仅用于测试环境（LDAP 不可用时绕过认证）
 ```
 
 **生成管理员密码 hash（bcrypt）：**

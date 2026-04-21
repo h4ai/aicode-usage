@@ -107,7 +107,14 @@ def login(body: LoginRequest) -> LoginResponse:
 
 @router.post("/test-login", response_model=LoginResponse)
 def test_login(body: LoginRequest) -> LoginResponse:
-    """临时测试端点：允许 ClickHouse 中存在的用户直接登录（仅测试用，勿在生产使用）。"""
+    """临时测试端点：允许 ClickHouse 中存在的用户直接登录（仅测试用，勿在生产使用）。
+
+    仅当 config.yaml 中 auth.allow_test_login: true 时生效，生产环境应设为 false（默认）。
+    """
+    cfg = get_config()
+    if not cfg.get("auth", {}).get("allow_test_login", False):
+        raise HTTPException(status_code=404, detail="Not Found")
+
     from app.services.clickhouse import _get_client  # noqa: PLC0415
 
     # 密码固定为 test123

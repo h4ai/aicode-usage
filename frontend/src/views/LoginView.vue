@@ -85,14 +85,19 @@ async function handleLogin() {
       )
       data = resp.data
     } catch (primaryErr: unknown) {
-      // 如果 LDAP 不可用，尝试测试登录端点（开发/测试环境）
+      // 如果 LDAP 不可用（503），尝试测试登录端点（开发/测试环境，生产环境 test-login 返回 404）
       const status = (primaryErr as { response?: { status?: number } }).response?.status
       if (status === 503 || status === 500) {
-        const resp = await api.post<{ token: string; role: string }>(
+        const testResp = await api.post<{ token: string; role: string }>(
           '/auth/test-login',
           { username: form.username, password: form.password },
-        )
-        data = resp.data
+        ).catch((e: unknown) => {
+          // test-login 返回 404 说明生产环境已禁用，继续抛原错误
+          const s = (e as { response?: { status?: number } }).response?.status
+          if (s === 404) throw primaryErr
+          throw e
+        })
+        data = testResp.data
       } else {
         throw primaryErr
       }
