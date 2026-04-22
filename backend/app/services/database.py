@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS quota_levels (
 
 INSERT INTO quota_levels (level, monthly_token, daily_chats, daily_requests)
 VALUES ('L1', 25000000, 100, 500), ('L2', 50000000, 200, 1000), ('L3', 100000000, 500, 2000)
-ON CONFLICT (level) DO UPDATE SET monthly_token = EXCLUDED.monthly_token, daily_chats = EXCLUDED.daily_chats;
+ON CONFLICT (level) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS email_alerts (
     user_id    TEXT NOT NULL,
