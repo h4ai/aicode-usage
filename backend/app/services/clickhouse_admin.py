@@ -74,8 +74,8 @@ def get_all_users_daily_requests() -> dict[str, int]:
 def get_global_trend(start_date: str, end_date: str, time_filter: str = "all") -> list[dict[str, Any]]:
     try:
         return _get_global_trend_impl(start_date, end_date, time_filter)
-    except Exception:
-        logger.error("get_global_trend failed (start=%s, end=%s)", start_date, end_date, exc_info=True)
+    except Exception as exc:
+        logger.error("get_global_trend failed (start=%s, end=%s): %s", start_date, end_date, exc)
         return []
 
 
@@ -113,8 +113,8 @@ def _get_global_trend_impl(start_date: str, end_date: str, time_filter: str = "a
 def get_global_trend_by_model(start_date: str, end_date: str, time_filter: str = "all") -> list[dict[str, Any]]:
     try:
         return _get_global_trend_by_model_impl(start_date, end_date, time_filter)
-    except Exception:
-        logger.error("get_global_trend_by_model failed (start=%s, end=%s)", start_date, end_date, exc_info=True)
+    except Exception as exc:
+        logger.error("get_global_trend_by_model failed (start=%s, end=%s): %s", start_date, end_date, exc)
         return []
 
 
@@ -154,8 +154,8 @@ def _get_global_trend_by_model_impl(start_date: str, end_date: str, time_filter:
 def get_global_trend_by_dept(start_date: str, end_date: str, time_filter: str = "all") -> list[dict[str, Any]]:
     try:
         return _get_global_trend_by_dept_impl(start_date, end_date, time_filter)
-    except Exception:
-        logger.error("get_global_trend_by_dept failed (start=%s, end=%s)", start_date, end_date, exc_info=True)
+    except Exception as exc:
+        logger.error("get_global_trend_by_dept failed (start=%s, end=%s): %s", start_date, end_date, exc)
         return []
 
 
@@ -356,8 +356,8 @@ def get_all_users_from_clickhouse() -> list[dict[str, Any]]:
     """Return distinct users from ClickHouse events table."""
     try:
         return _get_all_users_from_clickhouse_impl()
-    except Exception:
-        logger.error("get_all_users_from_clickhouse failed", exc_info=True)
+    except Exception as exc:
+        logger.error("get_all_users_from_clickhouse failed: %s", exc)
         return []
 
 
@@ -421,8 +421,8 @@ def get_all_users_batch(
     """One-shot query returning all per-user stats needed for admin list_users."""
     try:
         return _get_all_users_batch_impl(year, month, time_filter, is_current_month)
-    except Exception:
-        logger.error("get_all_users_batch failed (year=%d, month=%d)", year, month, exc_info=True)
+    except Exception as exc:
+        logger.error("get_all_users_batch failed (year=%d, month=%d): %s", year, month, exc)
         return AdminUserStats()
 
 
@@ -525,8 +525,8 @@ def get_leaderboard_batch(
     """One-shot query for leaderboard: token + requests + chats (3 queries → 1)."""
     try:
         return _get_leaderboard_batch_impl(time_filter, start_date, end_date)
-    except Exception:
-        logger.error("get_leaderboard_batch failed", exc_info=True)
+    except Exception as exc:
+        logger.error("get_leaderboard_batch failed: %s", exc)
         return []
 
 

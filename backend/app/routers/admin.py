@@ -209,8 +209,8 @@ def list_users(
                 )
             )
         return result
-    except Exception:
-        logger.error("list_users failed", exc_info=True)
+    except Exception as exc:
+        logger.error("list_users failed: %s", exc)
         raise HTTPException(status_code=500, detail="数据查询失败，请稍后重试")
 
 
@@ -287,8 +287,8 @@ def global_trend(
         if group_by == "department":
             return get_global_trend_by_dept(start, end, time_filter)
         return get_global_trend(start, end, time_filter)
-    except Exception:
-        logger.error("global_trend failed", exc_info=True)
+    except Exception as exc:
+        logger.error("global_trend failed: %s", exc)
         raise HTTPException(status_code=500, detail="数据查询失败，请稍后重试")
 
 
