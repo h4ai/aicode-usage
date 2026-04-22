@@ -124,3 +124,44 @@ def test_update_working_hours_success(client, admin_token, admin_config_patch):
     assert data["start"] == "09:00"
     assert data["end"] == "17:30"
     assert data["weekday_only"] is False
+
+
+def test_update_working_hours_persists_to_file(client, admin_token, admin_config_patch, tmp_path):
+    """PUT /api/admin/working-hours writes changes to config.yaml on disk."""
+    import yaml
+    import app.config as cfg_mod
+    import app.services.clickhouse as _ch_module
+
+    cfg_file = tmp_path / "config.yaml"
+    cfg_file.write_text(yaml.dump({"admins": [], "working_hours": {
+        "enabled": True, "start": "08:30", "end": "18:00", "weekday_only": True,
+    }}))
+
+    original_path = cfg_mod._CONFIG_PATH
+    _ch_module._cache = {}
+    try:
+        cfg_mod._CONFIG_PATH = cfg_file
+
+        with patch("app.config.load_config"):
+            resp = client.put(
+                "/api/admin/working-hours",
+                json={"enabled": False, "start": "09:00", "end": "17:00", "weekday_only": False},
+                headers={"Authorization": f"Bearer {admin_token}"},
+            )
+        assert resp.status_code == 200
+
+        # Verify persisted to disk
+        saved = yaml.safe_load(cfg_file.read_text())
+        assert saved["working_hours"]["enabled"] is False
+        assert saved["working_hours"]["start"] == "09:00"
+
+        # Verify GET returns the updated values
+        with patch("app.config.get_config", return_value=saved):
+            resp2 = client.get(
+                "/api/admin/working-hours",
+                headers={"Authorization": f"Bearer {admin_token}"},
+            )
+        assert resp2.status_code == 200
+        assert resp2.json()["enabled"] is False
+    finally:
+        cfg_mod._CONFIG_PATH = original_path

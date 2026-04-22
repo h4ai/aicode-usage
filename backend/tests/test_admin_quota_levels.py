@@ -132,3 +132,52 @@ def test_edit_quota_level_fallback_when_not_in_list(client, admin_token, admin_c
     data = resp.json()
     assert data["level"] == "L2"
     assert data["user_count"] == 0
+
+
+# ---------------------------------------------------------------------------
+# Persistence / regression tests
+# ---------------------------------------------------------------------------
+
+def test_quota_level_zero_value_allowed(client, admin_token, admin_config_patch):
+    """Bug2 regression: ge=0 validation allows zero values for all quota fields."""
+    updated = {"level": "L1", "monthly_token": 0, "daily_chats": 0, "daily_requests": 0, "user_count": 0}
+    with (
+        patch("app.routers.admin.update_quota_level", return_value=updated),
+        patch("app.routers.admin.get_all_quota_levels", return_value=[updated]),
+    ):
+        resp = client.put(
+            "/api/admin/quota-levels/L1",
+            json={"monthly_token": 0, "daily_chats": 0, "daily_requests": 0},
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["monthly_token"] == 0
+    assert data["daily_chats"] == 0
+    assert data["daily_requests"] == 0
+
+
+def test_init_db_does_not_overwrite_existing_quota_levels():
+    """Bug1 regression: init_db uses ON CONFLICT DO NOTHING so existing rows survive."""
+    from unittest.mock import MagicMock
+    from app.services import database as db_mod
+
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_conn.cursor.return_value.__enter__ = lambda s: mock_cursor
+    mock_conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
+
+    with patch.object(db_mod, "_get_conn_ctx") as mock_ctx:
+        mock_ctx.return_value.__enter__ = lambda s: mock_conn
+        mock_ctx.return_value.__exit__ = MagicMock(return_value=False)
+
+        # Call init_db twice
+        db_mod.init_db()
+        db_mod.init_db()
+
+    # The SQL executed contains ON CONFLICT (level) DO NOTHING
+    executed_sql = mock_cursor.execute.call_args_list[0][0][0]
+    assert "ON CONFLICT" in executed_sql
+    assert "DO NOTHING" in executed_sql
+    # init_db was called twice → execute called twice with same SQL
+    assert mock_cursor.execute.call_count == 2
