@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS quota_levels (
 
 INSERT INTO quota_levels (level, monthly_token, daily_chats, daily_requests)
 VALUES ('L1', 25000000, 100, 500), ('L2', 50000000, 200, 1000), ('L3', 100000000, 500, 2000)
-ON CONFLICT (level) DO UPDATE SET monthly_token = EXCLUDED.monthly_token, daily_chats = EXCLUDED.daily_chats;
+ON CONFLICT (level) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS email_alerts (
     user_id    TEXT NOT NULL,
@@ -71,7 +71,8 @@ VALUES (
     'default',
     '【AI Code Usage】您的{{quota_type_label}}用量已达 {{threshold}}',
     '<p>您好 {{username}}（{{user_id}}），</p>
-<p>您的 <strong>{{quota_type_label}}</strong> 在 {{period}} 已使用 <strong>{{percent}}</strong>（{{used}} / {{limit}}）。</p>
+<p>您的 <strong>{{quota_type_label}}</strong> 在 {{period}} 已使用 \
+<strong>{{percent}}</strong>（{{used}} / {{limit}}）。</p>
 <p>当前触发阈值：{{threshold}}。</p>
 <p>配额将于 {{reset_time}} 自动重置，如需提升配额请联系管理员。</p>
 <p>— AI Code Usage 系统</p>'
@@ -146,7 +147,7 @@ def get_quota_limits(level: str) -> dict[str, Any]:
                 (level,),
             )
             row = cur.fetchone()
-            return dict(row) if row else {"monthly_token": 0, "daily_requests": 0}
+            return dict(row) if row else {"monthly_token": 0, "daily_chats": 0, "daily_requests": 0}
 
 
 def get_all_quota_levels() -> list[dict[str, Any]]:
@@ -286,7 +287,8 @@ def has_sent_notification(user_id: str, quota_type: str, threshold: int, period_
     with _get_conn_ctx() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT 1 FROM email_notifications WHERE user_id = %s AND quota_type = %s AND threshold = %s AND period_key = %s",
+                "SELECT 1 FROM email_notifications"
+                " WHERE user_id = %s AND quota_type = %s AND threshold = %s AND period_key = %s",
                 (user_id, quota_type, threshold, period_key),
             )
             return cur.fetchone() is not None
@@ -304,6 +306,64 @@ def mark_notification_sent(
                 (user_id, quota_type, threshold, period_key, over_limit),
             )
         conn.commit()
+
+
+def get_email_notifications(
+    page: int = 1,
+    page_size: int = 20,
+    user_id: str | None = None,
+    quota_type: str | None = None,
+    period_key: str | None = None,
+) -> dict[str, Any]:
+    """Return paginated email notification records."""
+    conditions: list[str] = []
+    params: list[Any] = []
+    if user_id:
+        conditions.append("user_id = %s")
+        params.append(user_id)
+    if quota_type:
+        conditions.append("quota_type = %s")
+        params.append(quota_type)
+    if period_key:
+        conditions.append("period_key = %s")
+        params.append(period_key)
+
+    where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
+    offset = (page - 1) * page_size
+
+    with _get_conn_ctx() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(f"SELECT COUNT(*) AS cnt FROM email_notifications{where}", params)
+            total = cur.fetchone()["cnt"]
+            cur.execute(
+                f"SELECT * FROM email_notifications{where} ORDER BY sent_at DESC LIMIT %s OFFSET %s",
+                params + [page_size, offset],
+            )
+            items = [dict(row) for row in cur.fetchall()]
+    return {"total": total, "page": page, "page_size": page_size, "items": items}
+
+
+def delete_email_notifications(
+    user_id: str | None = None,
+    period_key: str | None = None,
+) -> int:
+    """Delete notification records. Both params optional; omit both to clear all."""
+    conditions: list[str] = []
+    params: list[Any] = []
+    if user_id:
+        conditions.append("user_id = %s")
+        params.append(user_id)
+    if period_key:
+        conditions.append("period_key = %s")
+        params.append(period_key)
+
+    where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
+    with _get_conn_ctx() as conn:
+        with conn.cursor() as cur:
+            cur.execute(f"DELETE FROM email_notifications{where}", params)
+            deleted = cur.rowcount
+        conn.commit()
+    return deleted
 
 
 # ─── email_templates ───
@@ -346,7 +406,8 @@ def save_email_template(name: str, subject: str, body_html: str) -> None:
             cur.execute(
                 "INSERT INTO email_templates (name, subject, body_html, updated_at) "
                 "VALUES (%s, %s, %s, now()) "
-                "ON CONFLICT (name) DO UPDATE SET subject = EXCLUDED.subject, body_html = EXCLUDED.body_html, updated_at = now()",
+                "ON CONFLICT (name) DO UPDATE SET subject = EXCLUDED.subject,"
+                " body_html = EXCLUDED.body_html, updated_at = now()",
                 (name, subject, body_html),
             )
         conn.commit()

@@ -184,6 +184,7 @@ def test_quota_usage_user_not_in_db_defaults_l1(client, admin_token, admin_confi
     """If user doesn't exist in DB, defaults to L1."""
     with (
         patch("app.routers.quota.get_user", return_value=None),
+        patch("app.routers.quota.upsert_user", return_value={"quota_level": "L1"}),
         patch("app.routers.quota.get_quota_limits", return_value={
             "monthly_token": 5000000, "daily_chats": 50, "daily_requests": 500,
         }) as mock_limits,

@@ -258,6 +258,43 @@ def test_build_context_daily_period_format():
     assert ctx["reset_time"] == "次日00:00重置"
 
 
+# ─── Batch rate limiting ───
+
+def test_email_batch_rate_limiting_calls_sleep():
+    """After sending batch_size (10) emails, time.sleep is called for rate limiting."""
+    users = [
+        {"user_id": f"u{i}", "username": f"u{i}", "nickname": f"U{i}",
+         "mail": f"u{i}@x.com", "quota_level": "L1"}
+        for i in range(15)
+    ]
+    with patch("app.services.notification_v2.get_config", return_value={
+        "notification": {"enabled": True, "thresholds": [80], "email_domain": "",
+                         "email_batch_size": 10, "email_batch_delay_seconds": 2},
+    }), \
+         patch("app.services.notification_v2.get_all_users", return_value=[]), \
+         patch("app.services.notification_v2.get_all_users_from_clickhouse", return_value=users), \
+         patch("app.services.notification_v2.get_quota_limits", return_value={
+             "monthly_token": 1000, "daily_chats": 0, "daily_requests": 0,
+         }), \
+         patch("app.services.notification_v2.get_monthly_token_usage", return_value=900), \
+         patch("app.services.notification_v2.get_daily_request_count", return_value=0), \
+         patch("app.services.notification_v2.has_sent_notification", return_value=False), \
+         patch("app.services.notification_v2.mark_notification_sent"), \
+         patch("app.services.notification_v2.send_notification_email", return_value=True) as send, \
+         patch("app.services.notification_v2.time") as mock_time:
+
+        from app.services.notification_v2 import check_quota_alerts
+        check_quota_alerts()
+
+        # 15 users × 1 threshold = 15 emails sent
+        assert send.call_count == 15
+        # After 10th email, batch rate limiter triggers sleep
+        batch_sleeps = [c for c in mock_time.sleep.call_args_list if c.args[0] == 2]
+        assert len(batch_sleeps) >= 1, (
+            f"Expected at least 1 batch sleep(2) call, got {mock_time.sleep.call_args_list}"
+        )
+
+
 # ─── config.py: update_notification_config ───
 
 def test_update_notification_config_persists(tmp_path):

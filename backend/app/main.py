@@ -22,6 +22,24 @@ from app.services.notification_v2 import check_quota_alerts
 
 logger = logging.getLogger(__name__)
 
+
+def _setup_logging() -> None:
+    """Configure unified logging format for the application."""
+    fmt = "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
+    datefmt = "%Y-%m-%d %H:%M:%S"
+    logging.basicConfig(level=logging.INFO, format=fmt, datefmt=datefmt, force=True)
+
+    # Suppress noisy third-party loggers
+    for noisy in ("jwt", "apscheduler", "passlib", "multipart", "urllib3"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
+
+    # uvicorn access stays INFO; uvicorn.error goes WARNING
+    logging.getLogger("uvicorn.access").setLevel(logging.INFO)
+    logging.getLogger("uvicorn.error").setLevel(logging.WARNING)
+
+
+_setup_logging()
+
 # ---------------------------------------------------------------------------
 # Rate limiter (shared instance, imported by routers)
 # ---------------------------------------------------------------------------
@@ -43,7 +61,7 @@ app.add_middleware(
 
 @app.exception_handler(Exception)
 async def _global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    logger.error("Unhandled exception: %s %s - %s", request.method, request.url.path, exc, exc_info=True)
+    logger.error("Unhandled exception: %s %s - %s", request.method, request.url.path, exc)
     return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 

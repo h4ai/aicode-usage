@@ -1,17 +1,8 @@
-# ---------------------------------------------------------------------------
-# 安全配置
-# ---------------------------------------------------------------------------
-security:
-  # CORS 允许来源白名单。生产环境请替换为实际前端域名，禁止保留 "*"。
-  # 本地开发：http://localhost:3002
-  # 内网部署示例：http://192.168.1.100:3002
-  # 域名部署示例：https://ai-usage.your-company.com
-  cors_origins:
-    - "http://localhost:3002"
-
 admins:
 - password_hash: $2b$12$uOK6hizY.Ici9VuLaRJIe.EHY/QrZsXgLTwFYpPItoMGN9I34nJki
   username: admin
+auth:
+  allow_test_login: true
 clickhouse:
   database: otel
   host: host.docker.internal
@@ -29,25 +20,29 @@ ldap:
   server: ldap://localhost:389
   user_attr: sAMAccountName
 notification:
-  check_interval_minutes: 60
+  check_interval_minutes: 30
   email_domain: ''
   enabled: true
   thresholds:
   - 50
   - 80
   - 100
+  email_batch_size: 10
+  email_batch_delay_seconds: 2
+security:
+  cors_origins:
+  - http://localhost:3002
 smtp:
-  from_email: ''
-  from_name: AI 使用助手
-  host: ''
-  password: ''
-  port: 587
+  host: mailrelay.internal.company.com
+  port: 25
   username: ''
+  password: ''
+  from_name: AI 使用助手
+  from_email: ai-usage@company.com
+  use_tls: false
+  use_starttls: true
 working_hours:
   enabled: true
   end: '18:00'
   start: 08:00
   weekday_only: true
-
-auth:
-  allow_test_login: true

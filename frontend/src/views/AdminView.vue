@@ -50,6 +50,12 @@
       >
         <NotificationSettings />
       </el-tab-pane>
+      <el-tab-pane
+        label="邮件记录"
+        name="email-records"
+      >
+        <EmailNotifications />
+      </el-tab-pane>
     </el-tabs>
   </div>
 </template>
@@ -64,6 +70,7 @@ import GlobalTrend from '@/views/admin/GlobalTrend.vue'
 import DepartmentSummary from '@/views/admin/DepartmentSummary.vue'
 import Leaderboard from '@/views/admin/Leaderboard.vue'
 import NotificationSettings from '@/views/admin/NotificationSettings.vue'
+import EmailNotifications from '@/views/admin/EmailNotifications.vue'
 
 const activeTab = ref('users')
 

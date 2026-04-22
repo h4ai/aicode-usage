@@ -6,7 +6,14 @@
     <el-card>
       <template #header>
         <span>邮件通知设置</span>
-        <el-button type="primary" size="small" style="float: right" @click="handleSaveConfig">保存配置</el-button>
+        <el-button
+          type="primary"
+          size="small"
+          style="float: right"
+          @click="handleSaveConfig"
+        >
+          保存配置
+        </el-button>
       </template>
 
       <el-form label-width="120px">
@@ -17,27 +24,63 @@
 
         <!-- 检查间隔 -->
         <el-form-item label="检查间隔">
-          <el-select v-model="form.checkInterval" style="width: 200px">
-            <el-option :value="30" label="30 分钟" />
-            <el-option :value="60" label="60 分钟" />
-            <el-option :value="120" label="120 分钟" />
+          <el-select
+            v-model="form.checkInterval"
+            style="width: 200px"
+          >
+            <el-option
+              :value="30"
+              label="30 分钟"
+            />
+            <el-option
+              :value="60"
+              label="60 分钟"
+            />
+            <el-option
+              :value="120"
+              label="120 分钟"
+            />
           </el-select>
           <span style="margin-left: 8px; color: #909399; font-size: 12px">（修改后需重启服务生效）</span>
         </el-form-item>
 
         <!-- 触发阈值 -->
         <el-form-item label="触发阈值">
-          <el-input-number v-model="form.thresholds[0]" :min="0" :max="100" style="width: 120px" />%
-          <el-input-number v-model="form.thresholds[1]" :min="0" :max="100" style="width: 120px; margin-left: 10px" />%
-          <el-input-number v-model="form.thresholds[2]" :min="0" :max="100" style="width: 120px; margin-left: 10px" />%
+          <el-input-number
+            v-model="form.thresholds[0]"
+            :min="0"
+            :max="100"
+            style="width: 120px"
+          />%
+          <el-input-number
+            v-model="form.thresholds[1]"
+            :min="0"
+            :max="100"
+            style="width: 120px; margin-left: 10px"
+          />%
+          <el-input-number
+            v-model="form.thresholds[2]"
+            :min="0"
+            :max="100"
+            style="width: 120px; margin-left: 10px"
+          />%
           <span style="margin-left: 8px; color: #909399; font-size: 12px">（0 表示忽略该档）</span>
         </el-form-item>
 
         <!-- 邮件域名 -->
         <el-form-item label="邮件域名">
-          <el-input v-model="form.emailDomain" placeholder="example.com（AD mail 为空时自动拼接）" style="width: 300px" />
-          <el-tooltip placement="top" content="当 AD 中没有配置用户 mail 属性时，系统会用「sAMAccountName@邮件域名」构造收件地址。如已有 AD mail 则此项无需填写。">
-            <el-icon style="margin-left: 6px; cursor: pointer; color: #909399"><QuestionFilled /></el-icon>
+          <el-input
+            v-model="form.emailDomain"
+            placeholder="example.com（AD mail 为空时自动拼接）"
+            style="width: 300px"
+          />
+          <el-tooltip
+            placement="top"
+            content="当 AD 中没有配置用户 mail 属性时，系统会用「sAMAccountName@邮件域名」构造收件地址。如已有 AD mail 则此项无需填写。"
+          >
+            <el-icon style="margin-left: 6px; cursor: pointer; color: #909399">
+              <QuestionFilled />
+            </el-icon>
           </el-tooltip>
         </el-form-item>
       </el-form>
@@ -46,14 +89,26 @@
     <el-card style="margin-top: 20px">
       <template #header>
         <span>邮件模板编辑</span>
-        <el-tooltip placement="top" content="在标题和正文中使用双大括号包裹占位符名称插入动态内容，点击下方占位符可快速复制">
-          <el-tag type="warning" size="small" style="margin-left: 8px">支持占位符</el-tag>
+        <el-tooltip
+          placement="top"
+          content="在标题和正文中使用双大括号包裹占位符名称插入动态内容，点击下方占位符可快速复制"
+        >
+          <el-tag
+            type="warning"
+            size="small"
+            style="margin-left: 8px"
+          >
+            支持占位符
+          </el-tag>
         </el-tooltip>
       </template>
 
       <el-form label-width="120px">
         <el-form-item label="邮件标题">
-          <el-input v-model="template.subject" placeholder="例：【AI Code Usage】您的{{quota_type_label}}用量已达 {{threshold}}" />
+          <el-input
+            v-model="template.subject"
+            placeholder="例：【AI Code Usage】您的{{quota_type_label}}用量已达 {{threshold}}"
+          />
         </el-form-item>
 
         <el-form-item label="邮件正文">
@@ -90,15 +145,33 @@
         <!-- 占位符说明表 -->
         <el-form-item label="">
           <el-collapse>
-            <el-collapse-item title="占位符说明（点击展开）" name="vars">
-              <el-table :data="variables" size="small" border style="width: 100%">
-                <el-table-column prop="name" label="占位符" width="220">
+            <el-collapse-item
+              title="占位符说明（点击展开）"
+              name="vars"
+            >
+              <el-table
+                :data="variables"
+                size="small"
+                border
+                style="width: 100%"
+              >
+                <el-table-column
+                  prop="name"
+                  label="占位符"
+                  width="220"
+                >
                   <template #default="{ row }">
                     <code><span v-text="`{{${row.name}}}`"></span></code>
                   </template>
                 </el-table-column>
-                <el-table-column prop="description" label="说明" />
-                <el-table-column label="示例值" width="160">
+                <el-table-column
+                  prop="description"
+                  label="说明"
+                />
+                <el-table-column
+                  label="示例值"
+                  width="160"
+                >
                   <template #default="{ row }">
                     <span style="color: #67c23a">{{ SAMPLE_VALUES[row.name] || '—' }}</span>
                   </template>
@@ -109,16 +182,36 @@
         </el-form-item>
 
         <el-form-item>
-          <el-button type="primary" @click="handlePreview">预览效果</el-button>
-          <el-button type="success" @click="handleSave">保存模板</el-button>
-          <el-button @click="handleReset">重置默认</el-button>
+          <el-button
+            type="primary"
+            @click="handlePreview"
+          >
+            预览效果
+          </el-button>
+          <el-button
+            type="success"
+            @click="handleSave"
+          >
+            保存模板
+          </el-button>
+          <el-button @click="handleReset">
+            重置默认
+          </el-button>
         </el-form-item>
       </el-form>
     </el-card>
 
     <!-- 预览对话框 -->
-    <el-dialog v-model="previewVisible" title="邮件预览（使用示例数据渲染）" width="640px">
-      <el-alert type="info" :closable="false" style="margin-bottom: 16px">
+    <el-dialog
+      v-model="previewVisible"
+      title="邮件预览（使用示例数据渲染）"
+      width="640px"
+    >
+      <el-alert
+        type="info"
+        :closable="false"
+        style="margin-bottom: 16px"
+      >
         以下为使用示例数据渲染的预览效果：用量 80%、月度 Token、用户张三
       </el-alert>
       <div style="border: 1px solid #e4e7ed; border-radius: 4px; padding: 16px">

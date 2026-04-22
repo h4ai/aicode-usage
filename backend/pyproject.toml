@@ -9,14 +9,14 @@ dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.44.0",
     "pyyaml>=6.0",
-    "clickhouse-connect>=0.8",
+    "clickhouse-connect>=0.15.1",
     "psycopg2-binary>=2.9.11",
     "aiosmtplib>=3.0",
     "ldap3>=2.9",
     "pyjwt>=2.8",
-    "bcrypt>=4.0",
-    "apscheduler>=3.10",
-    "cachetools>=5.3",
+    "bcrypt>=5.0.0",
+    "apscheduler>=3.11.2",
+    "cachetools>=7.0.5",
     "slowapi>=0.1.9",
     "watchdog>=6.0.0",
     "httpx>=0.28.1",
@@ -24,7 +24,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "mypy>=1.10",
+    "mypy>=1.20.1",
     "ruff>=0.15.11",
     "pytest>=8.0",
     "types-PyYAML",
