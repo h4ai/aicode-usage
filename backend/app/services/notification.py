@@ -88,8 +88,24 @@ async def mail_send(
     # Filter empty strings
     recipients = [r.strip() for r in recipients if r.strip()]
 
-    client = aiosmtplib.SMTP(hostname=host, port=port)
-    await client.connect()
+    use_tls: bool = smtp_cfg.get("use_tls", False)
+    use_starttls: bool = smtp_cfg.get("use_starttls", True)  # 默认尝试 STARTTLS
+
+    if use_tls:
+        # SSL/TLS 直连（port 465）
+        client = aiosmtplib.SMTP(hostname=host, port=port, use_tls=True)
+        await client.connect()
+    else:
+        # 明文连接，视服务器支持情况尝试 STARTTLS（port 25/587）
+        client = aiosmtplib.SMTP(hostname=host, port=port)
+        await client.connect()
+        if use_starttls:
+            try:
+                await client.starttls()
+            except aiosmtplib.SMTPException:
+                # 服务器不支持 STARTTLS（内网 relay），忽略继续
+                pass
+
     if smtp_user:
         await client.login(smtp_user, smtp_pass)
     await client.send_message(msg, recipients=recipients)
