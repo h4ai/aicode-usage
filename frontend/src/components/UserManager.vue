@@ -41,10 +41,21 @@
               value="gray"
             />
           </el-select>
-          <el-radio-group v-model="monthMode" size="small" style="margin-left:8px" @change="onMonthModeChange">
-            <el-radio-button value="current">本月</el-radio-button>
-            <el-radio-button value="last">上月</el-radio-button>
-            <el-radio-button value="custom">历史</el-radio-button>
+          <el-radio-group
+            v-model="monthMode"
+            size="small"
+            style="margin-left:8px"
+            @change="onMonthModeChange"
+          >
+            <el-radio-button value="current">
+              本月
+            </el-radio-button>
+            <el-radio-button value="last">
+              上月
+            </el-radio-button>
+            <el-radio-button value="custom">
+              历史
+            </el-radio-button>
           </el-radio-group>
           <el-date-picker
             v-if="monthMode === 'custom'"

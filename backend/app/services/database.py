@@ -71,7 +71,8 @@ VALUES (
     'default',
     '【AI Code Usage】您的{{quota_type_label}}用量已达 {{threshold}}',
     '<p>您好 {{username}}（{{user_id}}），</p>
-<p>您的 <strong>{{quota_type_label}}</strong> 在 {{period}} 已使用 <strong>{{percent}}</strong>（{{used}} / {{limit}}）。</p>
+<p>您的 <strong>{{quota_type_label}}</strong> 在 {{period}} 已使用 \
+<strong>{{percent}}</strong>（{{used}} / {{limit}}）。</p>
 <p>当前触发阈值：{{threshold}}。</p>
 <p>配额将于 {{reset_time}} 自动重置，如需提升配额请联系管理员。</p>
 <p>— AI Code Usage 系统</p>'
@@ -286,7 +287,8 @@ def has_sent_notification(user_id: str, quota_type: str, threshold: int, period_
     with _get_conn_ctx() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT 1 FROM email_notifications WHERE user_id = %s AND quota_type = %s AND threshold = %s AND period_key = %s",
+                "SELECT 1 FROM email_notifications"
+                " WHERE user_id = %s AND quota_type = %s AND threshold = %s AND period_key = %s",
                 (user_id, quota_type, threshold, period_key),
             )
             return cur.fetchone() is not None
@@ -404,7 +406,8 @@ def save_email_template(name: str, subject: str, body_html: str) -> None:
             cur.execute(
                 "INSERT INTO email_templates (name, subject, body_html, updated_at) "
                 "VALUES (%s, %s, %s, now()) "
-                "ON CONFLICT (name) DO UPDATE SET subject = EXCLUDED.subject, body_html = EXCLUDED.body_html, updated_at = now()",
+                "ON CONFLICT (name) DO UPDATE SET subject = EXCLUDED.subject,"
+                " body_html = EXCLUDED.body_html, updated_at = now()",
                 (name, subject, body_html),
             )
         conn.commit()

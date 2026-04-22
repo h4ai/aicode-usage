@@ -32,11 +32,24 @@
             >
               全天
             </el-tag>
-            <el-radio-group v-model="rangeMode" size="small" style="margin-left:8px" @change="onRangeModeChange">
-              <el-radio-button value="month">本月</el-radio-button>
-              <el-radio-button value="7">近7天</el-radio-button>
-              <el-radio-button value="30">近30天</el-radio-button>
-              <el-radio-button value="custom">自定义</el-radio-button>
+            <el-radio-group
+              v-model="rangeMode"
+              size="small"
+              style="margin-left:8px"
+              @change="onRangeModeChange"
+            >
+              <el-radio-button value="month">
+                本月
+              </el-radio-button>
+              <el-radio-button value="7">
+                近7天
+              </el-radio-button>
+              <el-radio-button value="30">
+                近30天
+              </el-radio-button>
+              <el-radio-button value="custom">
+                自定义
+              </el-radio-button>
             </el-radio-group>
             <el-date-picker
               v-if="rangeMode === 'custom'"

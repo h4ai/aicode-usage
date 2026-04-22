@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
@@ -17,18 +18,15 @@ from app.data_schema import (
     REQUEST_MODEL_NAME,
     TOTAL_TOKEN,
 )
-
-import logging
-
 from app.services.clickhouse_client import _cache, _get_client, _safe_int
-
-logger = logging.getLogger(__name__)
 from app.services.clickhouse_filters import (
     _BASE_FILTER,
     _today_shanghai,
     _user_filter,
     _working_hours_filter,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def get_monthly_token_usage(user: dict[str, Any], time_filter: str = "all") -> int:
@@ -223,7 +221,9 @@ def get_daily_request_count(user: dict[str, Any], time_filter: str = "auto") -> 
         raise
 
 
-def get_daily_trend(user: dict[str, Any], start_date: str, end_date: str, time_filter: str = "all") -> list[dict[str, Any]]:
+def get_daily_trend(
+    user: dict[str, Any], start_date: str, end_date: str, time_filter: str = "all",
+) -> list[dict[str, Any]]:
     _uid = user.get("sam") or user.get("sub", "")
     cache_key = f"trend:{_uid}:{start_date}:{end_date}:{time_filter}"
     if cache_key in _cache:

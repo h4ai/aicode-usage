@@ -11,6 +11,28 @@ to preserve backward compatibility for existing imports.
 """
 
 # Client & utilities
+# Admin/batch queries
+from app.services.clickhouse_admin import (  # noqa: F401
+    AdminUserStats,
+    get_all_users_batch,
+    get_all_users_chats_in_month,
+    get_all_users_chats_in_range,
+    get_all_users_daily_requests,
+    get_all_users_from_clickhouse,
+    get_all_users_monthly_chats,
+    get_all_users_monthly_requests,
+    get_all_users_monthly_tokens,
+    get_all_users_requests_in_month,
+    get_all_users_requests_in_range,
+    get_all_users_today_chats,
+    get_all_users_today_tokens,
+    get_all_users_tokens_in_month,
+    get_all_users_tokens_in_range,
+    get_global_trend,
+    get_global_trend_by_dept,
+    get_global_trend_by_model,
+    get_leaderboard_batch,
+)
 from app.services.clickhouse_client import (  # noqa: F401
     _cache,
     _ch_client,
@@ -43,27 +65,4 @@ from app.services.clickhouse_user import (  # noqa: F401
     get_today_token_usage,
     get_weekly_request_count,
     get_weekly_token_usage,
-)
-
-# Admin/batch queries
-from app.services.clickhouse_admin import (  # noqa: F401
-    AdminUserStats,
-    get_all_users_batch,
-    get_all_users_chats_in_month,
-    get_all_users_chats_in_range,
-    get_all_users_daily_requests,
-    get_all_users_from_clickhouse,
-    get_all_users_monthly_chats,
-    get_all_users_monthly_requests,
-    get_all_users_monthly_tokens,
-    get_all_users_requests_in_month,
-    get_all_users_requests_in_range,
-    get_all_users_today_chats,
-    get_all_users_today_tokens,
-    get_all_users_tokens_in_month,
-    get_all_users_tokens_in_range,
-    get_global_trend,
-    get_global_trend_by_dept,
-    get_global_trend_by_model,
-    get_leaderboard_batch,
 )

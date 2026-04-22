@@ -121,10 +121,6 @@ async def send_quota_email_async(
     limit: int,
 ) -> None:
     """Send quota warning email (async)."""
-    cfg = get_config()
-    smtp_cfg = cfg.get("smtp", {})
-    from_email: str = smtp_cfg.get("from_email", "")
-
     pct = round(used / limit * 100, 1) if limit > 0 else 0
     subject = f"【AI Code Usage】您的本月 Token 用量已达 {pct}%"
     content = (

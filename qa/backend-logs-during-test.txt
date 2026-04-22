@@ -1,0 +1,239 @@
+INFO:     172.23.0.1:60424 - "POST /api/auth/login HTTP/1.1" 503 Service Unavailable
+INFO:     172.23.0.1:60000 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     172.23.0.1:60002 - "GET /api/admin/email-template HTTP/1.1" 200 OK
+INFO:     172.23.0.1:56378 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     172.23.0.4:57858 - "GET /api/admin/email-template HTTP/1.1" 200 OK
+INFO:     172.23.0.1:39416 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     172.23.0.4:49528 - "GET /api/admin/notification-config HTTP/1.1" 200 OK
+INFO:     172.23.0.1:57272 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     172.23.0.1:57286 - "GET /api/admin/email-template HTTP/1.1" 200 OK
+INFO:     172.23.0.1:57296 - "GET /api/admin/email-template/variables HTTP/1.1" 200 OK
+INFO:     172.23.0.1:57304 - "GET /api/admin/notification-config HTTP/1.1" 200 OK
+INFO:     172.23.0.4:53978 - "GET /api/admin/email-template HTTP/1.1" 200 OK
+INFO:     172.23.0.1:60204 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     172.23.0.1:60212 - "GET /api/metrics/summary HTTP/1.1" 200 OK
+INFO:     172.23.0.4:48084 - "POST /api/auth/login HTTP/1.1" 401 Unauthorized
+INFO:     172.23.0.4:57194 - "POST /api/auth/login HTTP/1.1" 401 Unauthorized
+INFO:     172.23.0.1:57662 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     172.23.0.1:57676 - "GET /api/admin/email-template HTTP/1.1" 200 OK
+INFO:     172.23.0.1:58040 - "GET /api/admin/email-template HTTP/1.1" 200 OK
+INFO:     172.23.0.4:44576 - "POST /api/auth/login HTTP/1.1" 503 Service Unavailable
+INFO:     172.23.0.4:44578 - "POST /api/auth/test-login HTTP/1.1" 200 OK
+INFO:     172.23.0.4:44588 - "GET /api/metrics/summary HTTP/1.1" 200 OK
+INFO:     172.23.0.4:60964 - "GET /api/metrics/summary?scope=month&time_filter=all HTTP/1.1" 200 OK
+INFO:     172.23.0.4:60980 - "GET /api/metrics/trend?time_filter=all&days=7 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:60952 - "GET /api/quota/usage?time_filter=all HTTP/1.1" 200 OK
+INFO:     172.23.0.4:32786 - "GET /api/metrics/working-hours-config HTTP/1.1" 200 OK
+INFO:     172.23.0.4:32772 - "GET /api/metrics/detail?time_filter=all&days=7 HTTP/1.1" 500 Internal Server Error
+INFO:     172.23.0.4:60990 - "GET /api/metrics/model-distribution?time_filter=all&days=30 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:51124 - "GET /api/metrics/detail?time_filter=all&days=30 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:33886 - "POST /api/auth/login HTTP/1.1" 503 Service Unavailable
+INFO:     172.23.0.4:33890 - "POST /api/auth/test-login HTTP/1.1" 200 OK
+INFO:     172.23.0.4:33902 - "GET /api/metrics/summary HTTP/1.1" 200 OK
+INFO:     172.23.0.4:33914 - "GET /api/metrics/summary?scope=month&time_filter=all HTTP/1.1" 200 OK
+INFO:     172.23.0.4:33930 - "GET /api/metrics/model-distribution?time_filter=all&days=30 HTTP/1.1" 500 Internal Server Error
+INFO:     172.23.0.4:33940 - "GET /api/metrics/working-hours-config HTTP/1.1" 200 OK
+INFO:     172.23.0.4:33926 - "GET /api/metrics/trend?time_filter=all&days=7 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:33956 - "GET /api/metrics/detail?time_filter=all&days=7 HTTP/1.1" 500 Internal Server Error
+INFO:     172.23.0.4:33904 - "GET /api/quota/usage?time_filter=all HTTP/1.1" 200 OK
+INFO:     172.23.0.1:46880 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     172.23.0.1:46890 - "POST /api/admin/email-template/preview HTTP/1.1" 200 OK
+INFO:     172.23.0.1:46892 - "PUT /api/admin/email-template HTTP/1.1" 200 OK
+INFO:     172.23.0.4:60848 - "GET /api/metrics/trend?time_filter=all&days=30 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:60858 - "GET /api/metrics/detail?time_filter=all&days=30 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:60864 - "GET /api/metrics/detail?time_filter=all&days=7 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:60874 - "GET /api/metrics/detail?time_filter=all&days=30 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:33908 - "GET /api/metrics/detail?time_filter=all&days=7 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:33916 - "GET /api/metrics/model-distribution?time_filter=all&days=7 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:33918 - "GET /api/metrics/model-distribution?time_filter=all&days=30 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:33932 - "GET /api/metrics/model-distribution?time_filter=all&days=7 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:33958 - "GET /api/metrics/summary?scope=month&time_filter=work HTTP/1.1" 500 Internal Server Error
+INFO:     172.23.0.4:33946 - "GET /api/metrics/trend?time_filter=work&days=30 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:33974 - "GET /api/metrics/detail?time_filter=work&days=7 HTTP/1.1" 500 Internal Server Error
+INFO:     172.23.0.4:33972 - "GET /api/metrics/model-distribution?time_filter=work&days=7 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:37282 - "GET /api/metrics/model-distribution?time_filter=work&days=30 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:37294 - "GET /api/metrics/model-distribution?time_filter=work&days=7 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:59836 - "GET /api/metrics/model-distribution?time_filter=work&days=30 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:59844 - "GET /api/metrics/trend?time_filter=all&days=30 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:59852 - "GET /api/metrics/summary?scope=month&time_filter=all HTTP/1.1" 200 OK
+INFO:     172.23.0.4:59856 - "GET /api/metrics/model-distribution?time_filter=all&days=30 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:59860 - "GET /api/metrics/detail?time_filter=all&days=7 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:59862 - "GET /api/metrics/model-distribution?time_filter=all&days=7 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:50624 - "GET /api/metrics/summary HTTP/1.1" 200 OK
+INFO:     172.23.0.4:50654 - "GET /api/metrics/trend?time_filter=all&days=7 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:50660 - "GET /api/metrics/model-distribution?time_filter=all&days=30 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:50646 - "GET /api/metrics/summary?scope=month&time_filter=all HTTP/1.1" 200 OK
+INFO:     172.23.0.4:50630 - "GET /api/quota/usage?time_filter=all HTTP/1.1" 200 OK
+INFO:     172.23.0.4:50672 - "GET /api/metrics/detail?time_filter=all&days=7 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:50684 - "GET /api/metrics/working-hours-config HTTP/1.1" 200 OK
+INFO:     172.23.0.4:50700 - "GET /api/metrics/detail?time_filter=all&days=30 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:50714 - "GET /api/metrics/detail?time_filter=all&days=7 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:37538 - "POST /api/auth/login HTTP/1.1" 401 Unauthorized
+INFO:     172.23.0.4:37554 - "POST /api/auth/login HTTP/1.1" 401 Unauthorized
+INFO:     172.23.0.4:60010 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     172.23.0.4:60020 - "GET /api/metrics/summary HTTP/1.1" 200 OK
+INFO:     172.23.0.4:60030 - "GET /api/metrics/working-hours-config HTTP/1.1" 200 OK
+INFO:     172.23.0.4:60040 - "GET /api/admin/working-hours HTTP/1.1" 200 OK
+INFO:     172.23.0.4:60056 - "GET /api/api/admin/notification-config HTTP/1.1" 404 Not Found
+INFO:     172.23.0.4:60076 - "GET /api/api/admin/email-template HTTP/1.1" 404 Not Found
+INFO:     172.23.0.4:60068 - "GET /api/admin/quota-levels HTTP/1.1" 200 OK
+INFO:     172.23.0.4:60084 - "GET /api/api/admin/email-template/variables HTTP/1.1" 404 Not Found
+INFO:     172.23.0.4:60094 - "GET /api/admin/trend?time_filter=all&start=2026-03-23&end=2026-04-21 HTTP/1.1" 500 Internal Server Error
+INFO:     172.23.0.4:60108 - "GET /api/metrics/working-hours-config HTTP/1.1" 200 OK
+INFO:     172.23.0.4:60122 - "GET /api/metrics/working-hours-config HTTP/1.1" 200 OK
+INFO:     172.23.0.4:60026 - "GET /api/admin/users?time_filter=all&year=2026&month=4 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:60132 - "GET /api/admin/departments?time_filter=all HTTP/1.1" 200 OK
+INFO:     172.23.0.4:60148 - "GET /api/admin/leaderboard?time_filter=all HTTP/1.1" 200 OK
+INFO:     172.23.0.4:45774 - "GET /api/admin/users?time_filter=all&year=2026&month=3 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:45786 - "GET /api/admin/users?time_filter=all&year=2026&month=4 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:34514 - "GET /api/admin/leaderboard?time_filter=work HTTP/1.1" 200 OK
+INFO:     172.23.0.4:34524 - "GET /api/admin/leaderboard?time_filter=non_work HTTP/1.1" 200 OK
+INFO:     172.23.0.4:34540 - "GET /api/admin/leaderboard?time_filter=all HTTP/1.1" 200 OK
+INFO:     172.23.0.4:33646 - "GET /api/admin/leaderboard/export-csv?top=500&time_filter=all HTTP/1.1" 200 OK
+INFO:     172.23.0.4:57076 - "POST /api/api/admin/email-template/preview HTTP/1.1" 404 Not Found
+INFO:     172.23.0.4:33476 - "GET /api/metrics/summary HTTP/1.1" 200 OK
+INFO:     172.23.0.4:33490 - "GET /api/metrics/working-hours-config HTTP/1.1" 200 OK
+INFO:     172.23.0.4:33498 - "GET /api/api/admin/notification-config HTTP/1.1" 404 Not Found
+INFO:     172.23.0.4:33492 - "GET /api/admin/working-hours HTTP/1.1" 200 OK
+INFO:     172.23.0.4:33508 - "GET /api/admin/quota-levels HTTP/1.1" 200 OK
+INFO:     172.23.0.4:33478 - "GET /api/admin/users?time_filter=all&year=2026&month=4 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:33512 - "GET /api/api/admin/email-template HTTP/1.1" 404 Not Found
+INFO:     172.23.0.4:33522 - "GET /api/api/admin/email-template/variables HTTP/1.1" 404 Not Found
+INFO:     172.23.0.4:33532 - "GET /api/metrics/working-hours-config HTTP/1.1" 200 OK
+INFO:     172.23.0.4:33542 - "GET /api/metrics/working-hours-config HTTP/1.1" 200 OK
+INFO:     172.23.0.4:33544 - "GET /api/admin/departments?time_filter=all HTTP/1.1" 200 OK
+INFO:     172.23.0.4:33546 - "GET /api/admin/leaderboard?time_filter=all HTTP/1.1" 200 OK
+INFO:     172.23.0.4:33540 - "GET /api/admin/trend?time_filter=all&start=2026-03-23&end=2026-04-21 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:37416 - "GET /api/metrics/summary HTTP/1.1" 200 OK
+INFO:     172.23.0.4:37464 - "GET /api/api/admin/notification-config HTTP/1.1" 404 Not Found
+INFO:     172.23.0.4:37430 - "GET /api/metrics/working-hours-config HTTP/1.1" 200 OK
+INFO:     172.23.0.4:37450 - "GET /api/admin/working-hours HTTP/1.1" 200 OK
+INFO:     172.23.0.4:37474 - "GET /api/api/admin/email-template HTTP/1.1" 404 Not Found
+INFO:     172.23.0.4:37434 - "GET /api/admin/quota-levels HTTP/1.1" 200 OK
+INFO:     172.23.0.4:37426 - "GET /api/admin/users?time_filter=all&year=2026&month=4 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:37476 - "GET /api/api/admin/email-template/variables HTTP/1.1" 404 Not Found
+INFO:     172.23.0.4:37492 - "GET /api/metrics/working-hours-config HTTP/1.1" 200 OK
+INFO:     172.23.0.4:37494 - "GET /api/admin/trend?time_filter=all&start=2026-03-23&end=2026-04-21 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:37502 - "GET /api/metrics/working-hours-config HTTP/1.1" 200 OK
+INFO:     172.23.0.4:37506 - "GET /api/admin/departments?time_filter=all HTTP/1.1" 200 OK
+INFO:     172.23.0.4:37514 - "GET /api/admin/leaderboard?time_filter=all HTTP/1.1" 200 OK
+INFO:     172.23.0.4:60230 - "PUT /api/admin/working-hours HTTP/1.1" 200 OK
+INFO:     172.23.0.4:56556 - "GET /api/metrics/summary HTTP/1.1" 200 OK
+INFO:     172.23.0.4:56574 - "GET /api/metrics/working-hours-config HTTP/1.1" 200 OK
+INFO:     172.23.0.4:56580 - "GET /api/admin/working-hours HTTP/1.1" 200 OK
+INFO:     172.23.0.4:56588 - "GET /api/admin/quota-levels HTTP/1.1" 200 OK
+INFO:     172.23.0.4:56564 - "GET /api/admin/users?time_filter=all&year=2026&month=4 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:56604 - "GET /api/api/admin/notification-config HTTP/1.1" 404 Not Found
+INFO:     172.23.0.4:56618 - "GET /api/api/admin/email-template HTTP/1.1" 404 Not Found
+INFO:     172.23.0.4:56626 - "GET /api/api/admin/email-template/variables HTTP/1.1" 404 Not Found
+INFO:     172.23.0.4:56642 - "GET /api/metrics/working-hours-config HTTP/1.1" 200 OK
+INFO:     172.23.0.4:56648 - "GET /api/admin/trend?time_filter=all&start=2026-03-23&end=2026-04-21 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:56650 - "GET /api/metrics/working-hours-config HTTP/1.1" 200 OK
+INFO:     172.23.0.4:56666 - "GET /api/admin/departments?time_filter=all HTTP/1.1" 200 OK
+INFO:     172.23.0.4:56676 - "GET /api/admin/leaderboard?time_filter=all HTTP/1.1" 200 OK
+INFO:     172.23.0.4:45656 - "GET /api/metrics/summary HTTP/1.1" 200 OK
+INFO:     172.23.0.4:45704 - "GET /api/api/admin/notification-config HTTP/1.1" 404 Not Found
+INFO:     172.23.0.4:45664 - "GET /api/metrics/working-hours-config HTTP/1.1" 200 OK
+INFO:     172.23.0.4:45688 - "GET /api/admin/working-hours HTTP/1.1" 200 OK
+INFO:     172.23.0.4:45682 - "GET /api/admin/quota-levels HTTP/1.1" 200 OK
+INFO:     172.23.0.4:45666 - "GET /api/admin/users?time_filter=all&year=2026&month=4 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:45720 - "GET /api/api/admin/email-template HTTP/1.1" 404 Not Found
+INFO:     172.23.0.4:45730 - "GET /api/api/admin/email-template/variables HTTP/1.1" 404 Not Found
+INFO:     172.23.0.4:45738 - "GET /api/metrics/working-hours-config HTTP/1.1" 200 OK
+INFO:     172.23.0.4:45740 - "GET /api/admin/trend?time_filter=all&start=2026-03-23&end=2026-04-21 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:45756 - "GET /api/metrics/working-hours-config HTTP/1.1" 200 OK
+INFO:     172.23.0.4:45772 - "GET /api/admin/departments?time_filter=all HTTP/1.1" 200 OK
+INFO:     172.23.0.4:45788 - "GET /api/admin/leaderboard?time_filter=all HTTP/1.1" 200 OK
+INFO:     172.23.0.4:41204 - "GET /api/metrics/summary HTTP/1.1" 200 OK
+INFO:     172.23.0.4:41250 - "GET /api/api/admin/notification-config HTTP/1.1" 404 Not Found
+INFO:     172.23.0.4:41214 - "GET /api/metrics/working-hours-config HTTP/1.1" 200 OK
+INFO:     172.23.0.4:41230 - "GET /api/admin/working-hours HTTP/1.1" 200 OK
+INFO:     172.23.0.4:41238 - "GET /api/admin/quota-levels HTTP/1.1" 200 OK
+INFO:     172.23.0.4:41210 - "GET /api/admin/users?time_filter=all&year=2026&month=4 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:41258 - "GET /api/api/admin/email-template HTTP/1.1" 404 Not Found
+INFO:     172.23.0.4:41262 - "GET /api/api/admin/email-template/variables HTTP/1.1" 404 Not Found
+INFO:     172.23.0.4:41266 - "GET /api/metrics/working-hours-config HTTP/1.1" 200 OK
+INFO:     172.23.0.4:41268 - "GET /api/admin/trend?time_filter=all&start=2026-03-23&end=2026-04-21 HTTP/1.1" 200 OK
+INFO:     172.23.0.4:41282 - "GET /api/metrics/working-hours-config HTTP/1.1" 200 OK
+INFO:     172.23.0.4:41294 - "GET /api/admin/departments?time_filter=all HTTP/1.1" 200 OK
+INFO:     172.23.0.4:41310 - "GET /api/admin/leaderboard?time_filter=all HTTP/1.1" 200 OK
+INFO:     172.23.0.1:54558 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     172.23.0.4:52830 - "GET /api/metrics/summary HTTP/1.1" 401 Unauthorized
+INFO:     172.23.0.1:56880 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     172.23.0.1:60738 - "POST /api/auth/test-login HTTP/1.1" 200 OK
+INFO:     172.23.0.1:42508 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     172.23.0.1:42524 - "POST /api/auth/test-login HTTP/1.1" 200 OK
+INFO:     172.23.0.1:37038 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     172.23.0.1:37046 - "GET /api/admin/quota-levels HTTP/1.1" 200 OK
+INFO:     172.23.0.1:37058 - "GET /api/admin/users?month=4 HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55490 - "GET /health HTTP/1.1" 200 OK
+INFO:     172.23.0.1:40544 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     172.23.0.1:36910 - "GET /health HTTP/1.1" 200 OK
+INFO:     172.23.0.1:36922 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     172.23.0.1:36934 - "POST /api/auth/test-login HTTP/1.1" 200 OK
+INFO:     172.23.0.1:36938 - "POST /api/auth/test-login HTTP/1.1" 200 OK
+INFO:     172.23.0.1:36948 - "GET /api/metrics/summary HTTP/1.1" 200 OK
+INFO:     172.23.0.1:36956 - "GET /api/metrics/trend?range=7 HTTP/1.1" 200 OK
+INFO:     172.23.0.1:36972 - "GET /api/metrics/model-distribution HTTP/1.1" 200 OK
+INFO:     172.23.0.1:36976 - "GET /api/metrics/detail HTTP/1.1" 200 OK
+INFO:     172.23.0.1:36986 - "GET /api/metrics/export.csv HTTP/1.1" 200 OK
+INFO:     172.23.0.1:36992 - "GET /api/metrics/working-hours-config HTTP/1.1" 200 OK
+INFO:     172.23.0.1:36994 - "GET /api/quota/usage HTTP/1.1" 200 OK
+INFO:     172.23.0.1:37004 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     172.23.0.1:37012 - "GET /api/admin/quota-levels HTTP/1.1" 200 OK
+INFO:     172.23.0.1:37024 - "GET /api/admin/quota-levels HTTP/1.1" 200 OK
+INFO:     172.23.0.1:37030 - "PUT /api/admin/quota-levels/L1 HTTP/1.1" 200 OK
+INFO:     172.23.0.1:37032 - "GET /api/admin/users HTTP/1.1" 200 OK
+INFO:     172.23.0.1:37034 - "GET /api/admin/users HTTP/1.1" 200 OK
+INFO:     172.23.0.1:37036 - "PUT /api/admin/users/%E4%BD%95%E4%B8%BD/level HTTP/1.1" 200 OK
+INFO:     172.23.0.1:37046 - "GET /api/admin/trend HTTP/1.1" 200 OK
+INFO:     172.23.0.1:37054 - "GET /api/admin/departments HTTP/1.1" 200 OK
+INFO:     172.23.0.1:37068 - "GET /api/admin/leaderboard HTTP/1.1" 200 OK
+INFO:     172.23.0.1:37076 - "GET /api/admin/users/export-csv HTTP/1.1" 200 OK
+INFO:     172.23.0.1:37086 - "GET /api/admin/leaderboard/export-csv HTTP/1.1" 200 OK
+INFO:     172.23.0.1:37102 - "GET /api/admin/working-hours HTTP/1.1" 200 OK
+INFO:     172.23.0.1:37116 - "GET /api/admin/working-hours HTTP/1.1" 200 OK
+INFO:     172.23.0.1:37124 - "PUT /api/admin/working-hours HTTP/1.1" 200 OK
+INFO:     172.23.0.1:37128 - "GET /api/admin/email-template HTTP/1.1" 200 OK
+INFO:     172.23.0.1:37138 - "GET /api/admin/email-template HTTP/1.1" 200 OK
+INFO:     172.23.0.1:37154 - "PUT /api/admin/email-template HTTP/1.1" 200 OK
+INFO:     172.23.0.1:37156 - "POST /api/admin/email-template/preview HTTP/1.1" 422 Unprocessable Entity
+INFO:     172.23.0.1:37166 - "GET /api/admin/email-template/variables HTTP/1.1" 200 OK
+INFO:     172.23.0.1:37176 - "GET /api/admin/notification-config HTTP/1.1" 200 OK
+INFO:     172.23.0.1:37182 - "GET /api/admin/notification-config HTTP/1.1" 200 OK
+INFO:     172.23.0.1:37192 - "PUT /api/admin/notification-config HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55064 - "GET /health HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55078 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55088 - "POST /api/auth/test-login HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55098 - "POST /api/auth/test-login HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55114 - "GET /api/metrics/summary HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55128 - "GET /api/metrics/trend?range=7 HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55130 - "GET /api/metrics/model-distribution HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55146 - "GET /api/metrics/detail HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55158 - "GET /api/metrics/export.csv HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55168 - "GET /api/metrics/working-hours-config HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55170 - "GET /api/quota/usage HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55178 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55194 - "GET /api/admin/quota-levels HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55198 - "GET /api/admin/quota-levels HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55210 - "PUT /api/admin/quota-levels/L1 HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55212 - "GET /api/admin/users HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55222 - "GET /api/admin/users HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55224 - "PUT /api/admin/users/%E4%BD%95%E4%B8%BD/level HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55234 - "GET /api/admin/trend HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55236 - "GET /api/admin/departments HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55248 - "GET /api/admin/leaderboard HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55252 - "GET /api/admin/users/export-csv HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55266 - "GET /api/admin/leaderboard/export-csv HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55282 - "GET /api/admin/working-hours HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55288 - "GET /api/admin/working-hours HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55302 - "PUT /api/admin/working-hours HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55314 - "GET /api/admin/email-template HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55322 - "GET /api/admin/email-template HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55328 - "PUT /api/admin/email-template HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55340 - "GET /api/admin/email-template HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55356 - "POST /api/admin/email-template/preview HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55364 - "GET /api/admin/email-template/variables HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55378 - "GET /api/admin/notification-config HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55388 - "GET /api/admin/notification-config HTTP/1.1" 200 OK
+INFO:     172.23.0.1:55404 - "PUT /api/admin/notification-config HTTP/1.1" 200 OK

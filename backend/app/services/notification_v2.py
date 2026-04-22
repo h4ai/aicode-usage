@@ -12,7 +12,7 @@ import time
 from datetime import datetime, timezone
 
 from app.config import get_config
-from app.services.clickhouse import get_monthly_token_usage, get_daily_request_count, get_all_users_from_clickhouse
+from app.services.clickhouse import get_all_users_from_clickhouse, get_daily_request_count, get_monthly_token_usage
 from app.services.database import (
     get_all_users,
     get_quota_limits,
@@ -44,15 +44,14 @@ def send_notification_email(
     period_key: str,
 ) -> bool:
     """Send a single notification email. Returns True on success, False on failure."""
-    from app.services.notification import mail_send
     import asyncio
 
-    cfg = get_config()
     from app.services.database import get_email_template
+    from app.services.notification import mail_send
     template = get_email_template("default")
 
     # Build context for template rendering
-    from app.services.template_renderer import render_template, build_context
+    from app.services.template_renderer import build_context, render_template
     context = build_context(
         username=username,
         user_id=user_id,

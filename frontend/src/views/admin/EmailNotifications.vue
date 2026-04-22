@@ -5,52 +5,134 @@
   <div class="email-notifications">
     <!-- 筛选栏 -->
     <el-card style="margin-bottom: 16px">
-      <el-form :inline="true" @submit.prevent="loadData">
+      <el-form
+        :inline="true"
+        @submit.prevent="loadData"
+      >
         <el-form-item label="用户ID">
-          <el-input v-model="filters.userId" placeholder="按用户ID过滤" clearable style="width: 160px" />
+          <el-input
+            v-model="filters.userId"
+            placeholder="按用户ID过滤"
+            clearable
+            style="width: 160px"
+          />
         </el-form-item>
         <el-form-item label="配额类型">
-          <el-select v-model="filters.quotaType" placeholder="全部" clearable style="width: 160px">
-            <el-option value="monthly_token" label="月度Token" />
-            <el-option value="daily_chats" label="日对话" />
+          <el-select
+            v-model="filters.quotaType"
+            placeholder="全部"
+            clearable
+            style="width: 160px"
+          >
+            <el-option
+              value="monthly_token"
+              label="月度Token"
+            />
+            <el-option
+              value="daily_chats"
+              label="日对话"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="周期">
-          <el-input v-model="filters.periodKey" placeholder="如 2026-04" clearable style="width: 140px" />
+          <el-input
+            v-model="filters.periodKey"
+            placeholder="如 2026-04"
+            clearable
+            style="width: 140px"
+          />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="loadData">查询</el-button>
-          <el-button type="danger" @click="showResetDialog = true">批量重置</el-button>
+          <el-button
+            type="primary"
+            @click="loadData"
+          >
+            查询
+          </el-button>
+          <el-button
+            type="danger"
+            @click="showResetDialog = true"
+          >
+            批量重置
+          </el-button>
         </el-form-item>
       </el-form>
     </el-card>
 
     <!-- 数据表格 -->
     <el-card>
-      <el-table :data="items" v-loading="loading" stripe border style="width: 100%">
-        <el-table-column prop="user_id" label="用户ID" width="140" />
-        <el-table-column prop="quota_type" label="配额类型" width="120">
+      <el-table
+        v-loading="loading"
+        :data="items"
+        stripe
+        border
+        style="width: 100%"
+      >
+        <el-table-column
+          prop="user_id"
+          label="用户ID"
+          width="140"
+        />
+        <el-table-column
+          prop="quota_type"
+          label="配额类型"
+          width="120"
+        >
           <template #default="{ row }">
             {{ row.quota_type === 'monthly_token' ? '月度Token' : '日对话' }}
           </template>
         </el-table-column>
-        <el-table-column prop="threshold" label="阈值" width="80">
-          <template #default="{ row }">{{ row.threshold }}%</template>
-        </el-table-column>
-        <el-table-column prop="period_key" label="周期" width="110" />
-        <el-table-column prop="over_limit" label="是否超限" width="90">
+        <el-table-column
+          prop="threshold"
+          label="阈值"
+          width="80"
+        >
           <template #default="{ row }">
-            <el-tag :type="row.over_limit ? 'danger' : 'success'" size="small">
+            {{ row.threshold }}%
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="period_key"
+          label="周期"
+          width="110"
+        />
+        <el-table-column
+          prop="over_limit"
+          label="是否超限"
+          width="90"
+        >
+          <template #default="{ row }">
+            <el-tag
+              :type="row.over_limit ? 'danger' : 'success'"
+              size="small"
+            >
               {{ row.over_limit ? '是' : '否' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="sent_at" label="发送时间" width="180">
-          <template #default="{ row }">{{ formatTime(row.sent_at) }}</template>
-        </el-table-column>
-        <el-table-column label="操作" width="100" fixed="right">
+        <el-table-column
+          prop="sent_at"
+          label="发送时间"
+          width="180"
+        >
           <template #default="{ row }">
-            <el-button type="primary" link size="small" @click="handleResend(row)">重发</el-button>
+            {{ formatTime(row.sent_at) }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="操作"
+          width="100"
+          fixed="right"
+        >
+          <template #default="{ row }">
+            <el-button
+              type="primary"
+              link
+              size="small"
+              @click="handleResend(row)"
+            >
+              重发
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -68,21 +150,44 @@
     </el-card>
 
     <!-- 批量重置对话框 -->
-    <el-dialog v-model="showResetDialog" title="批量重置通知记录" width="440px">
+    <el-dialog
+      v-model="showResetDialog"
+      title="批量重置通知记录"
+      width="440px"
+    >
       <el-form label-width="80px">
         <el-form-item label="用户ID">
-          <el-input v-model="resetForm.userId" placeholder="留空则不限" clearable />
+          <el-input
+            v-model="resetForm.userId"
+            placeholder="留空则不限"
+            clearable
+          />
         </el-form-item>
         <el-form-item label="周期">
-          <el-input v-model="resetForm.periodKey" placeholder="留空则不限" clearable />
+          <el-input
+            v-model="resetForm.periodKey"
+            placeholder="留空则不限"
+            clearable
+          />
         </el-form-item>
-        <el-alert type="warning" :closable="false" style="margin-top: 8px">
+        <el-alert
+          type="warning"
+          :closable="false"
+          style="margin-top: 8px"
+        >
           两项都留空将清空所有通知记录，请谨慎操作。
         </el-alert>
       </el-form>
       <template #footer>
-        <el-button @click="showResetDialog = false">取消</el-button>
-        <el-button type="danger" @click="handleReset">确认重置</el-button>
+        <el-button @click="showResetDialog = false">
+          取消
+        </el-button>
+        <el-button
+          type="danger"
+          @click="handleReset"
+        >
+          确认重置
+        </el-button>
       </template>
     </el-dialog>
   </div>

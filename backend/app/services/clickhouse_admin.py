@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timezone
 from typing import Any
 
 from app.data_schema import (
@@ -19,7 +19,6 @@ from app.data_schema import (
     TOTAL_TOKEN,
     USERNAME,
 )
-
 from app.services.clickhouse_client import _cache, _get_client, _safe_int
 from app.services.clickhouse_filters import (
     _BASE_FILTER,
@@ -446,10 +445,14 @@ def _get_all_users_batch_impl(
 
     sql_monthly = (
         f"SELECT {USERNAME},"
-        f" sumIf({TOTAL_TOKEN}, {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}{wh}) AS monthly_token,"
-        f" sumIf({TOTAL_TOKEN}, {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}) AS monthly_token_all,"
-        f" countIf({EVENT_CODE} = 'chat_request_response' AND totalToken > 0 AND {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}{wh}) AS monthly_chats,"
-        f" countIf({EVENT_CODE} = 'chat_request_response' AND totalToken > 0 AND {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}) AS monthly_chats_all,"
+        f" sumIf({TOTAL_TOKEN}, {EVENT_DATE} >= {{start:String}}"
+        f" AND {EVENT_DATE} <= {{end:String}}{wh}) AS monthly_token,"
+        f" sumIf({TOTAL_TOKEN}, {EVENT_DATE} >= {{start:String}}"
+        f" AND {EVENT_DATE} <= {{end:String}}) AS monthly_token_all,"
+        f" countIf({EVENT_CODE} = 'chat_request_response' AND totalToken > 0"
+        f" AND {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}{wh}) AS monthly_chats,"
+        f" countIf({EVENT_CODE} = 'chat_request_response' AND totalToken > 0"
+        f" AND {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}) AS monthly_chats_all,"
         f" countIf({EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}{wh}) AS monthly_requests"
         f" FROM events"
         f" PREWHERE {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}"

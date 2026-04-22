@@ -22,9 +22,6 @@ from slowapi.util import get_remote_address
 from app.config import get_config
 from app.services.auth import create_token
 from app.services.database import upsert_user
-
-# 登录限速：每IP每分钟最多10次
-_limiter = Limiter(key_func=get_remote_address)
 from app.services.ldap_service import (
     LdapAuthError,
     LdapUnavailableError,
@@ -32,6 +29,9 @@ from app.services.ldap_service import (
 from app.services.ldap_service import (
     authenticate as ldap_authenticate,
 )
+
+# 登录限速：每IP每分钟最多10次
+_limiter = Limiter(key_func=get_remote_address)
 
 router = APIRouter(prefix="/api/auth")
 logger = logging.getLogger(__name__)

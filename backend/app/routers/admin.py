@@ -41,7 +41,6 @@ from app.services.database import (
     get_email_template,
     get_quota_limits,
     get_user,
-    has_sent_notification,
     mark_notification_sent,
     save_email_template,
     update_quota_level,
@@ -386,7 +385,12 @@ class LeaderboardItem(BaseModel):
     quota_usage_pct: float
 
 
-def get_leaderboard(top: int | None = None, time_filter: str = "all", start: str | None = None, end: str | None = None) -> list[dict[str, Any]]:
+def get_leaderboard(
+    top: int | None = None,
+    time_filter: str = "all",
+    start: str | None = None,
+    end: str | None = None,
+) -> list[dict[str, Any]]:
     """Return all users sorted by token consumption in the given range."""
     # 单次批量查询：token + requests + chats（3 次 → 1 次）
     rows = get_leaderboard_batch(time_filter=time_filter, start_date=start, end_date=end)
