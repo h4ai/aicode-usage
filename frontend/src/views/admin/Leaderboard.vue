@@ -147,8 +147,8 @@
       <DetailTable
         :time-filter="timeFilter"
         :user-id="detailUser.username"
-        :initial-start="detailDateRange.start"
-        :initial-end="detailDateRange.end"
+        :initial-start="detailDateRange.start ?? undefined"
+        :initial-end="detailDateRange.end ?? undefined"
       />
     </el-dialog>
   </div>
