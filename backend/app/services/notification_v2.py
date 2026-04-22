@@ -65,7 +65,14 @@ def send_notification_email(
     body = render_template(template["body_html"], context)
 
     try:
-        asyncio.run(mail_send(subject, to_email, "", body))
+        # APScheduler runs in a background thread; create a fresh event loop
+        # to avoid "This event loop is already running" when asyncio.run() is
+        # called from a thread that already has a running loop (FastAPI main thread).
+        loop = asyncio.new_event_loop()
+        try:
+            loop.run_until_complete(mail_send(subject, to_email, "", body))
+        finally:
+            loop.close()
         return True
     except Exception as exc:
         logger.error("Failed to send email to %s: %s", to_email, exc)

@@ -101,12 +101,14 @@ def _get_pool() -> psycopg2.pool.ThreadedConnectionPool:
             if _pool is None:
                 cfg = get_config()
                 url = cfg.get("database", {}).get("url", "")
+                # Append connect_timeout so new connections fail fast instead of blocking
+                dsn = url + ("&" if "?" in url else "?") + "connect_timeout=10"
                 _pool = psycopg2.pool.ThreadedConnectionPool(
                     minconn=2,
                     maxconn=20,
-                    dsn=url,
+                    dsn=dsn,
                 )
-                logger.info("PostgreSQL connection pool initialized (min=2, max=20)")
+                logger.info("PostgreSQL connection pool initialized (min=2, max=20, connect_timeout=10s)")
     return _pool
 
 
@@ -114,7 +116,10 @@ def _get_pool() -> psycopg2.pool.ThreadedConnectionPool:
 def _get_conn_ctx():  # type: ignore[return]
     """Context manager: acquire a pooled connection, return it on exit."""
     pool = _get_pool()
+    # timeout=10s prevents indefinite blocking when all 20 connections are in use
     conn = pool.getconn()
+    if conn is None:
+        raise RuntimeError("PostgreSQL connection pool exhausted (maxconn=20)")
     try:
         yield conn
     finally:
