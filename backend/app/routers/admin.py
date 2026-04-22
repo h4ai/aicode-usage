@@ -557,13 +557,9 @@ def update_working_hours(
     _user: dict[str, Any] = Depends(require_admin),
 ) -> WorkingHoursConfig:
     """Update working hours config (writes back to config.yaml)."""
-    from pathlib import Path
-
     import yaml
 
-    from app.config import load_config
-
-    config_path = Path(__file__).resolve().parent.parent.parent / "config.yaml"
+    from app.config import _CONFIG_PATH as config_path, load_config
     with open(config_path) as f:
         cfg = yaml.safe_load(f) or {}
 
