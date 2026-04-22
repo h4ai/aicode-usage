@@ -172,8 +172,8 @@ const dialogVisible = ref(false)
 const detailUser = reactive({ username: '', displayName: '' })
 
 function openDetail(row: any) {
-  detailUser.username = row.username
-  detailUser.displayName = row.display_name || row.username
+  detailUser.username = row.user_id
+  detailUser.displayName = row.display_name || row.user_id
   dialogVisible.value = true
 }
 
