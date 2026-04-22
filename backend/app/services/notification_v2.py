@@ -113,6 +113,11 @@ def check_quota_alerts() -> None:
     else:
         # Fallback: use PG users directly
         users = pg_users
+    # 限流参数：从 notification config 读取，默认每批 10 封，批间隔 2 秒
+    batch_size: int = notif_cfg.get("email_batch_size", 10)
+    batch_delay: float = float(notif_cfg.get("email_batch_delay_seconds", 2))
+    emails_sent_this_run = 0
+
     for user in users:
         user_id = user["user_id"]
         mail = user.get("mail") or ""
@@ -178,10 +183,15 @@ def check_quota_alerts() -> None:
                 if success:
                     over_limit = threshold >= 100
                     mark_notification_sent(user_id, quota_type, threshold, period_key, over_limit)
+                    emails_sent_this_run += 1
                     logger.info(
                         "Notification sent: user=%s type=%s threshold=%d%%",
                         user_id, quota_type, threshold,
                     )
+                    # 批量限流：每发 batch_size 封，暂停 batch_delay 秒
+                    if batch_size > 0 and emails_sent_this_run % batch_size == 0:
+                        logger.info("Rate limiting: sent %d emails, sleeping %.1fs", emails_sent_this_run, batch_delay)
+                        time.sleep(batch_delay)
                 else:
                     logger.error(
                         "Failed to send notification after 3 attempts: user=%s type=%s threshold=%d%%",
