@@ -57,7 +57,7 @@ def test_create_pat_invalid_expires(client, admin_token, admin_config_patch):
         headers=_auth_headers(admin_token),
     )
     assert resp.status_code == 400
-    assert "expires_months" in resp.json()["detail"].lower()
+    assert "expires_months" in resp.json()["message"].lower()
 
 
 def test_create_pat_limit_5(client, admin_token, admin_config_patch):
@@ -69,7 +69,7 @@ def test_create_pat_limit_5(client, admin_token, admin_config_patch):
             headers=_auth_headers(admin_token),
         )
     assert resp.status_code == 400
-    assert "5" in resp.json()["detail"]
+    assert "5" in resp.json()["message"]
 
 
 # ---------------------------------------------------------------------------

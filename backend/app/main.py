@@ -10,7 +10,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from apscheduler.schedulers.background import BackgroundScheduler
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -120,6 +120,29 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.exception_handler(HTTPException)
+async def _http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
+    """Custom error format for PAT routes (/api/v1/ and /api/tokens)."""
+    if request.url.path.startswith("/api/v1") or request.url.path.startswith("/api/tokens"):
+        code_map = {
+            401: "unauthorized",
+            403: "forbidden",
+            429: "too_many_requests",
+            400: "bad_request",
+            404: "not_found",
+        }
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "error": code_map.get(exc.status_code, "error"),
+                "message": str(exc.detail),
+                "code": exc.status_code,
+            },
+            headers=dict(exc.headers) if exc.headers else {},
+        )
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
 
 @app.exception_handler(Exception)
 async def _global_exception_handler(request: Request, exc: Exception) -> JSONResponse:

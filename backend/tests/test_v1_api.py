@@ -139,3 +139,97 @@ def test_admin_leaderboard_pagination(client):
     assert data["total"] == 5
     assert data["page"] == 1
     assert len(data["items"]) == 2
+
+
+# ---------------------------------------------------------------------------
+# GET /api/v1/usage/summary — scope=week
+# ---------------------------------------------------------------------------
+
+def test_usage_summary_week(client):
+    resp = _run(client, "get", "/api/v1/usage/summary?scope=week", **{
+        f"{_V1}.get_weekly_token_usage": 20000,
+        f"{_V1}.get_weekly_request_count": 60,
+        f"{_V1}.get_chat_session_count": 15,
+    })
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["total_token"] == 20000
+    assert data["request_count"] == 60
+    assert "daily_avg_token" in data
+    assert "chat_count" in data
+
+
+# ---------------------------------------------------------------------------
+# GET /api/v1/usage/summary — scope=today
+# ---------------------------------------------------------------------------
+
+def test_usage_summary_today(client):
+    resp = _run(client, "get", "/api/v1/usage/summary?scope=today", **{
+        f"{_V1}.get_today_token_usage": 5000,
+        f"{_V1}.get_daily_request_count": 10,
+        f"{_V1}.get_chat_session_count": 3,
+    })
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["total_token"] == 5000
+    assert data["request_count"] == 10
+    assert "chat_count" in data
+
+
+# ---------------------------------------------------------------------------
+# GET /api/v1/admin/users
+# ---------------------------------------------------------------------------
+
+def test_admin_users_endpoint(client):
+    from pydantic import BaseModel
+
+    class _FakeResponse(BaseModel):
+        total: int = 2
+        page: int = 1
+        page_size: int = 50
+        items: list = []
+
+    admin_pat = _pat(role="admin", user_id="admin")
+    resp = _run(client, "get", "/api/v1/admin/users",
+                pat_record=admin_pat, **{
+                    "app.routers.admin.list_users": _FakeResponse(),
+                })
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "total" in data
+
+
+# ---------------------------------------------------------------------------
+# GET /api/v1/admin/department-summary
+# ---------------------------------------------------------------------------
+
+def test_admin_department_summary(client):
+    mock_rows = [{"department": "eng", "total_token": 100000, "user_count": 5}]
+    admin_pat = _pat(role="admin", user_id="admin")
+    resp = _run(client, "get", "/api/v1/admin/department-summary",
+                pat_record=admin_pat, **{
+                    "app.routers.admin.get_department_summary": mock_rows,
+                })
+    assert resp.status_code == 200
+    data = resp.json()
+    assert isinstance(data, list)
+    assert len(data) == 1
+
+
+# ---------------------------------------------------------------------------
+# Error response format
+# ---------------------------------------------------------------------------
+
+def test_error_response_format(client):
+    """401 on /api/v1/ should return {error, message, code} format."""
+    from app.auth_pat import _rate_cache
+    _rate_cache.clear()
+    with patch(f"{_A}.get_pat_by_hash", return_value=None), \
+         patch(f"{_A}.add_pat_audit_log"):
+        resp = client.get("/api/v1/usage/summary", headers={"Authorization": "Bearer pat_invalid_token_xyz"})
+    assert resp.status_code == 401
+    data = resp.json()
+    assert data["error"] == "unauthorized"
+    assert data["code"] == 401
+    assert "message" in data
+    _rate_cache.clear()

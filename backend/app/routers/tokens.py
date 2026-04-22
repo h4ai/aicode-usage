@@ -6,6 +6,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import secrets
+import string
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -85,7 +86,7 @@ def create_token(
         raise HTTPException(status_code=400, detail="Maximum 5 active tokens allowed")
 
     # Generate token
-    raw = "pat_" + secrets.token_urlsafe(30)
+    raw = "pat_" + "".join(secrets.choice(string.ascii_letters + string.digits) for _ in range(40))
     token_hash = hashlib.sha256(raw.encode()).hexdigest()
     token_prefix = raw[:12]
     expires_at = (datetime.now(tz=timezone.utc) + timedelta(days=body.expires_months * 30)).isoformat()

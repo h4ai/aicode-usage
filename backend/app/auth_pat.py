@@ -83,6 +83,7 @@ def _authenticate_pat(
 
     pat = get_pat_by_hash(token_hash)
     if not pat:
+        add_pat_audit_log(None, "unknown", "auth_fail", ip, f"token_not_found: {token_hash[:8]}")
         raise HTTPException(status_code=401, detail="Invalid token")
 
     now = datetime.now(tz=timezone.utc)

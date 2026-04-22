@@ -105,7 +105,8 @@ def test_pat_invalid(client):
     """Random string PAT returns 401."""
     from app.auth_pat import _rate_cache
     _rate_cache.clear()
-    with patch(f"{_A}.get_pat_by_hash", return_value=None):
+    with patch(f"{_A}.get_pat_by_hash", return_value=None), \
+         patch(f"{_A}.add_pat_audit_log"):
         resp = client.get("/api/v1/usage/summary", headers=_bearer("pat_random_garbage_string"))
     assert resp.status_code == 401
     _rate_cache.clear()
@@ -158,6 +159,28 @@ def test_user_pat_cannot_access_admin(client):
     ):
         resp = client.get("/api/v1/admin/leaderboard", headers=_bearer(_VALID_TOKEN))
     assert resp.status_code == 403
+    _rate_cache.clear()
+
+
+def test_unknown_token_audit_log(client):
+    """Unknown token should trigger auth_fail audit log."""
+    from app.auth_pat import _rate_cache
+    from unittest.mock import MagicMock
+    _rate_cache.clear()
+
+    mock_audit = MagicMock()
+    with (
+        patch(f"{_A}.get_pat_by_hash", return_value=None),
+        patch(f"{_A}.add_pat_audit_log", mock_audit),
+    ):
+        resp = client.get("/api/v1/usage/summary", headers=_bearer("pat_totally_unknown_token_abc"))
+    assert resp.status_code == 401
+    mock_audit.assert_called_once()
+    call_args = mock_audit.call_args
+    assert call_args[0][0] is None  # token_id=None
+    assert call_args[0][1] == "unknown"  # user_id
+    assert call_args[0][2] == "auth_fail"  # action
+    assert "token_not_found" in call_args[0][4]  # details
     _rate_cache.clear()
 
 
