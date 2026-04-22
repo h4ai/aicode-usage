@@ -89,7 +89,16 @@
         <el-table-column
           prop="display_name"
           label="姓名"
-        />
+        >
+          <template #default="{ row }">
+            <el-link
+              type="primary"
+              @click="openDetail(row)"
+            >
+              {{ row.display_name }}
+            </el-link>
+          </template>
+        </el-table-column>
         <el-table-column
           prop="enterprise"
           label="分组"
@@ -128,13 +137,28 @@
         />
       </div>
     </el-card>
+
+    <el-dialog
+      v-model="dialogVisible"
+      :title="`${detailUser.displayName} 使用明细`"
+      width="80%"
+      destroy-on-close
+    >
+      <DetailTable
+        :time-filter="timeFilter"
+        :user-id="detailUser.username"
+        :initial-start="detailDateRange.start"
+        :initial-end="detailDateRange.end"
+      />
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, reactive, onMounted } from 'vue'
 import api from '@/api'
 import { useAuthStore } from '@/stores/auth'
+import DetailTable from '@/components/DetailTable.vue'
 
 const auth = useAuthStore()
 const rows = ref<any[]>([])
@@ -146,6 +170,17 @@ const currentPage = ref(1)
 const pageSize = ref(20)
 const rangeMode = ref<'month' | '7' | '30' | 'custom'>('month')
 const customRange = ref<[string, string] | null>(null)
+
+const dialogVisible = ref(false)
+const detailUser = reactive({ username: '', displayName: '' })
+
+function openDetail(row: any) {
+  detailUser.username = row.username
+  detailUser.displayName = row.display_name || row.username
+  dialogVisible.value = true
+}
+
+const detailDateRange = computed(() => _computeDateRange())
 
 const pagedRows = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value

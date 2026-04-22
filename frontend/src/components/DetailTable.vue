@@ -125,7 +125,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-const props = withDefaults(defineProps<{ timeFilter?: string }>(), { timeFilter: 'all' })
+const props = withDefaults(defineProps<{ timeFilter?: string; userId?: string; initialStart?: string; initialEnd?: string }>(), { timeFilter: 'all', userId: '', initialStart: '', initialEnd: '' })
 import api from '@/api'
 
 interface DetailItem {
@@ -167,6 +167,7 @@ function disabledDate(date: Date): boolean {
 /** 构建当前查询参数（导出复用此函数保证一致性） */
 function buildParams(): Record<string, string> {
   const params: Record<string, string> = { time_filter: props.timeFilter }
+  if (props.userId) params.user_id = props.userId
   if (rangeMode.value === 'custom' && customRange.value) {
     params.start = customRange.value[0]
     params.end = customRange.value[1]
@@ -235,7 +236,13 @@ function exportCsv() {
     })
 }
 
-onMounted(fetchDetail)
+onMounted(() => {
+  if (props.initialStart && props.initialEnd) {
+    rangeMode.value = 'custom'
+    customRange.value = [props.initialStart, props.initialEnd]
+  }
+  fetchDetail()
+})
 watch(() => props.timeFilter, fetchDetail)
 </script>
 
