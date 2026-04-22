@@ -77,9 +77,9 @@ def list_quota_levels(
 
 
 class QuotaLevelUpdate(BaseModel):
-    monthly_token: int = Field(gt=0, description="月度Token上限，必须大于0")
-    daily_chats: int = Field(gt=0, description="日对话上限，必须大于0")
-    daily_requests: int = Field(gt=0, description="日请求上限，必须大于0")
+    monthly_token: int = Field(ge=0, description="月度Token上限，0表示不限制")
+    daily_chats: int = Field(ge=0, description="日对话上限，0表示不限制")
+    daily_requests: int = Field(ge=0, description="日请求上限，0表示不限制")
 
 
 @router.put("/quota-levels/{level}", response_model=QuotaLevelItem)
