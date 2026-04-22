@@ -146,7 +146,7 @@ def get_quota_limits(level: str) -> dict[str, Any]:
                 (level,),
             )
             row = cur.fetchone()
-            return dict(row) if row else {"monthly_token": 0, "daily_requests": 0}
+            return dict(row) if row else {"monthly_token": 0, "daily_chats": 0, "daily_requests": 0}
 
 
 def get_all_quota_levels() -> list[dict[str, Any]]:

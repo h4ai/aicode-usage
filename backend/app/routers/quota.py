@@ -16,7 +16,7 @@ from app.services.clickhouse import (
     get_daily_request_count,
     get_monthly_token_usage,
 )
-from app.services.database import get_quota_limits, get_user
+from app.services.database import get_quota_limits, get_user, upsert_user
 
 router = APIRouter(prefix="/api/quota")
 
@@ -72,7 +72,11 @@ def quota_usage(
         effective_user = user  # JWT payload 含 nickname/cn/sam
 
     # Get user's quota level from PostgreSQL
-    db_user = get_user(effective_user.get("sub", ""))
+    uid = effective_user.get("sub", "")
+    db_user = get_user(uid)
+    if not db_user and uid:
+        # First login: user may not yet exist in PG (race with login upsert)
+        db_user = upsert_user(user_id=uid)
     level = db_user["quota_level"] if db_user else "L1"
     limits = get_quota_limits(level)
 
