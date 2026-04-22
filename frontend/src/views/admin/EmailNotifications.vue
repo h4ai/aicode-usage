@@ -9,10 +9,10 @@
         :inline="true"
         @submit.prevent="loadData"
       >
-        <el-form-item label="用户ID">
+        <el-form-item label="用户">
           <el-input
             v-model="filters.userId"
-            placeholder="按用户ID过滤"
+            placeholder="用户ID / 姓名"
             clearable
             style="width: 160px"
           />
@@ -69,10 +69,14 @@
         style="width: 100%"
       >
         <el-table-column
-          prop="user_id"
-          label="用户ID"
+          prop="display_name"
+          label="姓名"
           width="140"
-        />
+        >
+          <template #default="{ row }">
+            {{ row.display_name || row.user_id }}
+          </template>
+        </el-table-column>
         <el-table-column
           prop="quota_type"
           label="配额类型"
@@ -156,10 +160,10 @@
       width="440px"
     >
       <el-form label-width="80px">
-        <el-form-item label="用户ID">
+        <el-form-item label="用户">
           <el-input
             v-model="resetForm.userId"
-            placeholder="留空则不限"
+            placeholder="用户ID，留空则不限"
             clearable
           />
         </el-form-item>

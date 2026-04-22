@@ -319,24 +319,32 @@ def get_email_notifications(
     conditions: list[str] = []
     params: list[Any] = []
     if user_id:
-        conditions.append("user_id = %s")
+        conditions.append("n.user_id = %s")
         params.append(user_id)
     if quota_type:
-        conditions.append("quota_type = %s")
+        conditions.append("n.quota_type = %s")
         params.append(quota_type)
     if period_key:
-        conditions.append("period_key = %s")
+        conditions.append("n.period_key = %s")
         params.append(period_key)
 
     where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
+    # COUNT query uses simple table scan (no join needed)
+    count_where = (" WHERE " + " AND ".join(
+        c.replace("n.", "") for c in conditions
+    )) if conditions else ""
     offset = (page - 1) * page_size
 
     with _get_conn_ctx() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(f"SELECT COUNT(*) AS cnt FROM email_notifications{where}", params)
+            cur.execute(f"SELECT COUNT(*) AS cnt FROM email_notifications{count_where}", params)
             total = cur.fetchone()["cnt"]
             cur.execute(
-                f"SELECT * FROM email_notifications{where} ORDER BY sent_at DESC LIMIT %s OFFSET %s",
+                f"""SELECT n.*,
+                       COALESCE(u.nickname, u.username, n.user_id) AS display_name
+                    FROM email_notifications n
+                    LEFT JOIN users u ON u.user_id = n.user_id
+                    {where} ORDER BY n.sent_at DESC LIMIT %s OFFSET %s""",
                 params + [page_size, offset],
             )
             items = [dict(row) for row in cur.fetchall()]
