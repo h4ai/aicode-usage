@@ -306,6 +306,64 @@ def mark_notification_sent(
         conn.commit()
 
 
+def get_email_notifications(
+    page: int = 1,
+    page_size: int = 20,
+    user_id: str | None = None,
+    quota_type: str | None = None,
+    period_key: str | None = None,
+) -> dict[str, Any]:
+    """Return paginated email notification records."""
+    conditions: list[str] = []
+    params: list[Any] = []
+    if user_id:
+        conditions.append("user_id = %s")
+        params.append(user_id)
+    if quota_type:
+        conditions.append("quota_type = %s")
+        params.append(quota_type)
+    if period_key:
+        conditions.append("period_key = %s")
+        params.append(period_key)
+
+    where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
+    offset = (page - 1) * page_size
+
+    with _get_conn_ctx() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(f"SELECT COUNT(*) AS cnt FROM email_notifications{where}", params)
+            total = cur.fetchone()["cnt"]
+            cur.execute(
+                f"SELECT * FROM email_notifications{where} ORDER BY sent_at DESC LIMIT %s OFFSET %s",
+                params + [page_size, offset],
+            )
+            items = [dict(row) for row in cur.fetchall()]
+    return {"total": total, "page": page, "page_size": page_size, "items": items}
+
+
+def delete_email_notifications(
+    user_id: str | None = None,
+    period_key: str | None = None,
+) -> int:
+    """Delete notification records. Both params optional; omit both to clear all."""
+    conditions: list[str] = []
+    params: list[Any] = []
+    if user_id:
+        conditions.append("user_id = %s")
+        params.append(user_id)
+    if period_key:
+        conditions.append("period_key = %s")
+        params.append(period_key)
+
+    where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
+    with _get_conn_ctx() as conn:
+        with conn.cursor() as cur:
+            cur.execute(f"DELETE FROM email_notifications{where}", params)
+            deleted = cur.rowcount
+        conn.commit()
+    return deleted
+
+
 # ─── email_templates ───
 
 _DEFAULT_TEMPLATE_SUBJECT = "【AI Code Usage】您的{{quota_type_label}}用量已达 {{threshold}}"

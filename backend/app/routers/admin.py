@@ -10,40 +10,47 @@ import io
 import logging
 from typing import Any
 
-logger = logging.getLogger(__name__)
-
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, field_validator
 
+from app.config import get_config as _get_config
+from app.config import update_notification_config
 from app.deps import require_admin
 from app.services.clickhouse import (
     get_all_users_batch,
-    get_leaderboard_batch,
     get_all_users_chats_in_range,
-    get_all_users_chats_in_month,
     get_all_users_daily_requests,
     get_all_users_from_clickhouse,
     get_all_users_monthly_chats,
     get_all_users_monthly_requests,
     get_all_users_monthly_tokens,
     get_all_users_requests_in_range,
-    get_all_users_requests_in_month,
-    get_all_users_today_chats,
-    get_all_users_today_tokens,
     get_all_users_tokens_in_range,
-    get_all_users_tokens_in_month,
     get_global_trend,
     get_global_trend_by_dept,
     get_global_trend_by_model,
+    get_leaderboard_batch,
 )
+from app.services.clickhouse_user import get_daily_request_count, get_monthly_token_usage
 from app.services.database import (
+    delete_email_notifications,
     get_all_quota_levels,
     get_all_users,
+    get_email_notifications,
+    get_email_template,
     get_quota_limits,
+    get_user,
+    has_sent_notification,
+    mark_notification_sent,
+    save_email_template,
     update_quota_level,
     update_user_level,
 )
+from app.services.notification_v2 import send_notification_email
+from app.services.template_renderer import build_context, render_template
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/admin")
 
@@ -304,7 +311,11 @@ class DeptSummaryItem(BaseModel):
     avg_token_per_user: int
 
 
-def get_department_summary(time_filter: str = "all", start: str | None = None, end: str | None = None) -> list[dict[str, Any]]:
+def get_department_summary(
+    time_filter: str = "all",
+    start: str | None = None,
+    end: str | None = None,
+) -> list[dict[str, Any]]:
     """Compute department summary by merging ClickHouse users with token/request data.
 
     Uses ClickHouse as the authoritative user source (225 users) instead of PostgreSQL
@@ -559,7 +570,8 @@ def update_working_hours(
     """Update working hours config (writes back to config.yaml)."""
     import yaml
 
-    from app.config import _CONFIG_PATH as config_path, load_config
+    from app.config import _CONFIG_PATH as config_path
+    from app.config import load_config
     with open(config_path) as f:
         cfg = yaml.safe_load(f) or {}
 
@@ -584,9 +596,6 @@ def update_working_hours(
 
 
 # ─── Email Template Management ───
-
-from app.services.database import get_email_template, save_email_template
-from app.services.template_renderer import render_template, build_context
 
 
 class EmailTemplateUpdate(BaseModel):
@@ -646,9 +655,6 @@ def get_template_variables(admin: Any = Depends(require_admin)) -> list[dict[str
 
 # ─── Notification Config Management ───
 
-from app.config import update_notification_config
-from pydantic import field_validator
-
 
 class NotificationConfigUpdate(BaseModel):
     enabled: bool | None = None
@@ -700,3 +706,118 @@ def update_notif_config(
         email_domain=body.email_domain,
     )
     return result
+
+
+# ─── Email Notification Records ───
+
+
+class EmailNotificationItem(BaseModel):
+    id: int
+    user_id: str
+    quota_type: str
+    threshold: int
+    period_key: str
+    over_limit: bool
+    sent_at: str
+
+
+class EmailNotificationListResponse(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    items: list[EmailNotificationItem]
+
+
+@router.get("/email-notifications", response_model=EmailNotificationListResponse)
+def list_email_notifications(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    user_id: str | None = Query(None),
+    quota_type: str | None = Query(None),
+    period_key: str | None = Query(None),
+    _user: dict[str, Any] = Depends(require_admin),
+) -> EmailNotificationListResponse:
+    """Return paginated email notification records."""
+    result = get_email_notifications(page, page_size, user_id, quota_type, period_key)
+    for item in result["items"]:
+        if hasattr(item["sent_at"], "isoformat"):
+            item["sent_at"] = item["sent_at"].isoformat()
+    return EmailNotificationListResponse(**result)
+
+
+class EmailNotificationDeleteBody(BaseModel):
+    user_id: str | None = None
+    period_key: str | None = None
+
+
+@router.delete("/email-notifications")
+def reset_email_notifications(
+    body: EmailNotificationDeleteBody,
+    _user: dict[str, Any] = Depends(require_admin),
+) -> dict[str, Any]:
+    """Delete notification records (reset dedup)."""
+    deleted = delete_email_notifications(body.user_id, body.period_key)
+    logger.info("reset_email_notifications: user_id=%s period_key=%s deleted=%d",
+                body.user_id, body.period_key, deleted)
+    return {"success": True, "deleted": deleted}
+
+
+class EmailResendBody(BaseModel):
+    user_id: str
+    quota_type: str
+    threshold: int
+    period_key: str
+
+
+@router.post("/email-notifications/resend")
+def resend_email_notification(
+    body: EmailResendBody,
+    _user: dict[str, Any] = Depends(require_admin),
+) -> dict[str, Any]:
+    """Delete dedup record and resend notification email."""
+    delete_email_notifications(body.user_id, body.period_key)
+
+    user = get_user(body.user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="用户不存在")
+
+    mail = user.get("mail") or ""
+    if not mail:
+        cfg = _get_config()
+        email_domain = cfg.get("notification", {}).get("email_domain", "")
+        if email_domain:
+            mail = f"{body.user_id}@{email_domain}"
+        else:
+            raise HTTPException(status_code=400, detail="用户无邮箱地址且未配置邮件域名")
+
+    quota_level = user.get("quota_level", "L1")
+    limits = get_quota_limits(quota_level)
+    username = user.get("nickname") or user.get("username") or body.user_id
+
+    user_dict = {"username": body.user_id}
+    if body.quota_type == "monthly_token":
+        used = get_monthly_token_usage(user_dict)
+        limit_val = limits.get("monthly_token", 0)
+    else:
+        used = get_daily_request_count(user_dict)
+        limit_val = limits.get("daily_chats", 0)
+
+    success = send_notification_email(
+        to_email=mail,
+        username=username,
+        user_id=body.user_id,
+        quota_type=body.quota_type,
+        used=used,
+        limit=limit_val,
+        threshold=body.threshold,
+        period_key=body.period_key,
+    )
+
+    if not success:
+        raise HTTPException(status_code=500, detail="邮件发送失败")
+
+    mark_notification_sent(body.user_id, body.quota_type, body.threshold, body.period_key,
+                           over_limit=(used >= limit_val if limit_val > 0 else False))
+    logger.info("resend_email_notification: user_id=%s quota_type=%s threshold=%d",
+                body.user_id, body.quota_type, body.threshold)
+    return {"success": True, "message": "邮件已发送"}
