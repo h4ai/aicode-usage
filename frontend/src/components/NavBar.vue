@@ -25,6 +25,9 @@
             >
               已登录：{{ auth.username || '—' }}
             </el-dropdown-item>
+            <el-dropdown-item command="api-tokens">
+              <el-icon><Key /></el-icon> API Token
+            </el-dropdown-item>
             <el-dropdown-item
               divided
               command="logout"
@@ -41,7 +44,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowDown, SwitchButton } from '@element-plus/icons-vue'
+import { ArrowDown, SwitchButton, Key } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 
 defineProps<{ title?: string }>()
@@ -58,6 +61,8 @@ function handleCommand(cmd: string) {
   if (cmd === 'logout') {
     auth.logout()
     router.push('/login')
+  } else if (cmd === 'api-tokens') {
+    router.push('/api-tokens')
   }
 }
 </script>

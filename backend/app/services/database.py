@@ -78,6 +78,36 @@ VALUES (
 <p>— AI Code Usage 系统</p>'
 )
 ON CONFLICT (name) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS personal_access_tokens (
+    id              SERIAL PRIMARY KEY,
+    user_id         TEXT NOT NULL,
+    name            VARCHAR(100) NOT NULL,
+    token_hash      VARCHAR(64) NOT NULL UNIQUE,
+    token_prefix    VARCHAR(12) NOT NULL,
+    role            VARCHAR(10) NOT NULL DEFAULT 'user',
+    expires_at      TIMESTAMPTZ NOT NULL,
+    last_used_at    TIMESTAMPTZ,
+    created_at      TIMESTAMPTZ DEFAULT NOW(),
+    revoked_at      TIMESTAMPTZ,
+    is_locked       BOOLEAN DEFAULT FALSE,
+    locked_until    TIMESTAMPTZ,
+    failed_attempts INT DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS pat_audit_log (
+    id          SERIAL PRIMARY KEY,
+    token_id    INT REFERENCES personal_access_tokens(id) ON DELETE SET NULL,
+    user_id     TEXT NOT NULL,
+    action      VARCHAR(20) NOT NULL,
+    ip_address  VARCHAR(45),
+    details     TEXT,
+    created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_pat_token_hash ON personal_access_tokens(token_hash);
+CREATE INDEX IF NOT EXISTS idx_pat_user_id ON personal_access_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_pat_audit_token_id ON pat_audit_log(token_id);
 """
 
 
@@ -437,3 +467,134 @@ def cleanup_old_email_notifications(days: int = 180) -> int:
             deleted = cur.rowcount
         conn.commit()
     return deleted
+
+
+# ─── Personal Access Tokens (PAT) ───
+
+
+def create_pat(
+    user_id: str,
+    name: str,
+    token_hash: str,
+    token_prefix: str,
+    role: str,
+    expires_at: str,
+) -> dict[str, Any]:
+    with _get_conn_ctx() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                """INSERT INTO personal_access_tokens
+                   (user_id, name, token_hash, token_prefix, role, expires_at)
+                   VALUES (%s, %s, %s, %s, %s, %s) RETURNING *""",
+                (user_id, name, token_hash, token_prefix, role, expires_at),
+            )
+            row = cur.fetchone()
+        conn.commit()
+        return dict(row) if row else {}
+
+
+def list_pats(user_id: str) -> list[dict[str, Any]]:
+    with _get_conn_ctx() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                "SELECT * FROM personal_access_tokens WHERE user_id = %s ORDER BY created_at DESC",
+                (user_id,),
+            )
+            return [dict(row) for row in cur.fetchall()]
+
+
+def get_pat_by_hash(token_hash: str) -> dict[str, Any] | None:
+    with _get_conn_ctx() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                "SELECT * FROM personal_access_tokens WHERE token_hash = %s",
+                (token_hash,),
+            )
+            row = cur.fetchone()
+            return dict(row) if row else None
+
+
+def revoke_pat(pat_id: int, user_id: str) -> bool:
+    with _get_conn_ctx() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE personal_access_tokens SET revoked_at = NOW() "
+                "WHERE id = %s AND user_id = %s AND revoked_at IS NULL",
+                (pat_id, user_id),
+            )
+            ok = cur.rowcount > 0
+        conn.commit()
+        return ok
+
+
+def update_pat_last_used(pat_id: int) -> None:
+    with _get_conn_ctx() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE personal_access_tokens SET last_used_at = NOW() WHERE id = %s",
+                (pat_id,),
+            )
+        conn.commit()
+
+
+def increment_pat_failed(pat_id: int) -> int:
+    with _get_conn_ctx() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE personal_access_tokens SET failed_attempts = failed_attempts + 1 "
+                "WHERE id = %s RETURNING failed_attempts",
+                (pat_id,),
+            )
+            row = cur.fetchone()
+        conn.commit()
+        return row[0] if row else 0
+
+
+def lock_pat(pat_id: int, locked_until: str) -> None:
+    with _get_conn_ctx() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE personal_access_tokens SET is_locked = TRUE, locked_until = %s WHERE id = %s",
+                (locked_until, pat_id),
+            )
+        conn.commit()
+
+
+def reset_pat_failed(pat_id: int) -> None:
+    with _get_conn_ctx() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE personal_access_tokens SET failed_attempts = 0, is_locked = FALSE, "
+                "locked_until = NULL WHERE id = %s",
+                (pat_id,),
+            )
+        conn.commit()
+
+
+def add_pat_audit_log(
+    token_id: int | None,
+    user_id: str,
+    action: str,
+    ip_address: str | None = None,
+    details: str | None = None,
+) -> None:
+    with _get_conn_ctx() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO pat_audit_log (token_id, user_id, action, ip_address, details) "
+                "VALUES (%s, %s, %s, %s, %s)",
+                (token_id, user_id, action, ip_address, details),
+            )
+        conn.commit()
+
+
+def get_pat_count(user_id: str) -> int:
+    with _get_conn_ctx() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT COUNT(*) FROM personal_access_tokens "
+                "WHERE user_id = %s AND revoked_at IS NULL AND expires_at > NOW()",
+                (user_id,),
+            )
+            row = cur.fetchone()
+            return row[0] if row else 0

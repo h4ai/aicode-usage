@@ -18,7 +18,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
 from app.config import get_config
-from app.routers import admin, auth, health, metrics, quota
+from app.routers import admin, auth, health, metrics, quota, tokens, v1
 from app.services.database import init_db
 from app.services.notification_v2 import check_quota_alerts
 
@@ -27,9 +27,14 @@ logger = logging.getLogger(__name__)
 
 def _setup_logging() -> None:
     """Configure unified logging format for the application."""
+    from app.auth_pat import PATFilter
+
     fmt = "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
     datefmt = "%Y-%m-%d %H:%M:%S"
     logging.basicConfig(level=logging.INFO, format=fmt, datefmt=datefmt, force=True)
+
+    # Add PAT filter to root logger
+    logging.getLogger().addFilter(PATFilter())
 
     # Suppress noisy third-party loggers
     for noisy in ("jwt", "apscheduler", "passlib", "multipart", "urllib3"):
@@ -127,3 +132,5 @@ app.include_router(auth.router)
 app.include_router(quota.router)
 app.include_router(metrics.router)
 app.include_router(admin.router)
+app.include_router(tokens.router, prefix="/api")
+app.include_router(v1.router, prefix="/api/v1")
