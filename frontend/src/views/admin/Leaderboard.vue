@@ -144,48 +144,8 @@
       width="85%"
       destroy-on-close
     >
-      <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <span style="font-size:13px;color:#666">时间范围：</span>
-        <el-radio-group
-          v-model="detailTimeFilter"
-          size="small"
-          @change="onDetailTimeChange"
-        >
-          <el-radio-button value="today">
-            今天
-          </el-radio-button>
-          <el-radio-button value="week">
-            本周
-          </el-radio-button>
-          <el-radio-button value="month">
-            本月
-          </el-radio-button>
-          <el-radio-button value="all">
-            全部
-          </el-radio-button>
-          <el-radio-button value="custom">
-            自定义
-          </el-radio-button>
-        </el-radio-group>
-        <el-date-picker
-          v-if="detailTimeFilter === 'custom'"
-          v-model="detailCustomRange"
-          type="daterange"
-          size="small"
-          range-separator="~"
-          start-placeholder="开始"
-          end-placeholder="结束"
-          value-format="YYYY-MM-DD"
-          style="width:220px"
-          @change="onDetailTimeChange"
-        />
-      </div>
       <DetailTable
-        :key="detailUser.username + detailTimeFilter + (detailCustomRange ? detailCustomRange.join() : '')"
-        :time-filter="detailTimeFilter"
         :user-id="detailUser.username"
-        :initial-start="detailStart ?? undefined"
-        :initial-end="detailEnd ?? undefined"
       />
     </el-dialog>
   </div>
@@ -210,27 +170,10 @@ const customRange = ref<[string, string] | null>(null)
 
 const dialogVisible = ref(false)
 const detailUser = reactive({ username: '', displayName: '' })
-const detailTimeFilter = ref('month')
-const detailCustomRange = ref<string[] | null>(null)
-
-const detailStart = computed(() => {
-  if (detailTimeFilter.value === 'custom' && detailCustomRange.value) return detailCustomRange.value[0]
-  return undefined
-})
-const detailEnd = computed(() => {
-  if (detailTimeFilter.value === 'custom' && detailCustomRange.value) return detailCustomRange.value[1]
-  return undefined
-})
-
-function onDetailTimeChange() {
-  // key 绑定已触发重新加载
-}
 
 function openDetail(row: any) {
   detailUser.username = row.username
   detailUser.displayName = row.display_name || row.username
-  detailTimeFilter.value = 'month'
-  detailCustomRange.value = null
   dialogVisible.value = true
 }
 
