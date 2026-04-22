@@ -213,7 +213,7 @@ def update_user_level(user_id: str, level: str) -> dict[str, Any] | None:
         return None
     with _get_conn_ctx() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            # UPSERT: insert with given level if user doesn't exist, else update
+            # UPSERT: only update quota_level; do not overwrite username/nickname if already set
             cur.execute(
                 """
                 INSERT INTO users (user_id, username, quota_level)
@@ -221,7 +221,7 @@ def update_user_level(user_id: str, level: str) -> dict[str, Any] | None:
                 ON CONFLICT (user_id) DO UPDATE SET quota_level = EXCLUDED.quota_level
                 RETURNING *
                 """,
-                (user_id, user_id, level),
+                (user_id, user_id, level),  # username fallback = user_id for new records only
             )
             row = cur.fetchone()
         conn.commit()

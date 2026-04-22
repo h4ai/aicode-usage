@@ -778,9 +778,7 @@ def resend_email_notification(
     body: EmailResendBody,
     _user: dict[str, Any] = Depends(require_admin),
 ) -> dict[str, Any]:
-    """Delete dedup record and resend notification email."""
-    delete_email_notifications(body.user_id, body.period_key)
-
+    """Delete dedup record AFTER successful resend to avoid losing dedup on failure."""
     user = get_user(body.user_id)
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
@@ -820,6 +818,8 @@ def resend_email_notification(
     if not success:
         raise HTTPException(status_code=500, detail="邮件发送失败")
 
+    # Delete dedup record AFTER successful send, so failed sends don't lose dedup protection
+    delete_email_notifications(body.user_id, body.period_key)
     mark_notification_sent(body.user_id, body.quota_type, body.threshold, body.period_key,
                            over_limit=(used >= limit_val if limit_val > 0 else False))
     logger.info("resend_email_notification: user_id=%s quota_type=%s threshold=%d",
