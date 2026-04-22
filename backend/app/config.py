@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import fcntl
 import logging
 import threading
 from pathlib import Path
@@ -17,6 +18,23 @@ logger = logging.getLogger(__name__)
 _CONFIG_PATH = Path(__file__).resolve().parent.parent / "config.yaml"
 _lock = threading.Lock()
 _config: dict[str, Any] = {}
+
+
+def _flock_write(f: Any, data: dict[str, Any], **kwargs: Any) -> None:
+    """Write YAML to file with fcntl file-level exclusive lock."""
+    try:
+        fcntl.flock(f, fcntl.LOCK_EX)
+    except (OSError, ValueError, TypeError):
+        pass  # non-real fd (e.g. tests with mock/StringIO)
+    yaml.dump(data, f, allow_unicode=True, default_flow_style=False, **kwargs)
+    try:
+        f.flush()
+    except Exception:
+        pass
+    try:
+        fcntl.flock(f, fcntl.LOCK_UN)
+    except (OSError, ValueError, TypeError):
+        pass
 
 
 def _load(path: Path | None = None) -> dict[str, Any]:
@@ -68,7 +86,7 @@ def update_notification_config(
             notif["email_domain"] = email_domain
         cfg["notification"] = notif
         with open(_CONFIG_PATH, "w") as f:
-            yaml.dump(cfg, f, allow_unicode=True, default_flow_style=False)
+            _flock_write(f, cfg)
         _config.clear()
         _config.update(cfg)
         logger.info("Notification config updated: %s", notif)

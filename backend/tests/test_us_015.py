@@ -42,7 +42,7 @@ def test_ac1_leaderboard_sorted_by_token(client, admin_token, admin_config_patch
             "/api/admin/leaderboard", headers={"Authorization": f"Bearer {admin_token}"}, params={"top": 10}
         )
     assert resp.status_code == 200
-    data = resp.json()
+    data = resp.json()["items"]
     assert data[0]["monthly_token"] >= data[1]["monthly_token"]
 
 
@@ -62,7 +62,7 @@ def test_ac2_response_has_required_fields(client, admin_token, admin_config_patc
     """AC-2: Each item has rank, display_name, enterprise, quota_level, monthly_token, monthly_requests, quota_usage_pct."""
     with patch("app.routers.admin.get_leaderboard", return_value=_MOCK_LEADERBOARD):
         resp = client.get("/api/admin/leaderboard", headers={"Authorization": f"Bearer {admin_token}"})
-    item = resp.json()[0]
+    item = resp.json()["items"][0]
     for field in (
         "rank",
         "display_name",
@@ -79,7 +79,7 @@ def test_ac2_rank_starts_at_1(client, admin_token, admin_config_patch):
     """AC-2: rank field starts at 1."""
     with patch("app.routers.admin.get_leaderboard", return_value=_MOCK_LEADERBOARD):
         resp = client.get("/api/admin/leaderboard", headers={"Authorization": f"Bearer {admin_token}"})
-    assert resp.json()[0]["rank"] == 1
+    assert resp.json()["items"][0]["rank"] == 1
 
 
 def test_ac3_no_token_returns_401(client):

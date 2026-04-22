@@ -419,3 +419,16 @@ def save_email_template(name: str, subject: str, body_html: str) -> None:
                 (name, subject, body_html),
             )
         conn.commit()
+
+
+def cleanup_old_email_notifications(days: int = 180) -> int:
+    """Delete email notification records older than `days` days. Returns deleted count."""
+    with _get_conn_ctx() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "DELETE FROM email_notifications WHERE sent_at < NOW() - make_interval(days => %s)",
+                (days,),
+            )
+            deleted = cur.rowcount
+        conn.commit()
+    return deleted

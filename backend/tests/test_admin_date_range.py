@@ -61,7 +61,8 @@ def test_leaderboard_with_date_range_returns_200(client, admin_token, admin_conf
             headers={"Authorization": f"Bearer {admin_token}"},
         )
     assert resp.status_code == 200
-    assert isinstance(resp.json(), list)
+    assert isinstance(resp.json(), dict)
+    assert "items" in resp.json()
 
 
 def test_leaderboard_passes_start_end_to_backend(client, admin_token, admin_config_patch):

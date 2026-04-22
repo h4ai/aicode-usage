@@ -44,17 +44,17 @@ def _user_filter(user: dict[str, Any]) -> tuple[str, dict[str, Any]]:
     params: dict[str, Any] = {}
 
     if sam:
-        conditions.append(f"{USERNAME} = {{_u_sam:String}}")
+        conditions.append(f"lower({USERNAME}) = lower({{_u_sam:String}})")
         params["_u_sam"] = sam
-        conditions.append(f"endsWith({USERNAME}, concat('(', {{_u_sam:String}}, ')'))")
+        conditions.append(f"endsWith(lower({USERNAME}), lower(concat('(', {{_u_sam:String}}, ')')))")
         params["_u_sam"] = sam
 
     if cn and cn != sam:
-        conditions.append(f"{USERNAME} = {{_u_cn:String}}")
+        conditions.append(f"lower({USERNAME}) = lower({{_u_cn:String}})")
         params["_u_cn"] = cn
 
     if nickname and nickname not in (sam, cn):
-        conditions.append(f"{USERNAME} = {{_u_nick:String}}")
+        conditions.append(f"lower({USERNAME}) = lower({{_u_nick:String}})")
         params["_u_nick"] = nickname
 
     if not conditions:

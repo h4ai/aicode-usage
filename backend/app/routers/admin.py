@@ -162,13 +162,22 @@ def _chat_status(used: int, limit: int) -> str:
     return "gray"
 
 
-@router.get("/users", response_model=list[UserItem])
+class UserListResponse(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    items: list[UserItem]
+
+
+@router.get("/users")
 def list_users(
     time_filter: str = Query("all", description="all|work|non_work"),
     year: int | None = Query(None, description="年份，不传则当前年"),
     month: int | None = Query(None, description="月份 1-12，不传则当前月"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=500),
     _user: dict[str, Any] = Depends(require_admin),
-) -> list[UserItem]:
+) -> UserListResponse:
     from datetime import datetime as _dt
     now = _dt.now()
     q_year = year or now.year
@@ -214,7 +223,11 @@ def list_users(
                     status_chat=_chat_status(tc, int(limits.get("daily_chats", 0))),
                 )
             )
-        return result
+        all_items = result
+        total = len(all_items)
+        start = (page - 1) * page_size
+        paged = all_items[start:start + page_size]
+        return UserListResponse(total=total, page=page, page_size=page_size, items=paged)
     except Exception as exc:
         logger.error("list_users failed: %s", exc)
         raise HTTPException(status_code=500, detail="数据查询失败，请稍后重试")
@@ -427,16 +440,29 @@ def get_leaderboard(
     return result
 
 
-@router.get("/leaderboard", response_model=list[LeaderboardItem])
+class LeaderboardListResponse(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    items: list[LeaderboardItem]
+
+
+@router.get("/leaderboard")
 def list_leaderboard(
     time_filter: str = Query("all", description="all|work|non_work"),
     start: str | None = Query(None, description="开始日期 YYYY-MM-DD"),
     end: str | None = Query(None, description="结束日期 YYYY-MM-DD"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=500),
     _user: dict[str, Any] = Depends(require_admin),
-) -> list[LeaderboardItem]:
-    """Return all users sorted by token usage (frontend handles pagination)."""
+) -> LeaderboardListResponse:
+    """Return all users sorted by token usage with pagination."""
     rows = get_leaderboard(top=None, time_filter=time_filter, start=start, end=end)
-    return [LeaderboardItem(**row) for row in rows]
+    all_items = [LeaderboardItem(**row) for row in rows]
+    total = len(all_items)
+    offset = (page - 1) * page_size
+    paged = all_items[offset:offset + page_size]
+    return LeaderboardListResponse(total=total, page=page, page_size=page_size, items=paged)
 
 
 # ---- CSV export -------------------------------------------------------------
@@ -454,7 +480,11 @@ def export_users_csv(
     now = _dt.now()
     q_year = year or now.year
     q_month = month or now.month
-    users_data = list_users(time_filter=time_filter, year=q_year, month=q_month, _user=_user)
+    users_response = list_users(
+        time_filter=time_filter, year=q_year, month=q_month,
+        page=1, page_size=10000, _user=_user,
+    )
+    users_data = users_response.items
     logger.info("export_users_csv: period=%s-%02d rows=%d", q_year, q_month, len(users_data))
     is_current_month = (q_year == now.year and q_month == now.month)
     period_label = f"{q_year}-{q_month:02d}"
@@ -575,21 +605,23 @@ def update_working_hours(
     import yaml
 
     from app.config import _CONFIG_PATH as config_path
-    from app.config import load_config
-    with open(config_path) as f:
-        cfg = yaml.safe_load(f) or {}
+    from app.config import _flock_write, load_config
+    from app.config import _lock as config_lock
+    with config_lock:
+        with open(config_path) as f:
+            cfg = yaml.safe_load(f) or {}
 
-    old_wh = cfg.get("working_hours", {})
-    logger.info("update_working_hours: old=%s new=%s", old_wh, body.model_dump())
+        old_wh = cfg.get("working_hours", {})
+        logger.info("update_working_hours: old=%s new=%s", old_wh, body.model_dump())
 
-    cfg["working_hours"] = {
-        "enabled": body.enabled,
-        "start": body.start,
-        "end": body.end,
-        "weekday_only": body.weekday_only,
-    }
-    with open(config_path, "w") as f:
-        yaml.dump(cfg, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+        cfg["working_hours"] = {
+            "enabled": body.enabled,
+            "start": body.start,
+            "end": body.end,
+            "weekday_only": body.weekday_only,
+        }
+        with open(config_path, "w") as f:
+            _flock_write(f, cfg, sort_keys=False)
 
     load_config()  # hot-reload
     # 清空 ClickHouse 查询缓存，确保新配置立即生效
@@ -771,6 +803,22 @@ class EmailResendBody(BaseModel):
     quota_type: str
     threshold: int
     period_key: str
+
+
+class EmailCleanupBody(BaseModel):
+    days: int = Field(180, ge=1, le=3650)
+
+
+@router.post("/email-notifications/cleanup")
+def cleanup_email_notifications(
+    body: EmailCleanupBody,
+    _user: dict[str, Any] = Depends(require_admin),
+) -> dict[str, Any]:
+    """Delete email notification records older than `days` days."""
+    from app.services.database import cleanup_old_email_notifications
+    deleted = cleanup_old_email_notifications(body.days)
+    logger.info("cleanup_email_notifications: days=%d deleted=%d", body.days, deleted)
+    return {"success": True, "deleted": deleted}
 
 
 @router.post("/email-notifications/resend")

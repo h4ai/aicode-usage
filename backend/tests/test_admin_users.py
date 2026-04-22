@@ -143,8 +143,9 @@ def test_admin_users_returns_list(client, admin_token, admin_config_patch):
         headers={"Authorization": f"Bearer {admin_token}"},
     ))
     assert resp.status_code == 200
-    assert isinstance(resp.json(), list)
-    assert len(resp.json()) == 2
+    data = resp.json()
+    assert "items" in data
+    assert len(data["items"]) == 2
 
 
 def test_admin_users_has_required_fields(client, admin_token, admin_config_patch):
@@ -152,7 +153,7 @@ def test_admin_users_has_required_fields(client, admin_token, admin_config_patch
         "/api/admin/users",
         headers={"Authorization": f"Bearer {admin_token}"},
     ))
-    item = resp.json()[0]
+    item = resp.json()["items"][0]
     for field in ("user_id", "display_name", "enterprise", "quota_level", "monthly_token"):
         assert field in item
 
@@ -163,7 +164,7 @@ def test_admin_users_unknown_enterprise_for_empty(client, admin_token, admin_con
         "/api/admin/users",
         headers={"Authorization": f"Bearer {admin_token}"},
     ))
-    user2 = next(u for u in resp.json() if u["user_id"] == "Li Si")
+    user2 = next(u for u in resp.json()["items"] if u["user_id"] == "Li Si")
     assert user2["enterprise"] == "未知"
 
 
@@ -173,7 +174,7 @@ def test_admin_users_display_name_fallback(client, admin_token, admin_config_pat
         "/api/admin/users",
         headers={"Authorization": f"Bearer {admin_token}"},
     ))
-    user2 = next(u for u in resp.json() if u["user_id"] == "Li Si")
+    user2 = next(u for u in resp.json()["items"] if u["user_id"] == "Li Si")
     assert user2["display_name"] == "Li Si"
 
 
@@ -186,7 +187,7 @@ def test_admin_users_status_token_reflects_usage(client, admin_token, admin_conf
         ),
         get_all_users_tokens_in_month={"Zhang San": 4000000},  # 80% of 5M
     )
-    user1 = next(u for u in resp.json() if u["user_id"] == "Zhang San")
+    user1 = next(u for u in resp.json()["items"] if u["user_id"] == "Zhang San")
     assert user1["status_token"] == "yellow"
 
 
@@ -281,8 +282,8 @@ def test_admin_users_with_year_month_returns_list(client, admin_token, admin_con
         headers={"Authorization": f"Bearer {admin_token}"},
     ))
     assert resp.status_code == 200
-    assert isinstance(resp.json(), list)
-    assert len(resp.json()) == 2
+    assert isinstance(resp.json(), dict)
+    assert len(resp.json()["items"]) == 2
 
 
 def test_admin_users_with_year_month_uses_month_tokens(client, admin_token, admin_config_patch):
@@ -295,7 +296,7 @@ def test_admin_users_with_year_month_uses_month_tokens(client, admin_token, admi
         get_all_users_tokens_in_month={"Zhang San": 1234567},
     )
     assert resp.status_code == 200
-    user1 = next(u for u in resp.json() if u["user_id"] == "Zhang San")
+    user1 = next(u for u in resp.json()["items"] if u["user_id"] == "Zhang San")
     assert user1["monthly_token"] == 1234567
 
 
@@ -309,7 +310,7 @@ def test_admin_users_with_year_month_uses_month_chats(client, admin_token, admin
         get_all_users_chats_in_month={"Zhang San": 42},
     )
     assert resp.status_code == 200
-    user1 = next(u for u in resp.json() if u["user_id"] == "Zhang San")
+    user1 = next(u for u in resp.json()["items"] if u["user_id"] == "Zhang San")
     assert user1["monthly_chats"] == 42
 
 
@@ -322,7 +323,7 @@ def test_admin_users_historical_month_today_fields_are_zero(client, admin_token,
         ),
     )
     assert resp.status_code == 200
-    for u in resp.json():
+    for u in resp.json()["items"]:
         assert u["today_token"] == 0
         assert u["today_chats"] == 0
         assert u["daily_requests"] == 0
