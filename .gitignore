@@ -33,3 +33,5 @@ docs/po-*.md
 docs/po-*.html
 docs/po-*.pdf
 qa/.venv/
+.venv-qa/
+qa/

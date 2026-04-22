@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import html
 import re
 
 
@@ -41,8 +42,8 @@ def build_context(
         reset_time = "次日00:00重置"
 
     return {
-        "username": username,
-        "user_id": user_id,
+        "username": html.escape(username),
+        "user_id": html.escape(user_id),
         "quota_type_label": quota_type_label,
         "used": f"{used:,}",
         "limit": f"{limit:,}",

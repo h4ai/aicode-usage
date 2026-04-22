@@ -32,11 +32,24 @@
             >
               全天
             </el-tag>
-            <el-radio-group v-model="rangeMode" size="small" style="margin-left:8px" @change="onRangeModeChange">
-              <el-radio-button value="month">本月</el-radio-button>
-              <el-radio-button value="7">近7天</el-radio-button>
-              <el-radio-button value="30">近30天</el-radio-button>
-              <el-radio-button value="custom">自定义</el-radio-button>
+            <el-radio-group
+              v-model="rangeMode"
+              size="small"
+              style="margin-left:8px"
+              @change="onRangeModeChange"
+            >
+              <el-radio-button value="month">
+                本月
+              </el-radio-button>
+              <el-radio-button value="7">
+                近7天
+              </el-radio-button>
+              <el-radio-button value="30">
+                近30天
+              </el-radio-button>
+              <el-radio-button value="custom">
+                自定义
+              </el-radio-button>
             </el-radio-group>
             <el-date-picker
               v-if="rangeMode === 'custom'"
@@ -76,7 +89,16 @@
         <el-table-column
           prop="display_name"
           label="姓名"
-        />
+        >
+          <template #default="{ row }">
+            <el-link
+              type="primary"
+              @click="openDetail(row)"
+            >
+              {{ row.display_name }}
+            </el-link>
+          </template>
+        </el-table-column>
         <el-table-column
           prop="enterprise"
           label="分组"
@@ -115,13 +137,25 @@
         />
       </div>
     </el-card>
+
+    <el-dialog
+      v-model="dialogVisible"
+      :title="`${detailUser.displayName} 使用明细`"
+      width="85%"
+      destroy-on-close
+    >
+      <DetailTable
+        :user-id="detailUser.username"
+      />
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, reactive, onMounted } from 'vue'
 import api from '@/api'
 import { useAuthStore } from '@/stores/auth'
+import DetailTable from '@/components/DetailTable.vue'
 
 const auth = useAuthStore()
 const rows = ref<any[]>([])
@@ -133,6 +167,16 @@ const currentPage = ref(1)
 const pageSize = ref(20)
 const rangeMode = ref<'month' | '7' | '30' | 'custom'>('month')
 const customRange = ref<[string, string] | null>(null)
+
+const dialogVisible = ref(false)
+const detailUser = reactive({ username: '', displayName: '' })
+
+function openDetail(row: any) {
+  detailUser.username = row.user_id
+  detailUser.displayName = row.display_name || row.user_id
+  dialogVisible.value = true
+}
+
 
 const pagedRows = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value

@@ -161,7 +161,13 @@ function cancelEdit() {
 
 async function saveLevel(level: string) {
   try {
-    await api.put(`/admin/quota-levels/${level}`, editForm.value)
+    // el-input-number 在值为 0 时可能返回 null，统一转为 0
+    const payload = {
+      monthly_token: editForm.value.monthly_token ?? 0,
+      daily_chats: editForm.value.daily_chats ?? 0,
+      daily_requests: editForm.value.daily_requests ?? 0,
+    }
+    await api.put(`/admin/quota-levels/${level}`, payload)
     ElMessage.success('保存成功')
     editingLevel.value = null
     await fetchLevels()

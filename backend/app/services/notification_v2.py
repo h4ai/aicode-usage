@@ -12,7 +12,7 @@ import time
 from datetime import datetime, timezone
 
 from app.config import get_config
-from app.services.clickhouse import get_monthly_token_usage, get_daily_request_count, get_all_users_from_clickhouse
+from app.services.clickhouse import get_all_users_from_clickhouse, get_daily_request_count, get_monthly_token_usage
 from app.services.database import (
     get_all_users,
     get_quota_limits,
@@ -44,15 +44,14 @@ def send_notification_email(
     period_key: str,
 ) -> bool:
     """Send a single notification email. Returns True on success, False on failure."""
-    from app.services.notification import mail_send
     import asyncio
 
-    cfg = get_config()
     from app.services.database import get_email_template
+    from app.services.notification import mail_send
     template = get_email_template("default")
 
     # Build context for template rendering
-    from app.services.template_renderer import render_template, build_context
+    from app.services.template_renderer import build_context, render_template
     context = build_context(
         username=username,
         user_id=user_id,
@@ -66,7 +65,14 @@ def send_notification_email(
     body = render_template(template["body_html"], context)
 
     try:
-        asyncio.run(mail_send(subject, to_email, "", body))
+        # APScheduler runs in a background thread; create a fresh event loop
+        # to avoid "This event loop is already running" when asyncio.run() is
+        # called from a thread that already has a running loop (FastAPI main thread).
+        loop = asyncio.new_event_loop()
+        try:
+            loop.run_until_complete(mail_send(subject, to_email, "", body))
+        finally:
+            loop.close()
         return True
     except Exception as exc:
         logger.error("Failed to send email to %s: %s", to_email, exc)
@@ -113,6 +119,11 @@ def check_quota_alerts() -> None:
     else:
         # Fallback: use PG users directly
         users = pg_users
+    # 限流参数：从 notification config 读取，默认每批 10 封，批间隔 2 秒
+    batch_size: int = notif_cfg.get("email_batch_size", 10)
+    batch_delay: float = float(notif_cfg.get("email_batch_delay_seconds", 2))
+    emails_sent_this_run = 0
+
     for user in users:
         user_id = user["user_id"]
         mail = user.get("mail") or ""
@@ -178,10 +189,15 @@ def check_quota_alerts() -> None:
                 if success:
                     over_limit = threshold >= 100
                     mark_notification_sent(user_id, quota_type, threshold, period_key, over_limit)
+                    emails_sent_this_run += 1
                     logger.info(
                         "Notification sent: user=%s type=%s threshold=%d%%",
                         user_id, quota_type, threshold,
                     )
+                    # 批量限流：每发 batch_size 封，暂停 batch_delay 秒
+                    if batch_size > 0 and emails_sent_this_run % batch_size == 0:
+                        logger.info("Rate limiting: sent %d emails, sleeping %.1fs", emails_sent_this_run, batch_delay)
+                        time.sleep(batch_delay)
                 else:
                     logger.error(
                         "Failed to send notification after 3 attempts: user=%s type=%s threshold=%d%%",

@@ -18,6 +18,9 @@
             <el-radio-button value="30">
               最近30天
             </el-radio-button>
+            <el-radio-button value="month">
+              本月
+            </el-radio-button>
             <el-radio-button value="custom">
               自定义
             </el-radio-button>
@@ -125,7 +128,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-const props = withDefaults(defineProps<{ timeFilter?: string }>(), { timeFilter: 'all' })
+const props = withDefaults(defineProps<{ timeFilter?: string; userId?: string; initialStart?: string; initialEnd?: string }>(), { timeFilter: 'all', userId: '', initialStart: '', initialEnd: '' })
 import api from '@/api'
 
 interface DetailItem {
@@ -139,7 +142,7 @@ interface DetailItem {
 
 const loading = ref(true)
 const tableData = ref<DetailItem[]>([])
-const rangeMode = ref<'7' | '30' | 'custom'>('7')
+const rangeMode = ref<'7' | '30' | 'month' | 'custom'>('month')
 const customRange = ref<[string, string] | null>(null)
 const sortBy = ref<string | null>(null)
 const sortOrder = ref<string>('desc')
@@ -167,9 +170,16 @@ function disabledDate(date: Date): boolean {
 /** 构建当前查询参数（导出复用此函数保证一致性） */
 function buildParams(): Record<string, string> {
   const params: Record<string, string> = { time_filter: props.timeFilter }
+  if (props.userId) params.user_id = props.userId
   if (rangeMode.value === 'custom' && customRange.value) {
     params.start = customRange.value[0]
     params.end = customRange.value[1]
+  } else if (rangeMode.value === 'month') {
+    const now = new Date()
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
+    const fmt = (d: Date) => d.toISOString().slice(0, 10)
+    params.start = fmt(firstDay)
+    params.end = fmt(now)
   } else {
     params.days = rangeMode.value
   }
@@ -235,7 +245,13 @@ function exportCsv() {
     })
 }
 
-onMounted(fetchDetail)
+onMounted(() => {
+  if (props.initialStart && props.initialEnd) {
+    rangeMode.value = 'custom'
+    customRange.value = [props.initialStart, props.initialEnd]
+  }
+  fetchDetail()
+})
 watch(() => props.timeFilter, fetchDetail)
 </script>
 

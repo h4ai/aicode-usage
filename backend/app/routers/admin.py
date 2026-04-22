@@ -10,40 +10,46 @@ import io
 import logging
 from typing import Any
 
-logger = logging.getLogger(__name__)
-
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, field_validator
 
+from app.config import get_config as _get_config
+from app.config import update_notification_config
 from app.deps import require_admin
 from app.services.clickhouse import (
     get_all_users_batch,
-    get_leaderboard_batch,
     get_all_users_chats_in_range,
-    get_all_users_chats_in_month,
     get_all_users_daily_requests,
     get_all_users_from_clickhouse,
     get_all_users_monthly_chats,
     get_all_users_monthly_requests,
     get_all_users_monthly_tokens,
     get_all_users_requests_in_range,
-    get_all_users_requests_in_month,
-    get_all_users_today_chats,
-    get_all_users_today_tokens,
     get_all_users_tokens_in_range,
-    get_all_users_tokens_in_month,
     get_global_trend,
     get_global_trend_by_dept,
     get_global_trend_by_model,
+    get_leaderboard_batch,
 )
+from app.services.clickhouse_user import get_daily_request_count, get_monthly_token_usage
 from app.services.database import (
+    delete_email_notifications,
     get_all_quota_levels,
     get_all_users,
+    get_email_notifications,
+    get_email_template,
     get_quota_limits,
+    get_user,
+    mark_notification_sent,
+    save_email_template,
     update_quota_level,
     update_user_level,
 )
+from app.services.notification_v2 import send_notification_email
+from app.services.template_renderer import build_context, render_template
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/admin")
 
@@ -77,9 +83,9 @@ def list_quota_levels(
 
 
 class QuotaLevelUpdate(BaseModel):
-    monthly_token: int = Field(gt=0, description="月度Token上限，必须大于0")
-    daily_chats: int = Field(gt=0, description="日对话上限，必须大于0")
-    daily_requests: int = Field(gt=0, description="日请求上限，必须大于0")
+    monthly_token: int = Field(ge=0, description="月度Token上限，0表示不限制")
+    daily_chats: int = Field(ge=0, description="日对话上限，0表示不限制")
+    daily_requests: int = Field(ge=0, description="日请求上限，0表示不限制")
 
 
 @router.put("/quota-levels/{level}", response_model=QuotaLevelItem)
@@ -156,13 +162,22 @@ def _chat_status(used: int, limit: int) -> str:
     return "gray"
 
 
-@router.get("/users", response_model=list[UserItem])
+class UserListResponse(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    items: list[UserItem]
+
+
+@router.get("/users")
 def list_users(
     time_filter: str = Query("all", description="all|work|non_work"),
     year: int | None = Query(None, description="年份，不传则当前年"),
     month: int | None = Query(None, description="月份 1-12，不传则当前月"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=500),
     _user: dict[str, Any] = Depends(require_admin),
-) -> list[UserItem]:
+) -> UserListResponse:
     from datetime import datetime as _dt
     now = _dt.now()
     q_year = year or now.year
@@ -208,9 +223,13 @@ def list_users(
                     status_chat=_chat_status(tc, int(limits.get("daily_chats", 0))),
                 )
             )
-        return result
-    except Exception:
-        logger.error("list_users failed", exc_info=True)
+        all_items = result
+        total = len(all_items)
+        start = (page - 1) * page_size
+        paged = all_items[start:start + page_size]
+        return UserListResponse(total=total, page=page, page_size=page_size, items=paged)
+    except Exception as exc:
+        logger.error("list_users failed: %s", exc)
         raise HTTPException(status_code=500, detail="数据查询失败，请稍后重试")
 
 
@@ -287,8 +306,8 @@ def global_trend(
         if group_by == "department":
             return get_global_trend_by_dept(start, end, time_filter)
         return get_global_trend(start, end, time_filter)
-    except Exception:
-        logger.error("global_trend failed", exc_info=True)
+    except Exception as exc:
+        logger.error("global_trend failed: %s", exc)
         raise HTTPException(status_code=500, detail="数据查询失败，请稍后重试")
 
 
@@ -304,7 +323,11 @@ class DeptSummaryItem(BaseModel):
     avg_token_per_user: int
 
 
-def get_department_summary(time_filter: str = "all", start: str | None = None, end: str | None = None) -> list[dict[str, Any]]:
+def get_department_summary(
+    time_filter: str = "all",
+    start: str | None = None,
+    end: str | None = None,
+) -> list[dict[str, Any]]:
     """Compute department summary by merging ClickHouse users with token/request data.
 
     Uses ClickHouse as the authoritative user source (225 users) instead of PostgreSQL
@@ -375,7 +398,12 @@ class LeaderboardItem(BaseModel):
     quota_usage_pct: float
 
 
-def get_leaderboard(top: int | None = None, time_filter: str = "all", start: str | None = None, end: str | None = None) -> list[dict[str, Any]]:
+def get_leaderboard(
+    top: int | None = None,
+    time_filter: str = "all",
+    start: str | None = None,
+    end: str | None = None,
+) -> list[dict[str, Any]]:
     """Return all users sorted by token consumption in the given range."""
     # 单次批量查询：token + requests + chats（3 次 → 1 次）
     rows = get_leaderboard_batch(time_filter=time_filter, start_date=start, end_date=end)
@@ -412,16 +440,29 @@ def get_leaderboard(top: int | None = None, time_filter: str = "all", start: str
     return result
 
 
-@router.get("/leaderboard", response_model=list[LeaderboardItem])
+class LeaderboardListResponse(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    items: list[LeaderboardItem]
+
+
+@router.get("/leaderboard")
 def list_leaderboard(
     time_filter: str = Query("all", description="all|work|non_work"),
     start: str | None = Query(None, description="开始日期 YYYY-MM-DD"),
     end: str | None = Query(None, description="结束日期 YYYY-MM-DD"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=500),
     _user: dict[str, Any] = Depends(require_admin),
-) -> list[LeaderboardItem]:
-    """Return all users sorted by token usage (frontend handles pagination)."""
+) -> LeaderboardListResponse:
+    """Return all users sorted by token usage with pagination."""
     rows = get_leaderboard(top=None, time_filter=time_filter, start=start, end=end)
-    return [LeaderboardItem(**row) for row in rows]
+    all_items = [LeaderboardItem(**row) for row in rows]
+    total = len(all_items)
+    offset = (page - 1) * page_size
+    paged = all_items[offset:offset + page_size]
+    return LeaderboardListResponse(total=total, page=page, page_size=page_size, items=paged)
 
 
 # ---- CSV export -------------------------------------------------------------
@@ -439,7 +480,11 @@ def export_users_csv(
     now = _dt.now()
     q_year = year or now.year
     q_month = month or now.month
-    users_data = list_users(time_filter=time_filter, year=q_year, month=q_month, _user=_user)
+    users_response = list_users(
+        time_filter=time_filter, year=q_year, month=q_month,
+        page=1, page_size=10000, _user=_user,
+    )
+    users_data = users_response.items
     logger.info("export_users_csv: period=%s-%02d rows=%d", q_year, q_month, len(users_data))
     is_current_month = (q_year == now.year and q_month == now.month)
     period_label = f"{q_year}-{q_month:02d}"
@@ -557,27 +602,26 @@ def update_working_hours(
     _user: dict[str, Any] = Depends(require_admin),
 ) -> WorkingHoursConfig:
     """Update working hours config (writes back to config.yaml)."""
-    from pathlib import Path
-
     import yaml
 
-    from app.config import load_config
+    from app.config import _CONFIG_PATH as config_path
+    from app.config import _flock_write, load_config
+    from app.config import _lock as config_lock
+    with config_lock:
+        with open(config_path) as f:
+            cfg = yaml.safe_load(f) or {}
 
-    config_path = Path(__file__).resolve().parent.parent.parent / "config.yaml"
-    with open(config_path) as f:
-        cfg = yaml.safe_load(f) or {}
+        old_wh = cfg.get("working_hours", {})
+        logger.info("update_working_hours: old=%s new=%s", old_wh, body.model_dump())
 
-    old_wh = cfg.get("working_hours", {})
-    logger.info("update_working_hours: old=%s new=%s", old_wh, body.model_dump())
-
-    cfg["working_hours"] = {
-        "enabled": body.enabled,
-        "start": body.start,
-        "end": body.end,
-        "weekday_only": body.weekday_only,
-    }
-    with open(config_path, "w") as f:
-        yaml.dump(cfg, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+        cfg["working_hours"] = {
+            "enabled": body.enabled,
+            "start": body.start,
+            "end": body.end,
+            "weekday_only": body.weekday_only,
+        }
+        with open(config_path, "w") as f:
+            _flock_write(f, cfg, sort_keys=False)
 
     load_config()  # hot-reload
     # 清空 ClickHouse 查询缓存，确保新配置立即生效
@@ -588,9 +632,6 @@ def update_working_hours(
 
 
 # ─── Email Template Management ───
-
-from app.services.database import get_email_template, save_email_template
-from app.services.template_renderer import render_template, build_context
 
 
 class EmailTemplateUpdate(BaseModel):
@@ -650,9 +691,6 @@ def get_template_variables(admin: Any = Depends(require_admin)) -> list[dict[str
 
 # ─── Notification Config Management ───
 
-from app.config import update_notification_config
-from pydantic import field_validator
-
 
 class NotificationConfigUpdate(BaseModel):
     enabled: bool | None = None
@@ -704,3 +742,134 @@ def update_notif_config(
         email_domain=body.email_domain,
     )
     return result
+
+
+# ─── Email Notification Records ───
+
+
+class EmailNotificationItem(BaseModel):
+    id: int
+    user_id: str
+    quota_type: str
+    threshold: int
+    period_key: str
+    over_limit: bool
+    sent_at: str
+
+
+class EmailNotificationListResponse(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    items: list[EmailNotificationItem]
+
+
+@router.get("/email-notifications", response_model=EmailNotificationListResponse)
+def list_email_notifications(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    user_id: str | None = Query(None),
+    quota_type: str | None = Query(None),
+    period_key: str | None = Query(None),
+    _user: dict[str, Any] = Depends(require_admin),
+) -> EmailNotificationListResponse:
+    """Return paginated email notification records."""
+    result = get_email_notifications(page, page_size, user_id, quota_type, period_key)
+    for item in result["items"]:
+        if hasattr(item["sent_at"], "isoformat"):
+            item["sent_at"] = item["sent_at"].isoformat()
+    return EmailNotificationListResponse(**result)
+
+
+class EmailNotificationDeleteBody(BaseModel):
+    user_id: str | None = None
+    period_key: str | None = None
+
+
+@router.delete("/email-notifications")
+def reset_email_notifications(
+    body: EmailNotificationDeleteBody,
+    _user: dict[str, Any] = Depends(require_admin),
+) -> dict[str, Any]:
+    """Delete notification records (reset dedup)."""
+    deleted = delete_email_notifications(body.user_id, body.period_key)
+    logger.info("reset_email_notifications: user_id=%s period_key=%s deleted=%d",
+                body.user_id, body.period_key, deleted)
+    return {"success": True, "deleted": deleted}
+
+
+class EmailResendBody(BaseModel):
+    user_id: str
+    quota_type: str
+    threshold: int
+    period_key: str
+
+
+class EmailCleanupBody(BaseModel):
+    days: int = Field(180, ge=1, le=3650)
+
+
+@router.post("/email-notifications/cleanup")
+def cleanup_email_notifications(
+    body: EmailCleanupBody,
+    _user: dict[str, Any] = Depends(require_admin),
+) -> dict[str, Any]:
+    """Delete email notification records older than `days` days."""
+    from app.services.database import cleanup_old_email_notifications
+    deleted = cleanup_old_email_notifications(body.days)
+    logger.info("cleanup_email_notifications: days=%d deleted=%d", body.days, deleted)
+    return {"success": True, "deleted": deleted}
+
+
+@router.post("/email-notifications/resend")
+def resend_email_notification(
+    body: EmailResendBody,
+    _user: dict[str, Any] = Depends(require_admin),
+) -> dict[str, Any]:
+    """Delete dedup record AFTER successful resend to avoid losing dedup on failure."""
+    user = get_user(body.user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="用户不存在")
+
+    mail = user.get("mail") or ""
+    if not mail:
+        cfg = _get_config()
+        email_domain = cfg.get("notification", {}).get("email_domain", "")
+        if email_domain:
+            mail = f"{body.user_id}@{email_domain}"
+        else:
+            raise HTTPException(status_code=400, detail="用户无邮箱地址且未配置邮件域名")
+
+    quota_level = user.get("quota_level", "L1")
+    limits = get_quota_limits(quota_level)
+    username = user.get("nickname") or user.get("username") or body.user_id
+
+    user_dict = {"username": body.user_id}
+    if body.quota_type == "monthly_token":
+        used = get_monthly_token_usage(user_dict)
+        limit_val = limits.get("monthly_token", 0)
+    else:
+        used = get_daily_request_count(user_dict)
+        limit_val = limits.get("daily_chats", 0)
+
+    success = send_notification_email(
+        to_email=mail,
+        username=username,
+        user_id=body.user_id,
+        quota_type=body.quota_type,
+        used=used,
+        limit=limit_val,
+        threshold=body.threshold,
+        period_key=body.period_key,
+    )
+
+    if not success:
+        raise HTTPException(status_code=500, detail="邮件发送失败")
+
+    # Delete dedup record AFTER successful send, so failed sends don't lose dedup protection
+    delete_email_notifications(body.user_id, body.period_key)
+    mark_notification_sent(body.user_id, body.quota_type, body.threshold, body.period_key,
+                           over_limit=(used >= limit_val if limit_val > 0 else False))
+    logger.info("resend_email_notification: user_id=%s quota_type=%s threshold=%d",
+                body.user_id, body.quota_type, body.threshold)
+    return {"success": True, "message": "邮件已发送"}
