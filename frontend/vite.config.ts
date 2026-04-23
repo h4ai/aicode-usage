@@ -1,12 +1,19 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'node:url'
 import * as http from 'node:http'
 
+const version = readFileSync(resolve(__dirname, '../VERSION'), 'utf-8').trim()
+
 const keepAliveAgent = new http.Agent({ keepAlive: true, family: 4 })
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(version),
+  },
   plugins: [vue()],
   resolve: {
     alias: {

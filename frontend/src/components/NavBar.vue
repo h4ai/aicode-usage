@@ -15,6 +15,7 @@
             {{ avatarText }}
           </el-avatar>
           <span class="username">{{ auth.username || auth.role || '用户' }}</span>
+          <span class="app-version">{{ appVersion }}</span>
           <el-icon class="arrow"><ArrowDown /></el-icon>
         </span>
         <template #dropdown>
@@ -47,7 +48,11 @@ import { useRouter } from 'vue-router'
 import { ArrowDown, SwitchButton, Key } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 
+declare const __APP_VERSION__: string
+
 defineProps<{ title?: string }>()
+
+const appVersion = __APP_VERSION__
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -112,6 +117,12 @@ function handleCommand(cmd: string) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.app-version {
+  font-size: 11px;
+  color: #c0c4cc;
+  margin-left: 4px;
 }
 
 .arrow {
