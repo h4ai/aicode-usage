@@ -6,7 +6,7 @@
     <NavBar title="管理员后台" />
     <el-tabs
       v-model="activeTab"
-      @tab-click="onTabChange"
+      @tab-change="onTabChange"
     >
       <el-tab-pane
         label="用户管理"
@@ -82,8 +82,9 @@ const initialTab = typeof route.query.tab === 'string' && VALID_TABS.includes(ro
   : 'users'
 const activeTab = ref(initialTab)
 
-function onTabChange() {
-  router.replace({ query: { ...route.query, tab: activeTab.value } })
+function onTabChange(tabName: string) {
+  // tab-change 事件直接提供新 tab name，无需依赖 v-model 更新时序
+  router.replace({ query: { ...route.query, tab: tabName } })
   // Tab 切换后容器宽度可能还未更新，延迟触发 resize
   setTimeout(() => {
     window.dispatchEvent(new Event('resize'))
