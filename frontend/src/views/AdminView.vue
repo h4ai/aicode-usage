@@ -61,7 +61,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import NavBar from '@/components/NavBar.vue'
 import QuotaLevelManager from '@/components/QuotaLevelManager.vue'
 import WorkingHoursConfig from '@/components/WorkingHoursConfig.vue'
@@ -74,16 +74,17 @@ import EmailNotifications from '@/views/admin/EmailNotifications.vue'
 
 const VALID_TABS = ['users', 'trend', 'dept', 'leaderboard', 'workhours', 'quota', 'notification', 'email-records']
 const route = useRoute()
-const router = useRouter()
 
 const initialTab = typeof route.query.tab === 'string' && VALID_TABS.includes(route.query.tab)
   ? route.query.tab
   : 'users'
 const activeTab = ref(initialTab)
 
-// Watch activeTab reactively — fires synchronously on every change (no event timing issues)
+// Watch activeTab — sync URL immediately via history.replaceState (bypasses router async queue)
 watch(activeTab, (tabName) => {
-  router.replace({ query: { ...route.query, tab: tabName } })
+  const url = new URL(window.location.href)
+  url.searchParams.set('tab', tabName)
+  history.replaceState(history.state, '', url.toString())
   // Tab 切换后容器宽度可能还未更新，延迟触发 resize
   setTimeout(() => {
     window.dispatchEvent(new Event('resize'))
