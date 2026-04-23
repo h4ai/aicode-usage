@@ -5,7 +5,11 @@ import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'node:url'
 import * as http from 'node:http'
 
-const version = readFileSync(resolve(__dirname, '../VERSION'), 'utf-8').trim()
+const version = (() => {
+  try { return readFileSync(resolve(__dirname, 'VERSION'), 'utf-8').trim() } catch {
+    try { return readFileSync(resolve(__dirname, '../VERSION'), 'utf-8').trim() } catch { return 'dev' }
+  }
+})()
 
 const keepAliveAgent = new http.Agent({ keepAlive: true, family: 4 })
 
