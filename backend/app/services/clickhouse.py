@@ -35,7 +35,6 @@ from app.services.clickhouse_admin import (  # noqa: F401
 )
 from app.services.clickhouse_client import (  # noqa: F401
     _cache,
-    _ch_client,
     _get_client,
     _reset_client,
     _safe_float,
