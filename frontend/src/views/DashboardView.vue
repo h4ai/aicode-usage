@@ -76,7 +76,7 @@
         <div class="header-divider"></div>
         <el-dropdown
           trigger="click"
-          @command="handleLogout"
+          @command="handleCommand"
         >
           <span class="user-badge">
             <el-avatar
@@ -94,6 +94,9 @@
               >
                 已登录：{{ auth.username || '—' }}
               </el-dropdown-item>
+              <el-dropdown-item command="api-tokens">
+                <el-icon><Key /></el-icon> API Token
+              </el-dropdown-item>
               <el-dropdown-item
                 divided
                 command="logout"
@@ -105,11 +108,13 @@
         </el-dropdown>
       </div>
     </div>
-    <QuotaProgressBar :time-filter="tf.timeFilter" />
-    <MetricCards :time-filter="tf.timeFilter" />
-    <TrendChart :time-filter="tf.timeFilter" />
-    <ModelDistribution :time-filter="tf.timeFilter" />
-    <DetailTable :time-filter="tf.timeFilter" />
+    <template v-if="ready">
+      <QuotaProgressBar :time-filter="tf.timeFilter" />
+      <MetricCards :time-filter="tf.timeFilter" />
+      <TrendChart :time-filter="tf.timeFilter" />
+      <ModelDistribution :time-filter="tf.timeFilter" />
+      <DetailTable :time-filter="tf.timeFilter" />
+    </template>
   </div>
 </template>
 
@@ -118,14 +123,16 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTimeFilterStore } from '@/stores/timeFilter'
 import { useAuthStore } from '@/stores/auth'
-import { QuestionFilled, ArrowDown, SwitchButton } from '@element-plus/icons-vue'
+import { QuestionFilled, ArrowDown, SwitchButton, Key } from '@element-plus/icons-vue'
 import api from '@/api'
 const tf = useTimeFilterStore()
 const auth = useAuthStore()
 const router = useRouter()
 const avatarText = computed(() => (auth.username || '').slice(-2) || 'U')
-function handleLogout(cmd: string) {
+const ready = ref(false)
+function handleCommand(cmd: string) {
   if (cmd === 'logout') { auth.logout(); router.push('/login') }
+  else if (cmd === 'api-tokens') { router.push('/api-tokens') }
 }
 
 const workStart = ref('08:30')
@@ -140,9 +147,9 @@ onMounted(async () => {
     workEnd.value = data.end
     weekdayOnly.value = data.weekday_only
     workingHoursEnabled.value = data.enabled
-    // 若时段限制已关闭，强制重置为全天
     if (!data.enabled) tf.timeFilter = 'all'
   } catch {}
+  ready.value = true
 })
 import QuotaProgressBar from '@/components/QuotaProgressBar.vue'
 import MetricCards from '@/components/MetricCards.vue'
