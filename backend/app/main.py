@@ -53,7 +53,7 @@ async def _check_smtp() -> None:
     cfg = get_config().get("smtp", {})
     host = cfg.get("host", "")
     port = int(cfg.get("port", 25))
-    if not host or host == "mailrelay.internal.company.com":
+    if not host:
         logger.warning("SMTP not configured (host=%s), email notifications disabled", host)
         return
     import aiosmtplib

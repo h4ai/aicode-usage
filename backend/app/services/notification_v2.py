@@ -134,7 +134,7 @@ def check_quota_alerts() -> None:
             if email_domain:
                 mail = f"{sam}@{email_domain}"
             else:
-                logger.debug("Skipping user %s: no mail and no email_domain", user_id)
+                logger.warning("Skipping user %s: no mail and no email_domain configured", user_id)
                 continue
 
         quota_level = user.get("quota_level", "L1")
