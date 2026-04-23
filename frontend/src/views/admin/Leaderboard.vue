@@ -199,7 +199,9 @@ function _computeDateRange(): { start: string | null; end: string | null } {
   } else if (rangeMode.value === 'custom' && customRange.value) {
     return { start: customRange.value[0], end: customRange.value[1] }
   }
-  return { start: null, end: null }
+  // month mode: from 1st of current month to today (consistent with DetailTable)
+  const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+  return { start: fmt(firstOfMonth), end: fmt(today) }
 }
 
 function onRangeModeChange() {
