@@ -146,6 +146,9 @@
     >
       <DetailTable
         :user-id="detailUser.username"
+        :time-filter="timeFilter"
+        :initial-start="detailUser.start || ''"
+        :initial-end="detailUser.end || ''"
       />
     </el-dialog>
   </div>
@@ -169,11 +172,14 @@ const rangeMode = ref<'month' | '7' | '30' | 'custom'>('month')
 const customRange = ref<[string, string] | null>(null)
 
 const dialogVisible = ref(false)
-const detailUser = reactive({ username: '', displayName: '' })
+const detailUser = reactive({ username: '', displayName: '', start: '', end: '' })
 
 function openDetail(row: any) {
   detailUser.username = row.user_id
   detailUser.displayName = row.display_name || row.user_id
+  const { start, end } = _computeDateRange()
+  detailUser.start = start || ''
+  detailUser.end = end || ''
   dialogVisible.value = true
 }
 
