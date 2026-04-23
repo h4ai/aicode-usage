@@ -326,7 +326,8 @@ def get_detail_records(
         sql = (
             f"SELECT {EVENT_DATE}, {REQUEST_MODEL_NAME},"
             f" count() AS request_count,"
-            f" sum({INPUT_TOKEN}), sum({OUTPUT_TOKEN}), sum({TOTAL_TOKEN})"
+            f" sum({INPUT_TOKEN}), sum({OUTPUT_TOKEN}), sum({TOTAL_TOKEN}),"
+            f" countIf({EVENT_CODE} = 'chat_request_response' AND totalToken > 0) AS chat_count"
             f" FROM events"
             f" WHERE {user_cond}"
             f" AND {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}"
@@ -344,6 +345,7 @@ def get_detail_records(
                 "input_token": _safe_int(row[3]),
                 "output_token": _safe_int(row[4]),
                 "total_token": _safe_int(row[5]),
+                "chat_count": _safe_int(row[6]),
             }
             for row in rows
         ]

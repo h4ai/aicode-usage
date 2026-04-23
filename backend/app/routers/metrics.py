@@ -163,6 +163,7 @@ class DetailItem(BaseModel):
     date: str
     model: str
     request_count: int
+    chat_count: int = 0
     input_token: int
     output_token: int
     total_token: int

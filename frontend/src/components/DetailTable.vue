@@ -69,10 +69,17 @@
         min-width="160"
       />
       <el-table-column
-        prop="request_count"
+        prop="chat_count"
         label="对话轮次"
         sortable="custom"
         width="110"
+        align="right"
+      />
+      <el-table-column
+        prop="request_count"
+        label="请求数"
+        sortable="custom"
+        width="90"
         align="right"
       />
       <el-table-column
