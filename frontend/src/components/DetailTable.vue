@@ -49,6 +49,14 @@
       </div>
     </template>
 
+    <el-alert
+      v-if="tableData.length > 0"
+      :title="`汇总：对话轮次 ${totalChatCount} · 请求数 ${totalRequestCount} · Token ${formatNum(totalToken)}`"
+      type="info"
+      :closable="false"
+      style="margin-bottom: 12px;"
+    />
+
     <el-table
       v-loading="loading"
       :data="pagedData"
@@ -142,6 +150,7 @@ interface DetailItem {
   date: string
   model: string
   request_count: number
+  chat_count: number
   input_token: number
   output_token: number
   total_token: number
@@ -161,6 +170,10 @@ const pagedData = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   return tableData.value.slice(start, start + pageSize.value)
 })
+
+const totalChatCount = computed(() => tableData.value.reduce((s, r) => s + (r.chat_count || 0), 0))
+const totalRequestCount = computed(() => tableData.value.reduce((s, r) => s + (r.request_count || 0), 0))
+const totalToken = computed(() => tableData.value.reduce((s, r) => s + (r.total_token || 0), 0))
 
 function formatNum(n: number): string {
   return n.toLocaleString()
