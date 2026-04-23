@@ -222,11 +222,31 @@ async function handleRevoke(id: number) {
 }
 
 function copyToken() {
-  navigator.clipboard.writeText(newToken.value).then(() => {
+  const text = newToken.value
+  // Clipboard API 需要 HTTPS，内网 HTTP 环境降级用 execCommand
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(() => {
+      ElMessage.success('已复制到剪贴板')
+    }).catch(() => fallbackCopy(text))
+  } else {
+    fallbackCopy(text)
+  }
+}
+
+function fallbackCopy(text: string) {
+  const el = document.createElement('textarea')
+  el.value = text
+  el.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0'
+  document.body.appendChild(el)
+  el.focus()
+  el.select()
+  const ok = document.execCommand('copy')
+  document.body.removeChild(el)
+  if (ok) {
     ElMessage.success('已复制到剪贴板')
-  }).catch(() => {
-    ElMessage.warning('复制失败，请手动复制')
-  })
+  } else {
+    ElMessage.warning('自动复制失败，请手动选中文本复制')
+  }
 }
 
 onMounted(fetchTokens)
