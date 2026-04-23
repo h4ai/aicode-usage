@@ -152,3 +152,23 @@ def test_login(body: LoginRequest) -> LoginResponse:
         },
     )
     return LoginResponse(token=token, role="user")
+
+
+from app.services.auth import decode_token  # noqa: E402
+
+
+@router.get("/me")
+def get_me(request: Request) -> dict[str, Any]:
+    """Return basic info for the current authenticated user (lightweight token check)."""
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未登录")
+    token = auth_header[7:]
+    payload = decode_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Token 无效或已过期")
+    return {
+        "user_id": payload.get("sub"),
+        "role": payload.get("role", "user"),
+        "display_name": payload.get("display_name"),
+    }

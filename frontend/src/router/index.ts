@@ -37,10 +37,10 @@ const router = createRouter({
   ],
 })
 
-// 验证 token 是否仍然有效
+// 验证 token 是否仍然有效 — 用 /health 或 /api/auth/me，不依赖 ClickHouse
 async function isTokenValid(token: string): Promise<boolean> {
   try {
-    const res = await fetch('/api/metrics/summary', {
+    const res = await fetch('/api/auth/me', {
       headers: { Authorization: `Bearer ${token}` },
     })
     return res.status !== 401
