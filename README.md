@@ -15,10 +15,12 @@
   - 用户管理（含状态指示灯、分组筛选、CSV 导出）
   - 全局趋势图（按天/按分组，支持时段过滤）
   - 分组汇总（各分组 Token 用量 & 对话轮次汇总）
-  - 用量排行榜（Top N 用户排名）
+  - 用量排行榜（Top N 用户排名，**点击用户名可查看个人明细弹窗**）
   - 工作时段设置（管理员配置起止时间和工作日范围）
   - 配额级别管理（L1/L2/L3 月度 Token + 日对话轮次上限）
   - **邮件通知设置**（US-017~022）：多阈值多配额项轮询通知、可配置检查间隔、邮件模板在线编辑与预览
+  - **邮件记录管理**：查看所有已发邮件记录、手动重发、删除去重记录
+- **PAT 外部 API**（/api/v1/）：通过 Personal Access Token 无需登录直接调用，支持个人用量查询和管理员数据查询，适合 AI Agent / 脚本集成
 
 ---
 
@@ -81,12 +83,13 @@ database:
   url: "postgresql://postgres:postgres@postgres:5432/ai_usage"
 
 smtp:
-  host: "mailrelay.company.com"         # 内网邮件中继，留空则禁用邮件通知
-  port: 25
-  username: ""                          # 无需认证的 relay 留空
-  password: ""
-  from_name: "AI Code Usage"
-  from_email: "ai-usage@company.com"
+  host: "mailrelay.company.com"        # SMTP 服务器地址（必填，才能发邮件）
+  port: 25                              # 端口：25(SMTP)/587(STARTTLS)/465(SSL)
+  username: ""                          # 认证用户名（无需认证时留空）
+  password: ""                          # 认证密码（无需认证时留空）
+  from_addr: "ai-usage@company.com"    # 发件人地址
+  use_tls: false                        # 是否使用 SSL/TLS（端口 465）
+  use_starttls: false                   # 是否使用 STARTTLS（端口 587）
 
 working_hours:
   enabled: false                        # true=开启时段过滤
@@ -110,6 +113,8 @@ auth:
 ```
 
 > **注意**：`auth.allow_test_login` 在 config.yaml 中默认值为 `true`（开发默认），部署生产时必须改为 `false`。
+
+> 注：smtp.host 未配置时邮件通知功能不生效，服务仍正常启动（只打 WARN 日志）
 
 **生成管理员密码 hash（bcrypt）：**
 
@@ -356,6 +361,75 @@ docker exec -it ai-code-usage-postgres-1 psql -U postgres -d ai_usage
 docker exec ai-code-usage-backend-1 python3 -c \
   "from app.services.database import init_db; init_db(); print('done')"
 ```
+
+---
+
+## PAT API（外部接口）
+
+通过 Personal Access Token 可无需登录直接调用 API，适合 AI Agent、脚本、BI 工具集成。
+
+### 获取 PAT
+
+登录 Web UI → 右上角下拉菜单 → **API Token** → 新建 Token（有效期 3/6/12 个月）
+
+> ⚠️ Token 创建后**仅显示一次**，请立即复制保存。
+
+### 认证方式
+
+所有 `/api/v1/` 接口均使用 Bearer Token：
+
+```bash
+curl -H "Authorization: Bearer pat_xxxxxxxx..." \
+  http://your-server:8002/api/v1/usage/summary
+```
+
+### 接口清单
+
+#### 个人接口（任意用户 PAT）
+
+| 接口 | 说明 |
+|------|------|
+| `GET /api/v1/usage/summary?scope=month\|week\|today` | 用量汇总 |
+| `GET /api/v1/usage/detail` | 使用明细（支持日期范围、模型过滤、排序）|
+| `GET /api/v1/usage/quota` | 配额状态（已用/上限/百分比）|
+
+#### 管理员接口（需管理员 PAT）
+
+| 接口 | 说明 |
+|------|------|
+| `GET /api/v1/admin/leaderboard` | 用量排行榜（支持分页）|
+| `GET /api/v1/admin/users` | 用户列表（支持分页）|
+| `GET /api/v1/admin/department-summary` | 部门汇总 |
+
+### 安全说明
+
+- Token 明文不落库，只存 SHA-256 哈希
+- 每用户最多 5 个活跃 Token
+- 连续 5 次认证失败自动锁定 10 分钟
+- 100 次/分钟 速率限制
+
+### aicode-usage-query Skill
+
+项目内置 `skills/aicode-usage-query/` Skill，让 AI Agent 直接通过自然语言查询用量数据。
+
+**配置：**
+```bash
+export AICODE_PAT="pat_xxxxxxxx..."
+export AICODE_BASE_URL="http://your-server:8002"
+```
+
+**使用：**
+```bash
+# 个人用量
+python3 skills/aicode-usage-query/scripts/query.py summary --scope month
+python3 skills/aicode-usage-query/scripts/query.py quota
+python3 skills/aicode-usage-query/scripts/query.py detail --days 7 --sort-by total_token
+
+# 管理员
+python3 skills/aicode-usage-query/scripts/query.py leaderboard --top 10
+```
+
+或直接问 AI Agent：「查询我本月的 token 用量」、「我的配额还剩多少」
 
 ---
 
