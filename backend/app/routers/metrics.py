@@ -237,10 +237,10 @@ def metrics_export_csv(
 
     buf = io.StringIO()
     writer = csv.writer(buf)
-    writer.writerow(["日期", "模型", "请求次数", "输入Token", "输出Token", "总Token"])
+    writer.writerow(["日期", "模型", "对话轮次", "请求次数", "输入Token", "输出Token", "总Token"])
     for r in rows:
         writer.writerow([
-            r["date"], r["model"], r["request_count"],
+            r["date"], r["model"], r.get("chat_count", 0), r["request_count"],
             r["input_token"], r["output_token"], r["total_token"],
         ])
 
