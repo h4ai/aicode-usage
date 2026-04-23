@@ -84,6 +84,7 @@
               :style="{ background: '#409eff', fontSize: '12px' }"
             >{{ avatarText }}</el-avatar>
             <span class="username-text">{{ auth.username || '用户' }}</span>
+            <span class="app-version-text">{{ appVersion }}</span>
             <el-icon style="font-size:11px;color:#909399"><ArrowDown /></el-icon>
           </span>
           <template #dropdown>
@@ -130,6 +131,9 @@ const auth = useAuthStore()
 const router = useRouter()
 const avatarText = computed(() => (auth.username || '').slice(-2) || 'U')
 const ready = ref(false)
+
+declare const __APP_VERSION__: string
+const appVersion = __APP_VERSION__
 function handleCommand(cmd: string) {
   if (cmd === 'logout') { auth.logout(); router.push('/login') }
   else if (cmd === 'api-tokens') { router.push('/api-tokens') }
@@ -205,6 +209,13 @@ import DetailTable from '@/components/DetailTable.vue'
   max-width: 100px;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-version-text {
+  font-size: 11px;
+  color: #b0b0b0;
+  margin-left: 2px;
   white-space: nowrap;
 }
 
