@@ -107,18 +107,10 @@
 
             <h4>示例</h4>
             <p><strong>curl：</strong></p>
-            <pre><code>curl -H "Authorization: Bearer pat_xxxxxxxx..." \
-  {{ baseUrl }}/api/v1/usage/summary?scope=month</code></pre>
+            <pre><code>{{ curlExample }}</code></pre>
 
             <p><strong>Python：</strong></p>
-            <pre><code>import requests
-
-resp = requests.get(
-    "{{ baseUrl }}/api/v1/usage/summary",
-    params={"scope": "month"},
-    headers={"Authorization": "Bearer pat_xxxxxxxx..."},
-)
-print(resp.json())</code></pre>
+            <pre><code>{{ pythonExample }}</code></pre>
           </div>
         </el-collapse-item>
       </el-collapse>
@@ -127,7 +119,7 @@ print(resp.json())</code></pre>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import api from '@/api'
 import { useAuthStore } from '@/stores/auth'
@@ -142,6 +134,14 @@ const creating = ref(false)
 const form = ref({ name: '', expires_months: 6 })
 
 const baseUrl = window.location.origin
+
+const curlExample = computed(() =>
+  `curl -H "Authorization: Bearer pat_xxxxxxxx..." \\\n  ${baseUrl}/api/v1/usage/summary?scope=month`
+)
+
+const pythonExample = computed(() =>
+  `import requests\n\nresp = requests.get(\n    "${baseUrl}/api/v1/usage/summary",\n    params={"scope": "month"},\n    headers={"Authorization": "Bearer pat_xxxxxxxx..."},\n)\nprint(resp.json())`
+)
 
 const userApis = [
   { path: 'GET /api/v1/usage/summary', desc: '个人用量汇总（scope=month/week/today）' },
