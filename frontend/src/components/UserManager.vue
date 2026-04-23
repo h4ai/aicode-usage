@@ -369,16 +369,18 @@ async function fetchUsers() {
   try {
     const { year, month } = _queryYearMonth()
     const url = `/admin/users?time_filter=all&year=${year}&month=${month}`
-    const { data } = await api.get<UserItem[]>(url)
+    const { data } = await api.get<{ items: UserItem[]; total: number } | UserItem[]>(url)
+    // 后端可能返回分页对象 {items, total} 或旧格式数组
+    const list: UserItem[] = Array.isArray(data) ? data : (data as { items: UserItem[] }).items ?? []
     // 默认按状态+月 Token 排序
     const order = { red: 0, yellow: 1, green: 2, gray: 3 }
-    data.sort((a, b) => {
+    list.sort((a, b) => {
       const sa = Math.min(order[a.status_token as keyof typeof order] ?? 4, order[a.status_chat as keyof typeof order] ?? 4)
       const sb = Math.min(order[b.status_token as keyof typeof order] ?? 4, order[b.status_chat as keyof typeof order] ?? 4)
       if (sa !== sb) return sa - sb
       return b.monthly_token - a.monthly_token
     })
-    users.value = data
+    users.value = list
   } finally {
     loading.value = false
   }
