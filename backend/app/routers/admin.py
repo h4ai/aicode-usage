@@ -694,16 +694,7 @@ def get_template_variables(admin: Any = Depends(require_admin)) -> list[dict[str
 
 class NotificationConfigUpdate(BaseModel):
     enabled: bool | None = None
-    check_interval_minutes: int | None = Field(None, description="检查间隔（分钟），仅限 30/60/120")
-
-    @field_validator("check_interval_minutes")
-    @classmethod
-    def _valid_interval(cls, v: int | None) -> int | None:
-        if v is not None and v not in (30, 60, 120):
-            raise ValueError("check_interval_minutes must be 30, 60, or 120")
-        return v
     thresholds: list[int] | None = Field(None, description="阈值列表，每个值1-100")
-    email_domain: str | None = None
 
     @field_validator("thresholds")
     @classmethod
@@ -737,9 +728,7 @@ def update_notif_config(
     logger.info("update_notif_config: %s", body.model_dump(exclude_none=True))
     result = update_notification_config(
         enabled=body.enabled,
-        check_interval_minutes=body.check_interval_minutes,
         thresholds=body.thresholds,
-        email_domain=body.email_domain,
     )
     return result
 

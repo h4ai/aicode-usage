@@ -22,28 +22,6 @@
           <el-switch v-model="form.enabled" />
         </el-form-item>
 
-        <!-- 检查间隔 -->
-        <el-form-item label="检查间隔">
-          <el-select
-            v-model="form.checkInterval"
-            style="width: 200px"
-          >
-            <el-option
-              :value="30"
-              label="30 分钟"
-            />
-            <el-option
-              :value="60"
-              label="60 分钟"
-            />
-            <el-option
-              :value="120"
-              label="120 分钟"
-            />
-          </el-select>
-          <span style="margin-left: 8px; color: #909399; font-size: 12px">（修改后需重启服务生效）</span>
-        </el-form-item>
-
         <!-- 触发阈值 -->
         <el-form-item label="触发阈值">
           <el-input-number
@@ -67,22 +45,14 @@
           <span style="margin-left: 8px; color: #909399; font-size: 12px">（0 表示忽略该档）</span>
         </el-form-item>
 
-        <!-- 邮件域名 -->
-        <el-form-item label="邮件域名">
-          <el-input
-            v-model="form.emailDomain"
-            placeholder="example.com（AD mail 为空时自动拼接）"
-            style="width: 300px"
-          />
-          <el-tooltip
-            placement="top"
-            content="当 AD 中没有配置用户 mail 属性时，系统会用「sAMAccountName@邮件域名」构造收件地址。如已有 AD mail 则此项无需填写。"
-          >
-            <el-icon style="margin-left: 6px; cursor: pointer; color: #909399">
-              <QuestionFilled />
-            </el-icon>
-          </el-tooltip>
-        </el-form-item>
+        <el-alert
+          type="info"
+          :closable="false"
+          show-icon
+          style="margin-top: 8px"
+        >
+          检查间隔和邮件域名请在服务器 backend/config.yaml 中配置，修改后重启服务生效。
+        </el-alert>
       </el-form>
     </el-card>
 
@@ -228,7 +198,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { QuestionFilled } from '@element-plus/icons-vue'
 import api from '@/api'
 
 // 占位符示例值（与后端 sample_context 对齐）
@@ -246,9 +215,7 @@ const SAMPLE_VALUES: Record<string, string> = {
 
 const form = ref({
   enabled: true,
-  checkInterval: 60,
   thresholds: [50, 80, 100],
-  emailDomain: '',
 })
 
 const template = ref({
@@ -299,9 +266,7 @@ async function loadConfig() {
     const resp = await api.get('/admin/notification-config')
     const d = resp.data
     form.value.enabled = d.enabled ?? true
-    form.value.checkInterval = d.check_interval_minutes ?? 60
     form.value.thresholds = d.thresholds ?? [50, 80, 100]
-    form.value.emailDomain = d.email_domain ?? ''
   } catch {
     // use defaults
   }
@@ -311,11 +276,9 @@ async function handleSaveConfig() {
   try {
     await api.put('/admin/notification-config', {
       enabled: form.value.enabled,
-      check_interval_minutes: form.value.checkInterval,
       thresholds: form.value.thresholds,
-      email_domain: form.value.emailDomain,
     })
-    ElMessage.success('配置已保存（间隔/开关修改需重启服务生效）')
+    ElMessage.success('配置已保存')
   } catch {
     ElMessage.error('保存配置失败，请检查网络或登录状态')
   }
