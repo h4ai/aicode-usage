@@ -10,7 +10,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from apscheduler.schedulers.background import BackgroundScheduler
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -18,7 +18,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
 from app.config import get_config
-from app.routers import admin, auth, health, metrics, quota
+from app.routers import admin, auth, health, metrics, quota, tokens, v1
 from app.services.database import init_db
 from app.services.notification_v2 import check_quota_alerts
 
@@ -27,9 +27,14 @@ logger = logging.getLogger(__name__)
 
 def _setup_logging() -> None:
     """Configure unified logging format for the application."""
+    from app.auth_pat import PATFilter
+
     fmt = "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
     datefmt = "%Y-%m-%d %H:%M:%S"
     logging.basicConfig(level=logging.INFO, format=fmt, datefmt=datefmt, force=True)
+
+    # Add PAT filter to root logger
+    logging.getLogger().addFilter(PATFilter())
 
     # Suppress noisy third-party loggers
     for noisy in ("jwt", "apscheduler", "passlib", "multipart", "urllib3"):
@@ -116,6 +121,43 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Security headers middleware — applies to ALL responses globally
+from starlette.middleware.base import BaseHTTPMiddleware  # noqa: E402
+from starlette.requests import Request as StarletteRequest  # noqa: E402
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: StarletteRequest, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        return response
+
+app.add_middleware(SecurityHeadersMiddleware)
+
+@app.exception_handler(HTTPException)
+async def _http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
+    """Custom error format for PAT routes (/api/v1/ and /api/tokens)."""
+    if request.url.path.startswith("/api/v1") or request.url.path.startswith("/api/tokens"):
+        code_map = {
+            401: "unauthorized",
+            403: "forbidden",
+            429: "too_many_requests",
+            400: "bad_request",
+            404: "not_found",
+        }
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "error": code_map.get(exc.status_code, "error"),
+                "message": str(exc.detail),
+                "code": exc.status_code,
+            },
+            headers=dict(exc.headers) if exc.headers else {},
+        )
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
+
 @app.exception_handler(Exception)
 async def _global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     logger.error("Unhandled exception: %s %s - %s", request.method, request.url.path, exc)
@@ -127,3 +169,5 @@ app.include_router(auth.router)
 app.include_router(quota.router)
 app.include_router(metrics.router)
 app.include_router(admin.router)
+app.include_router(tokens.router, prefix="/api")
+app.include_router(v1.router, prefix="/api/v1")
