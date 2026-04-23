@@ -28,6 +28,12 @@ const router = createRouter({
       component: () => import('@/views/AdminView.vue'),
       meta: { requiresAdmin: true },
     },
+    {
+      path: '/api-tokens',
+      name: 'api-tokens',
+      component: () => import('@/views/ApiTokens.vue'),
+      meta: { requiresAuth: true },
+    },
   ],
 })
 

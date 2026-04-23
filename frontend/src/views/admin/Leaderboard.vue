@@ -209,7 +209,9 @@ async function fetchData() {
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${auth.token}` }
     })
-    rows.value = await res.json()
+    const json = await res.json()
+    // 后端可能返回分页对象 {items, total} 或旧格式数组
+    rows.value = Array.isArray(json) ? json : (json.items ?? [])
   } finally {
     loading.value = false
   }
