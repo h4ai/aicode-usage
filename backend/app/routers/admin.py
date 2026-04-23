@@ -654,7 +654,7 @@ def update_template(body: EmailTemplateUpdate, admin: Any = Depends(require_admi
 
 @router.post("/email-template/preview")
 def preview_template(body: EmailTemplateUpdate, admin: Any = Depends(require_admin)) -> dict[str, str]:
-    """Preview template with sample data."""
+    """Preview template with sample data — all 9 known variables are substituted."""
     sample_context = build_context(
         username="张三",
         user_id="zhangsan",
@@ -664,6 +664,8 @@ def preview_template(body: EmailTemplateUpdate, admin: Any = Depends(require_adm
         threshold=80,
         period_key="2026-04",
     )
+    # Also expose raw quota_type value in case templates use {{quota_type}} directly
+    sample_context.setdefault("quota_type", "monthly_token")
     return {
         "subject": render_template(body.subject, sample_context),
         "body_html": render_template(body.body_html, sample_context),

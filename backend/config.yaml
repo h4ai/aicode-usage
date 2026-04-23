@@ -21,26 +21,26 @@ ldap:
   user_attr: sAMAccountName
 notification:
   check_interval_minutes: 30
+  email_batch_delay_seconds: 2
+  email_batch_size: 10
   email_domain: ''
   enabled: true
   thresholds:
   - 50
   - 80
   - 100
-  email_batch_size: 10
-  email_batch_delay_seconds: 2
 security:
   cors_origins:
   - http://localhost:3002
 smtp:
-  host: mailrelay.internal.company.com
-  port: 25
-  username: ''
-  password: ''
-  from_name: AI 使用助手
   from_email: ai-usage@company.com
-  use_tls: false
+  from_name: AI 使用助手
+  host: mailrelay.internal.company.com
+  password: ''
+  port: 25
   use_starttls: true
+  use_tls: false
+  username: ''
 working_hours:
   enabled: true
   end: '18:00'

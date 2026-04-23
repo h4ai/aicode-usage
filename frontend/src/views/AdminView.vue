@@ -6,7 +6,6 @@
     <NavBar title="管理员后台" />
     <el-tabs
       v-model="activeTab"
-      @tab-change="onTabChange"
     >
       <el-tab-pane
         label="用户管理"
@@ -61,7 +60,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import NavBar from '@/components/NavBar.vue'
 import QuotaLevelManager from '@/components/QuotaLevelManager.vue'
@@ -82,12 +81,12 @@ const initialTab = typeof route.query.tab === 'string' && VALID_TABS.includes(ro
   : 'users'
 const activeTab = ref(initialTab)
 
-function onTabChange(tabName: string) {
-  // tab-change 事件直接提供新 tab name，无需依赖 v-model 更新时序
+// Watch activeTab reactively — fires synchronously on every change (no event timing issues)
+watch(activeTab, (tabName) => {
   router.replace({ query: { ...route.query, tab: tabName } })
   // Tab 切换后容器宽度可能还未更新，延迟触发 resize
   setTimeout(() => {
     window.dispatchEvent(new Event('resize'))
   }, 50)
-}
+})
 </script>

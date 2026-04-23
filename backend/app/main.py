@@ -182,26 +182,33 @@ def _get_audit_action(method: str, path: str) -> str | None:
 
 class AuditMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: StarletteRequest, call_next):
+        # Extract user identity BEFORE call_next (headers are still intact)
+        user_id = "anonymous"
+        try:
+            auth_header = request.headers.get("Authorization", "")
+            if auth_header.startswith("Bearer "):
+                token = auth_header[7:]
+                if token.startswith("pat_"):
+                    # PAT token: resolve user_id via DB hash lookup
+                    import hashlib
+
+                    from app.services.database import get_pat_by_hash
+                    token_hash = hashlib.sha256(token.encode()).hexdigest()
+                    pat_record = get_pat_by_hash(token_hash)
+                    user_id = pat_record["user_id"] if pat_record else "pat_user"
+                else:
+                    # JWT token: decode without DB
+                    from app.services.auth import decode_token
+                    payload = decode_token(token)
+                    if payload:
+                        user_id = payload.get("sub", "anonymous")
+        except Exception:
+            pass
+
         response = await call_next(request)
+
         action = _get_audit_action(request.method, request.url.path)
         if action:
-            # Extract user identity from JWT token (best-effort, no hard dependency)
-            user_id = "anonymous"
-            try:
-                auth_header = request.headers.get("Authorization", "")
-                if auth_header.startswith("Bearer "):
-                    token = auth_header[7:]
-                    if not token.startswith("pat_"):
-                        from jose import jwt as _jwt
-
-                        from app.auth import ALGORITHM, SECRET_KEY
-                        payload = _jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-                        user_id = payload.get("sub", "anonymous")
-                    else:
-                        # PAT token — username logged via PAT auth
-                        user_id = "pat_user"
-            except Exception:
-                pass
             status = response.status_code
             _audit_logger.info(
                 "[AUDIT] user=%s action=%s path=%s status=%d",
