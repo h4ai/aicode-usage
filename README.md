@@ -74,7 +74,7 @@ ldap:
 
 clickhouse:
   host: "host.docker.internal"          # 宿主机 ClickHouse（Linux 填宿主机 IP）
-  port: 19000                           # Native 协议端口（HTTP 用 8123）
+  port: 8123                            # HTTP 端口（clickhouse_connect 使用 HTTP 协议）
   database: "otel"
   user: "default"
   password: ""
@@ -83,25 +83,29 @@ database:
   url: "postgresql://postgres:postgres@postgres:5432/ai_usage"
 
 smtp:
-  host: "mailrelay.company.com"        # SMTP 服务器地址（必填，才能发邮件）
-  port: 25                              # 端口：25(SMTP)/587(STARTTLS)/465(SSL)
+  host: "mailrelay.company.com"        # ⚠️ SMTP 服务器地址（必填才能发邮件；留空或虚拟值时邮件功能禁用）
+  port: 25                              # 端口：25(SMTP) / 587(STARTTLS) / 465(SSL)
   username: ""                          # 认证用户名（无需认证时留空）
   password: ""                          # 认证密码（无需认证时留空）
-  from_addr: "ai-usage@company.com"    # 发件人地址
-  use_tls: false                        # 是否使用 SSL/TLS（端口 465）
-  use_starttls: false                   # 是否使用 STARTTLS（端口 587）
+  from_email: "ai-usage@company.com"   # 发件人地址（字段名 from_email）
+  from_name: "AI 使用助手"              # 发件人显示名
+  use_tls: false                        # 是否使用 SSL/TLS（端口 465 时设 true）
+  use_starttls: false                   # 是否使用 STARTTLS（端口 587 时设 true）
 
 working_hours:
-  enabled: false                        # true=开启时段过滤
+  enabled: false                        # true=开启工作时段过滤
   start: "09:00"
   end: "18:00"
   weekday_only: true
 
 notification:
   enabled: true                         # false=关闭邮件通知（不启动 scheduler）
-  check_interval_minutes: 60            # 轮询间隔分钟，修改后需重启服务
-  thresholds: [50, 80, 100]             # 触发阈值（%），0 表示忽略该档
-  email_domain: ""                      # AD mail 为空时自动拼接 sam@email_domain
+  check_interval_minutes: 30            # 轮询间隔（分钟）⚠️ 修改后需重启服务才生效
+  thresholds: [50, 80, 100]             # 触发阈值（%）
+  email_domain: ""                      # ⚠️ AD 未存邮箱时自动拼接 sam@email_domain，必须填写否则跳过所有用户
+  email_batch_size: 10                  # 每批发送数量（防止 SMTP 限速）
+  email_batch_delay_seconds: 2          # 批次间隔秒数
+  # check_interval_minutes 和 email_domain 无前端界面，只能在此处修改，改后需重启
 
 security:
   cors_origins:
@@ -299,6 +303,61 @@ API 已内置限速（slowapi）：
 ### test-login
 
 `auth.allow_test_login: true` 仅用于测试环境（LDAP 不可用时）。**生产必须设为 `false`**。
+
+### JWT Secret
+
+JWT 签发密钥在 `backend/app/services/auth.py` 中以常量形式存在：
+
+```python
+_JWT_SECRET = "ai-code-usage-secret-change-me"
+```
+
+**生产部署前必须修改**为足够强度的随机字符串（建议 ≥ 32 字节）。修改方式：
+
+```bash
+# 生成随机 secret
+python3 -c "import secrets; print(secrets.token_hex(32))"
+# 将输出值替换 backend/app/services/auth.py 第 15 行的 _JWT_SECRET 值
+```
+
+> ⚠️ 修改 SECRET 后所有已签发的 JWT 立即失效，用户需重新登录。
+
+### 邮件通知配置
+
+邮件通知所有参数均通过 `backend/config.yaml` 配置（**前端不提供修改界面**）：
+
+```yaml
+smtp:
+  host: "mailrelay.company.com"    # ⚠️ 必填，留空或使用虚拟值时邮件功能禁用
+  port: 25
+  username: ""
+  password: ""
+  from_email: "ai-usage@company.com"
+  from_name: "AI 使用助手"
+  use_tls: false
+  use_starttls: false              # 587 端口时建议 true
+
+notification:
+  enabled: true
+  check_interval_minutes: 30       # 轮询间隔（分钟），仅重启生效
+  thresholds: [50, 80, 100]        # 触发阈值（%）
+  email_domain: ""                 # AD 未存邮箱时自动拼接 sam@email_domain，如 "corp.com"
+  email_batch_size: 10             # 每批发送数量（防止 SMTP 限速）
+  email_batch_delay_seconds: 2     # 批次间隔秒数
+```
+
+> 注：修改 `smtp.host` 或 `notification.check_interval_minutes` 后需 `docker compose restart backend` 才能生效（热重载不触发调度器重建）。
+
+### 用户操作审计日志
+
+v1.3.0 起后端自动记录所有关键操作的审计日志，无需配置：
+
+```
+[AUDIT] user=admin action=查看用量排行榜 path=/api/admin/leaderboard status=200
+[AUDIT] user=张三 action=创建 API Token path=/api/tokens status=201
+```
+
+覆盖范围：登录/登出、用户管理、配额配置、邮件通知配置、数据导出、PAT 管理等 20+ 操作。日志格式与其他日志统一，可通过 `grep "\[AUDIT\]"` 过滤。
 
 ---
 
