@@ -61,7 +61,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import NavBar from '@/components/NavBar.vue'
 import QuotaLevelManager from '@/components/QuotaLevelManager.vue'
 import WorkingHoursConfig from '@/components/WorkingHoursConfig.vue'
@@ -72,9 +73,17 @@ import Leaderboard from '@/views/admin/Leaderboard.vue'
 import NotificationSettings from '@/views/admin/NotificationSettings.vue'
 import EmailNotifications from '@/views/admin/EmailNotifications.vue'
 
-const activeTab = ref('users')
+const VALID_TABS = ['users', 'trend', 'dept', 'leaderboard', 'workhours', 'quota', 'notification', 'email-records']
+const route = useRoute()
+const router = useRouter()
+
+const initialTab = typeof route.query.tab === 'string' && VALID_TABS.includes(route.query.tab)
+  ? route.query.tab
+  : 'users'
+const activeTab = ref(initialTab)
 
 function onTabChange() {
+  router.replace({ query: { ...route.query, tab: activeTab.value } })
   // Tab 切换后容器宽度可能还未更新，延迟触发 resize
   setTimeout(() => {
     window.dispatchEvent(new Event('resize'))
