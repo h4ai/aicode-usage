@@ -134,11 +134,11 @@ def check_quota_alerts() -> None:
         user_id = user["user_id"]
         mail = user.get("mail") or ""
         if not mail.strip():
-            # Try to construct from email_domain
+            # Try to construct from email_domain，用 sam（域账号），不能用中文 username
             email_domain = notif_cfg.get("email_domain", "")
-            sam = user.get("username") or user_id
+            sam_for_mail = user.get("sam") or user_id
             if email_domain:
-                mail = f"{sam}@{email_domain}"
+                mail = f"{sam_for_mail}@{email_domain}"
             else:
                 logger.warning("Skipping user %s: no mail and no email_domain configured", user_id)
                 continue
