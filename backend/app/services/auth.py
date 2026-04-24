@@ -12,7 +12,7 @@ from typing import Any
 import jwt
 
 # Application-level secret; in production this should come from env/config.
-_JWT_SECRET = "ai-code-usage-secret-change-me"
+_JWT_SECRET = "2e6193c8bb394af2c778f39ae56c9bfafceacefd1bf14fcb808a74603bc747c2"
 _JWT_ALGORITHM = "HS256"
 _JWT_TTL_SECONDS = 8 * 3600  # 8 hours
 
