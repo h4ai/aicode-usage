@@ -53,7 +53,10 @@ def mock_all():
 
 
 def test_checks_both_monthly_token_and_daily_chats(mock_all):
-    """AC-1: check_quota_alerts checks both monthly_token and daily_chats."""
+    """AC-1: check_quota_alerts checks both monthly_token and daily_chats.
+    新逻辑：两种配额同时触发时，只发最高严重度（阈值最高）的一封邮件。
+    monthly=85%触发80%，daily=55%触发50%，80% > 50%，只发 monthly_token 那封。
+    """
     mock_all["users"].return_value = [
         {"user_id": "u1", "username": "u1", "nickname": "User1", "mail": "u1@ex.com", "quota_level": "L1"}
     ]
@@ -66,11 +69,12 @@ def test_checks_both_monthly_token_and_daily_chats(mock_all):
     from app.services.notification_v2 import check_quota_alerts
     check_quota_alerts()
 
-    # Should have sent notifications for both quota types
+    # 新逻辑：两种配额同时触发，只发最高阈值（80% > 50%），即 monthly_token
     sent_calls = mock_all["mark_sent"].call_args_list
     quota_types = [c[0][1] for c in sent_calls]
-    assert "monthly_token" in quota_types
-    assert "daily_chats" in quota_types
+    assert "monthly_token" in quota_types   # 最高阈值，正式发送
+    # daily_chats 50% 阈值低于 monthly 80%，本次不发（下次 monthly 发过后再单独判断）
+    assert mock_all["send_email"].call_count == 1  # 只发一封
 
 
 def test_skips_quota_when_limit_is_zero(mock_all):
