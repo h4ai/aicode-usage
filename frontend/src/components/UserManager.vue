@@ -237,6 +237,23 @@
         </template>
       </el-table-column>
 
+      <!-- 当月总对话（全天，不受时段过滤） -->
+      <el-table-column
+        label="当月总对话"
+        width="100"
+        sortable
+        :sort-method="(a: UserItem, b: UserItem) => (a.monthly_chats_all ?? a.monthly_chats) - (b.monthly_chats_all ?? b.monthly_chats)"
+      >
+        <template #header>
+          <el-tooltip content="当月全天（含非工作时段）的对话轮次，仅作参考" placement="top">
+            <span style="cursor:help">当月总对话 <el-icon style="font-size:12px;vertical-align:middle"><QuestionFilled /></el-icon></span>
+          </el-tooltip>
+        </template>
+        <template #default="{ row }">
+          <span>{{ row.monthly_chats_all ?? row.monthly_chats }}</span>
+        </template>
+      </el-table-column>
+
       <!-- 今日 Token -->
       <el-table-column
         label="今日限额Token"
@@ -359,6 +376,7 @@ interface UserItem {
   today_chats: number         // 限额统计用（受time_filter影响）
   today_chats_all: number     // 全天今日总对话
   monthly_chats: number
+  monthly_chats_all: number   // 全天当月总对话
   daily_requests: number
   status_token: string
   status_chat: string

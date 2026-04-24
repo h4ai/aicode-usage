@@ -130,6 +130,7 @@ class UserItem(BaseModel):
     today_token: int = 0
     today_chats: int = 0
     monthly_chats: int = 0
+    monthly_chats_all: int = 0  # 全天本月对话轮次（不受time_filter影响）
     monthly_token_all: int = 0  # 全天本月Token（不受time_filter影响）
     today_chats_all: int = 0  # 全天今日对话（不受time_filter影响）
     today_token_all: int = 0  # 全天今日Token（不受time_filter影响）
@@ -219,6 +220,7 @@ def list_users(
                     today_token=s.get("today_token", 0),
                     today_chats=tc,
                     monthly_chats=s.get("monthly_chats", 0),
+                    monthly_chats_all=s.get("monthly_chats_all", 0),
                     monthly_token_all=s.get("monthly_token_all", mt),
                     today_chats_all=s.get("today_chats_all", 0),
                     today_token_all=s.get("today_token_all", 0),
