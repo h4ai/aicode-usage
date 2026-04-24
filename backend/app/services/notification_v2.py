@@ -107,11 +107,16 @@ def check_quota_alerts() -> None:
         # 合并：CH 用户列表为主，PG 补充 quota_level 和 mail 信息，不在 PG 里的默认 L1
         users = []
         for cu in ch_users:
-            uid = cu["username"]  # userNickname
+            uid = cu["username"]  # userNickname，格式可能是 "张三(aaa)" 或纯 "aaa"
             pg_u = pg_map.get(uid, {})
+            # 从 userNickname 解析 sam：优先取括号内域账号（如 "张三(aaa)" → "aaa"）
+            import re as _re
+            _m = _re.search(r'\(([^)]+)\)$', uid)
+            sam = _m.group(1) if _m else uid
             users.append({
                 "user_id": uid,
                 "username": uid,
+                "sam": sam,          # 供 _user_filter() 按 userNickname 精确匹配
                 "nickname": cu.get("nickname") or uid,
                 "mail": pg_u.get("mail") or cu.get("mail") or "",
                 "quota_level": pg_u.get("quota_level", "L1"),
