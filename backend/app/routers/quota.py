@@ -85,7 +85,9 @@ def quota_usage(
     daily_limit = int(limits["daily_requests"])
 
     # Query ClickHouse for current usage
-    monthly_used = get_monthly_token_usage(effective_user)
+    # time_filter="auto" — respects working_hours.enabled in config.yaml,
+    # consistent with admin user list (which uses time_filter=work when enabled).
+    monthly_used = get_monthly_token_usage(effective_user, time_filter="auto")
     chats_used = get_chat_session_count(effective_user, "today")
     daily_used = get_daily_request_count(effective_user)
 
