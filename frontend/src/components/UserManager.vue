@@ -200,7 +200,7 @@
 
       <!-- 今日 Token -->
       <el-table-column
-        label="今日 Token"
+        label="今日限额Token"
         min-width="110"
         sortable
         :sort-method="(a: UserItem, b: UserItem) => a.today_token - b.today_token"
