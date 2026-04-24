@@ -348,6 +348,27 @@ notification:
 
 > 注：修改 `smtp.host` 或 `notification.check_interval_minutes` 后需 `docker compose restart backend` 才能生效（热重载不触发调度器重建）。
 
+#### 邮件通知行为说明（v1.4+ 起）
+
+| 行为 | 说明 |
+|------|------|
+| **每用户每次检查只发一封** | 月度 Token、日对话两种配额同时超标时，只发阈值最高的那封 |
+| **同配额多阈值** | 50%/80%/100% 同时超标，只发最高档（100%），低阈值自动标记已发 |
+| **去重** | 4字段联合唯一（user_id + quota_type + threshold + period_key），同周期内不重复发 |
+| **历史数据自动清理** | 服务启动时 + 每月1日 02:00 定时删除 180 天前的旧通知记录 |
+
+#### userNickname 格式兼容性（多环境部署注意）
+
+生产环境 ClickHouse `userNickname` 字段可能有三种格式，系统已全部兼容：
+
+| 格式 | 示例 | 匹配方式 |
+|------|------|---------|
+| 纯域账号 | `zhangsan` | `userNickname = 'zhangsan'` |
+| 纯中文 | `张三` | `userNickname = '张三'` |
+| 中文+括号 | `张三(zhangsan)` | `endsWith(userNickname, '(zhangsan)')` |
+
+> ⚠️ `email_domain` 兜底构造邮箱时使用 `sAMAccountName`（域账号），不会因中文 displayName 生成无效地址。
+
 ### 用户操作审计日志
 
 v1.3.0 起后端自动记录所有关键操作的审计日志，无需配置：
