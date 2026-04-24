@@ -186,20 +186,20 @@
         </template>
       </el-table-column>
 
-      <!-- 限额占比：当月限额Token / 月度配额上限 -->
+      <!-- 限额占比：本月限额Token / 当月总Token -->
       <el-table-column
         label="限额占比"
         width="100"
         sortable
         :sort-method="(a: UserItem, b: UserItem) => {
-          const pa = a.monthly_token_limit ? a.monthly_token / a.monthly_token_limit : 0
-          const pb = b.monthly_token_limit ? b.monthly_token / b.monthly_token_limit : 0
+          const pa = a.monthly_token_all ? a.monthly_token / a.monthly_token_all : 0
+          const pb = b.monthly_token_all ? b.monthly_token / b.monthly_token_all : 0
           return pa - pb
         }"
       >
         <template #default="{ row }">
-          <span v-if="row.monthly_token_limit > 0" :class="'text-' + row.status_token">
-            {{ (row.monthly_token / row.monthly_token_limit * 100).toFixed(1) }}%
+          <span v-if="row.monthly_token_all > 0">
+            {{ (row.monthly_token / row.monthly_token_all * 100).toFixed(1) }}%
           </span>
           <span v-else>--</span>
         </template>
