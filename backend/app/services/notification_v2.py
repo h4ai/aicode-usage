@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 
 from app.config import get_config
 from app.services.clickhouse import get_all_users_from_clickhouse, get_daily_request_count, get_monthly_token_usage
+from app.services.clickhouse_user import get_daily_chat_count
 from app.services.database import (
     get_all_users,
     get_quota_limits,
@@ -147,9 +148,13 @@ def check_quota_alerts() -> None:
         username = user.get("nickname") or user.get("username") or user_id
 
         # Check each quota type
+        # monthly_token: 使用 time_filter="auto"（工作时段），与配额判断口径一致
+        # daily_chats: 使用 time_filter="auto"（工作时段）
         quota_checks = [
-            ("monthly_token", limits.get("monthly_token", 0), get_monthly_token_usage, month_key),
-            ("daily_chats", limits.get("daily_chats", 0), get_daily_request_count, day_key),
+            ("monthly_token", limits.get("monthly_token", 0),
+             lambda u: get_monthly_token_usage(u, time_filter="auto"), month_key),
+            ("daily_chats", limits.get("daily_chats", 0),
+             lambda u: get_daily_chat_count(u, time_filter="auto"), day_key),
         ]
 
         for quota_type, quota_limit, usage_fn, period_key in quota_checks:
@@ -159,52 +164,58 @@ def check_quota_alerts() -> None:
             used = usage_fn(user)
             pct = used / quota_limit * 100
 
-            for threshold in thresholds:
-                if threshold <= 0:
-                    continue
-                if pct < threshold:
-                    continue
+            # 找出所有已超过且未发过通知的阈值
+            triggered = sorted(
+                [t for t in thresholds
+                 if t > 0 and pct >= t and not has_sent_notification(user_id, quota_type, t, period_key)],
+                reverse=True,
+            )
+            if not triggered:
+                continue
+            # 首次上线或多阈值同时超标：只发最高阈值那一封
+            threshold = triggered[0]
 
-                if has_sent_notification(user_id, quota_type, threshold, period_key):
-                    continue
+            # 标记所有已触发但未发送的低阈值为"已发"（避免下次再发）
+            for lower_t in triggered[1:]:
+                mark_notification_sent(user_id, quota_type, lower_t, period_key, over_limit=lower_t >= 100)
 
-                # Call over_limit hook for 100%
-                if threshold == 100:
-                    on_over_limit(user_id, quota_type)
+            # Call over_limit hook for 100%
+            if threshold == 100:
+                on_over_limit(user_id, quota_type)
 
-                # Retry up to 3 times with exponential backoff
-                success = False
-                for attempt in range(3):
-                    result = send_notification_email(
-                        to_email=mail,
-                        username=username,
-                        user_id=user_id,
-                        quota_type=quota_type,
-                        used=used,
-                        limit=quota_limit,
-                        threshold=threshold,
-                        period_key=period_key,
-                    )
-                    if result:
-                        success = True
-                        break
-                    if attempt < 2:
-                        time.sleep(2 ** attempt)  # 1s, 2s
+            # Retry up to 3 times with exponential backoff
+            success = False
+            for attempt in range(3):
+                result = send_notification_email(
+                    to_email=mail,
+                    username=username,
+                    user_id=user_id,
+                    quota_type=quota_type,
+                    used=used,
+                    limit=quota_limit,
+                    threshold=threshold,
+                    period_key=period_key,
+                )
+                if result:
+                    success = True
+                    break
+                if attempt < 2:
+                    time.sleep(2 ** attempt)  # 1s, 2s
 
-                if success:
-                    over_limit = threshold >= 100
-                    mark_notification_sent(user_id, quota_type, threshold, period_key, over_limit)
-                    emails_sent_this_run += 1
-                    logger.info(
-                        "Notification sent: user=%s type=%s threshold=%d%%",
-                        user_id, quota_type, threshold,
-                    )
-                    # 批量限流：每发 batch_size 封，暂停 batch_delay 秒
-                    if batch_size > 0 and emails_sent_this_run % batch_size == 0:
-                        logger.info("Rate limiting: sent %d emails, sleeping %.1fs", emails_sent_this_run, batch_delay)
-                        time.sleep(batch_delay)
-                else:
-                    logger.error(
+            if success:
+                over_limit = threshold >= 100
+                mark_notification_sent(user_id, quota_type, threshold, period_key, over_limit)
+                emails_sent_this_run += 1
+                logger.info(
+                    "Notification sent: user=%s type=%s threshold=%d%%",
+                    user_id, quota_type, threshold,
+                )
+                # 批量限流：每发 batch_size 封，暂停 batch_delay 秒
+                if batch_size > 0 and emails_sent_this_run % batch_size == 0:
+                    logger.info("Rate limiting: sent %d emails, sleeping %.1fs", emails_sent_this_run, batch_delay)
+                    time.sleep(batch_delay)
+            else:
+                logger.error(
                         "Failed to send notification after 3 attempts: user=%s type=%s threshold=%d%%",
                         user_id, quota_type, threshold,
                     )

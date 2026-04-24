@@ -36,7 +36,7 @@ def mock_all():
          patch("app.services.notification_v2.get_all_users") as users, \
          patch("app.services.notification_v2.get_quota_limits") as limits, \
          patch("app.services.notification_v2.get_monthly_token_usage") as monthly, \
-         patch("app.services.notification_v2.get_daily_request_count") as daily, \
+         patch("app.services.notification_v2.get_daily_chat_count") as daily, \
          patch("app.services.notification_v2.has_sent_notification") as has_sent, \
          patch("app.services.notification_v2.mark_notification_sent") as mark_sent, \
          patch("app.services.notification_v2.send_notification_email") as send_email:
@@ -185,10 +185,11 @@ def test_smtp_retry_3_times(mock_all):
     from app.services.notification_v2 import check_quota_alerts
     check_quota_alerts()
 
-    # send_email called 3 times per threshold (50%, 80%) = but we need to check total calls
-    # For 85%: triggers 50% and 80%. Each retries 3 times.
-    assert mock_all["send_email"].call_count == 6  # 2 thresholds × 3 retries
-    mock_all["mark_sent"].assert_not_called()
+    # 新逻辑：多阈值同时超标时只发最高阈值（80%），重试 3 次
+    # 低阈值（50%）直接 mark_notification_sent 跳过，不发邮件
+    assert mock_all["send_email"].call_count == 3  # 最高阈值 80% × 3 retries
+    # 50% 阈值被自动标记为已发（不发邮件）
+    assert mock_all["mark_sent"].call_count == 1  # lower threshold 50% marked sent
 
 
 def test_successful_send_marks_notification(mock_all):

@@ -222,6 +222,34 @@ def get_daily_request_count(user: dict[str, Any], time_filter: str = "auto") -> 
         raise
 
 
+def get_daily_chat_count(user: dict[str, Any], time_filter: str = "auto") -> int:
+    """Return today's distinct conversation count (uniqIf conversationId) — 对话轮次口径."""
+    today = _today_shanghai()
+    _uid = user.get("sam") or user.get("sub", "")
+    cache_key = f"daily_chat:{_uid}:{today}:{time_filter}"
+    if cache_key in _cache:
+        return int(_cache[cache_key])
+
+    user_cond, user_params = _user_filter(user)
+    try:
+        client = _get_client()
+        sql = (
+            f"SELECT uniqIf({CONVERSATION_ID}, {EVENT_CODE} = 'chat_request_response' AND {TOTAL_TOKEN} > 0"
+            f"{_working_hours_filter(time_filter)}) FROM events"
+            f" PREWHERE event_date = {{today:String}}"
+            f" WHERE {user_cond}"
+            f" AND {_BASE_FILTER}"
+        )
+        params = {**user_params, "today": today}
+        rows = client.query(sql, parameters=params).result_rows
+        count = _safe_int(rows[0][0]) if rows else 0
+        _cache[cache_key] = count
+        return count
+    except Exception as exc:
+        logger.error("ClickHouse query failed", extra={"action": "clickhouse_query", "error": str(exc)})
+        raise
+
+
 def get_daily_trend(
     user: dict[str, Any], start_date: str, end_date: str, time_filter: str = "all",
 ) -> list[dict[str, Any]]:
