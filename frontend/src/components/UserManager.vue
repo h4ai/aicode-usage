@@ -151,6 +151,11 @@
         sortable
         :sort-method="(a: UserItem, b: UserItem) => a.monthly_token - b.monthly_token"
       >
+        <template #header>
+          <el-tooltip content="当月工作时段（工作日 08:00~18:00）内消耗的 Token 总量，用于配额超限判断。绿色<80%，黄色80~100%，红色>100%" placement="top">
+            <span style="cursor:help">本月限额Token <el-icon style="font-size:12px;vertical-align:middle"><QuestionFilled /></el-icon></span>
+          </el-tooltip>
+        </template>
         <template #default="{ row }">
           <span :class="'text-' + row.status_token">
             {{ formatWan(row.monthly_token) }}
@@ -181,6 +186,11 @@
         sortable
         :sort-method="(a: UserItem, b: UserItem) => a.monthly_token_all - b.monthly_token_all"
       >
+        <template #header>
+          <el-tooltip content="当月全天（含非工作时段）消耗的 Token 总量，仅作参考，不用于配额判断" placement="top">
+            <span style="cursor:help">当月总Token <el-icon style="font-size:12px;vertical-align:middle"><QuestionFilled /></el-icon></span>
+          </el-tooltip>
+        </template>
         <template #default="{ row }">
           <span>{{ formatWan(row.monthly_token_all ?? row.monthly_token) }}</span>
         </template>
@@ -197,6 +207,11 @@
           return pa - pb
         }"
       >
+        <template #header>
+          <el-tooltip content="本月限额Token ÷ 当月总Token，反映工作时段用量占全天的比例" placement="top">
+            <span style="cursor:help">限额占比 <el-icon style="font-size:12px;vertical-align:middle"><QuestionFilled /></el-icon></span>
+          </el-tooltip>
+        </template>
         <template #default="{ row }">
           <span v-if="row.monthly_token_all > 0">
             {{ (row.monthly_token / row.monthly_token_all * 100).toFixed(1) }}%
@@ -212,6 +227,11 @@
         sortable
         :sort-method="(a: UserItem, b: UserItem) => a.monthly_chats - b.monthly_chats"
       >
+        <template #header>
+          <el-tooltip content="当月工作时段内有效对话轮次（以 chat_request_response 且 token>0 计）" placement="top">
+            <span style="cursor:help">当月对话 <el-icon style="font-size:12px;vertical-align:middle"><QuestionFilled /></el-icon></span>
+          </el-tooltip>
+        </template>
         <template #default="{ row }">
           <span>{{ row.monthly_chats }}</span>
         </template>
@@ -224,6 +244,11 @@
         sortable
         :sort-method="(a: UserItem, b: UserItem) => a.today_token - b.today_token"
       >
+        <template #header>
+          <el-tooltip content="今日工作时段内消耗的 Token，用于判断今日用量趋势（非历史月份显示 --）" placement="top">
+            <span style="cursor:help">今日限额Token <el-icon style="font-size:12px;vertical-align:middle"><QuestionFilled /></el-icon></span>
+          </el-tooltip>
+        </template>
         <template #default="{ row }">
           <span>{{ isCurrentMonth ? formatWan(row.today_token) : '--' }}</span>
         </template>
@@ -236,6 +261,11 @@
         sortable
         :sort-method="(a: UserItem, b: UserItem) => (a.today_token_all ?? a.today_token) - (b.today_token_all ?? b.today_token)"
       >
+        <template #header>
+          <el-tooltip content="今日全天（含非工作时段）消耗的 Token 总量，仅作参考" placement="top">
+            <span style="cursor:help">今日总Token <el-icon style="font-size:12px;vertical-align:middle"><QuestionFilled /></el-icon></span>
+          </el-tooltip>
+        </template>
         <template #default="{ row }">
           <span>{{ isCurrentMonth ? formatWan(row.today_token_all ?? row.today_token) : '--' }}</span>
         </template>
@@ -248,6 +278,11 @@
         sortable
         :sort-method="(a: UserItem, b: UserItem) => a.today_chats - b.today_chats"
       >
+        <template #header>
+          <el-tooltip content="今日工作时段内有效对话轮次，绿色正常，黄色接近上限，红色超限（配额由级别决定）" placement="top">
+            <span style="cursor:help">今日限额对话 <el-icon style="font-size:12px;vertical-align:middle"><QuestionFilled /></el-icon></span>
+          </el-tooltip>
+        </template>
         <template #default="{ row }">
           <template v-if="isCurrentMonth">
             <span :class="'text-' + row.status_chat">{{ row.today_chats }}</span>
@@ -279,6 +314,11 @@
         sortable
         :sort-method="(a: UserItem, b: UserItem) => (a.today_chats_all ?? a.today_chats) - (b.today_chats_all ?? b.today_chats)"
       >
+        <template #header>
+          <el-tooltip content="今日全天（含非工作时段）的对话轮次，仅作参考" placement="top">
+            <span style="cursor:help">今日总对话 <el-icon style="font-size:12px;vertical-align:middle"><QuestionFilled /></el-icon></span>
+          </el-tooltip>
+        </template>
         <template #default="{ row }">
           <span>{{ isCurrentMonth ? (row.today_chats_all ?? row.today_chats) : '--' }}</span>
         </template>
@@ -303,6 +343,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import { QuestionFilled } from '@element-plus/icons-vue'
 import api from '@/api'
 
 interface UserItem {
