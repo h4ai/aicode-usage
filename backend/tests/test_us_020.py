@@ -28,9 +28,10 @@ def test_scheduler_uses_config_interval():
         "database": {"url": "postgresql://localhost/test"},
     }
     sched = _reload_and_startup(mock_cfg)
-    sched.add_job.assert_called_once()
-    kwargs = sched.add_job.call_args[1] if sched.add_job.call_args[1] else {}
-    args = sched.add_job.call_args[0] if sched.add_job.call_args[0] else ()
+    assert sched.add_job.call_count >= 1  # quota_alerts + optional cleanup_notifications
+    first_call = sched.add_job.call_args_list[0]
+    kwargs = first_call[1] if first_call[1] else {}
+    args = first_call[0] if first_call[0] else ()
     # minutes=30 should be in kwargs
     assert kwargs.get("minutes") == 30 or (len(args) > 2 and args[2] == 30)
 
@@ -42,8 +43,9 @@ def test_scheduler_default_interval_60():
         "database": {"url": "postgresql://localhost/test"},
     }
     sched = _reload_and_startup(mock_cfg)
-    sched.add_job.assert_called_once()
-    kwargs = sched.add_job.call_args[1] if sched.add_job.call_args[1] else {}
+    assert sched.add_job.call_count >= 1  # quota_alerts + optional cleanup_notifications
+    first_call = sched.add_job.call_args_list[0]
+    kwargs = first_call[1] if first_call[1] else {}
     assert kwargs.get("minutes") == 60
 
 

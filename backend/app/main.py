@@ -89,6 +89,11 @@ def _startup() -> None:
     if notif_cfg.get("enabled", True) is not False:
         interval = notif_cfg.get("check_interval_minutes", 60)
         _scheduler.add_job(check_quota_alerts, "interval", minutes=interval, id="quota_alerts")
+        # 每月1日凌晨2:00 自动清理 180 天前的通知记录
+        _scheduler.add_job(
+            lambda: _cleanup_old_notifications(),
+            "cron", day=1, hour=2, minute=0, id="cleanup_notifications",
+        )
         _scheduler.start()
         logger.info("APScheduler started: quota_alerts job scheduled every %d min", interval)
     else:
