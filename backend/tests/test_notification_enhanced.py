@@ -50,44 +50,36 @@ def test_put_notification_config_saves_all_fields(client, admin_token, admin_con
     with patch("app.routers.admin.update_notification_config") as mock_update:
         mock_update.return_value = {
             "enabled": False,
-            "check_interval_minutes": 30,
             "thresholds": [80, 100],
-            "email_domain": "example.com",
         }
         resp = client.put(
             "/api/admin/notification-config",
             json={
                 "enabled": False,
-                "check_interval_minutes": 30,
                 "thresholds": [80, 100],
-                "email_domain": "example.com",
             },
             headers={"Authorization": f"Bearer {admin_token}"},
         )
     assert resp.status_code == 200
     mock_update.assert_called_once_with(
         enabled=False,
-        check_interval_minutes=30,
         thresholds=[80, 100],
-        email_domain="example.com",
     )
 
 
 def test_put_notification_config_partial_update(client, admin_token, admin_config_patch):
-    """PUT /admin/notification-config with only email_domain updates just that field."""
+    """PUT /admin/notification-config with only thresholds updates just that field."""
     with patch("app.routers.admin.update_notification_config") as mock_update:
-        mock_update.return_value = {"email_domain": "newdomain.com"}
+        mock_update.return_value = {"thresholds": [90]}
         resp = client.put(
             "/api/admin/notification-config",
-            json={"email_domain": "newdomain.com"},
+            json={"thresholds": [90]},
             headers={"Authorization": f"Bearer {admin_token}"},
         )
     assert resp.status_code == 200
     mock_update.assert_called_once_with(
         enabled=None,
-        check_interval_minutes=None,
-        thresholds=None,
-        email_domain="newdomain.com",
+        thresholds=[90],
     )
 
 

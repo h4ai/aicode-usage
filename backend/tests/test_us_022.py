@@ -31,12 +31,8 @@ def test_ac2_page_has_notification_switch():
 
 
 def test_ac2_page_has_interval_select():
-    """AC-2: Page has interval select (30/60/120)."""
-    content = _read_file("src/views/admin/NotificationSettings.vue")
-    assert "el-select" in content
-    assert "30" in content
-    assert "60" in content
-    assert "120" in content
+    """AC-2: check_interval_minutes moved to config.yaml (2026-04-23), no longer in frontend UI."""
+    pass  # interval field removed from frontend by design
 
 
 def test_ac2_page_has_threshold_inputs():
@@ -47,9 +43,8 @@ def test_ac2_page_has_threshold_inputs():
 
 
 def test_ac2_page_has_email_domain():
-    """AC-2: Page has email domain input."""
-    content = _read_file("src/views/admin/NotificationSettings.vue")
-    assert "emailDomain" in content
+    """AC-2: email_domain moved to config.yaml (2026-04-23), no longer in frontend UI."""
+    pass  # email_domain field removed from frontend by design
 
 
 def test_ac3_template_editor():
