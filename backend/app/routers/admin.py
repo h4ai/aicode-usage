@@ -126,11 +126,13 @@ class UserItem(BaseModel):
     enterprise: str
     quota_level: str
     monthly_token: int
+    monthly_token_limit: int = 0  # 该用户配额级别对应的月度Token上限
     today_token: int = 0
     today_chats: int = 0
     monthly_chats: int = 0
     monthly_token_all: int = 0  # 全天本月Token（不受time_filter影响）
     today_chats_all: int = 0  # 全天今日对话（不受time_filter影响）
+    today_token_all: int = 0  # 全天今日Token（不受time_filter影响）
     daily_requests: int
     status_token: str = "gray"  # green/yellow/red/gray
     status_chat: str = "gray"
@@ -213,11 +215,13 @@ def list_users(
                     enterprise=u.get("enterprise") or "未知",
                     quota_level=level,
                     monthly_token=mt,
+                    monthly_token_limit=int(limits.get("monthly_token", 0)),
                     today_token=s.get("today_token", 0),
                     today_chats=tc,
                     monthly_chats=s.get("monthly_chats", 0),
                     monthly_token_all=s.get("monthly_token_all", mt),
                     today_chats_all=s.get("today_chats_all", 0),
+                    today_token_all=s.get("today_token_all", 0),
                     daily_requests=s.get("daily_requests", 0),
                     status_token=_token_status(mt, int(limits.get("monthly_token", 0))),
                     status_chat=_chat_status(tc, int(limits.get("daily_chats", 0))),

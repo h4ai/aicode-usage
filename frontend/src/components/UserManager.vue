@@ -186,6 +186,25 @@
         </template>
       </el-table-column>
 
+      <!-- 限额占比：当月限额Token / 月度配额上限 -->
+      <el-table-column
+        label="限额占比"
+        width="100"
+        sortable
+        :sort-method="(a: UserItem, b: UserItem) => {
+          const pa = a.monthly_token_limit ? a.monthly_token / a.monthly_token_limit : 0
+          const pb = b.monthly_token_limit ? b.monthly_token / b.monthly_token_limit : 0
+          return pa - pb
+        }"
+      >
+        <template #default="{ row }">
+          <span v-if="row.monthly_token_limit > 0" :class="'text-' + row.status_token">
+            {{ (row.monthly_token / row.monthly_token_limit * 100).toFixed(1) }}%
+          </span>
+          <span v-else>--</span>
+        </template>
+      </el-table-column>
+
       <!-- 当月对话轮次 -->
       <el-table-column
         label="当月对话"
@@ -292,6 +311,7 @@ interface UserItem {
   enterprise: string
   quota_level: string
   monthly_token: number       // 限额统计用（受time_filter影响）
+  monthly_token_limit: number // 该用户配额级别的月度Token上限
   monthly_token_all: number   // 全天本月总量
   today_token: number
   today_token_all: number     // 全天今日总token
