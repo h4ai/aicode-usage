@@ -10,6 +10,7 @@ from datetime import date, datetime, timezone
 from typing import Any
 
 from app.data_schema import (
+    CONVERSATION_ID,
     ENTERPRISE,
     EVENT_CODE,
     EVENT_DATE,
@@ -17,6 +18,7 @@ from app.data_schema import (
     OUTPUT_TOKEN,
     REQUEST_MODEL_NAME,
     TOTAL_TOKEN,
+    USER_ID,
     USERNAME,
 )
 from app.services.clickhouse_client import _cache, _get_client, _safe_int
@@ -41,7 +43,7 @@ def get_all_users_monthly_tokens(time_filter: str = "all") -> dict[str, int]:
     sql = (
         f"SELECT {USERNAME}, sum({TOTAL_TOKEN})"
         f" FROM events PREWHERE event_date >= {{start:String}}"
-        f" WHERE {_BASE_FILTER} AND {USERNAME} != ''"
+        f" WHERE {_BASE_FILTER} AND {USER_ID} IS NOT NULL"
         + _working_hours_filter(time_filter)
         + f" GROUP BY {USERNAME}"
     )
@@ -61,7 +63,7 @@ def get_all_users_daily_requests() -> dict[str, int]:
     sql = (
         f"SELECT {USERNAME}, count() FROM events"
         f" WHERE {EVENT_DATE} = {{today:String}}"
-        f" AND {_BASE_FILTER} AND {USERNAME} != ''"
+        f" AND {_BASE_FILTER} AND {USER_ID} IS NOT NULL"
         f" GROUP BY {USERNAME}"
     )
     rows = client.query(sql, parameters={"today": today}).result_rows
@@ -87,7 +89,7 @@ def _get_global_trend_impl(start_date: str, end_date: str, time_filter: str = "a
     sql = (
         f"SELECT {EVENT_DATE},"
         f" sum({INPUT_TOKEN}), sum({OUTPUT_TOKEN}), sum({TOTAL_TOKEN}),"
-        f" countIf({EVENT_CODE} = 'chat_request_response') AS chat_count"
+        f" count(DISTINCT {CONVERSATION_ID}) AS chat_count"
         f" FROM events"
         f" PREWHERE {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}"
         f" WHERE {_BASE_FILTER}"
@@ -126,7 +128,7 @@ def _get_global_trend_by_model_impl(start_date: str, end_date: str, time_filter:
     sql = (
         f"SELECT {EVENT_DATE}, {REQUEST_MODEL_NAME},"
         f" sum({INPUT_TOKEN}), sum({OUTPUT_TOKEN}), sum({TOTAL_TOKEN}),"
-        f" countIf({EVENT_CODE} = 'chat_request_response') AS chat_count"
+        f" count(DISTINCT {CONVERSATION_ID}) AS chat_count"
         f" FROM events"
         f" PREWHERE {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}"
         f" WHERE {_BASE_FILTER}"
@@ -168,7 +170,7 @@ def _get_global_trend_by_dept_impl(start_date: str, end_date: str, time_filter: 
         f"SELECT {EVENT_DATE},"
         f" if({ENTERPRISE} = '' OR {ENTERPRISE} IS NULL, '未知', {ENTERPRISE}) AS dept,"
         f" sum({INPUT_TOKEN}), sum({OUTPUT_TOKEN}), sum({TOTAL_TOKEN}),"
-        f" countIf({EVENT_CODE} = 'chat_request_response') AS chat_count"
+        f" count(DISTINCT {CONVERSATION_ID}) AS chat_count"
         f" FROM events"
         f" PREWHERE {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}"
         f" WHERE {_BASE_FILTER}"
@@ -203,7 +205,7 @@ def get_all_users_monthly_requests(time_filter: str = "all") -> dict[str, int]:
         f"SELECT {USERNAME}, count() AS req_count"
         f" FROM events"
         f" WHERE {EVENT_DATE} >= {{start:String}}"
-        f" AND {_BASE_FILTER} AND {USERNAME} != ''"
+        f" AND {_BASE_FILTER} AND {USER_ID} IS NOT NULL"
         + _working_hours_filter(time_filter)
         + f" GROUP BY {USERNAME}"
     )
@@ -223,7 +225,7 @@ def get_all_users_today_tokens(time_filter: str = "auto") -> dict[str, int]:
     sql = (
         f"SELECT {USERNAME}, sum({TOTAL_TOKEN}) FROM events"
         f" WHERE {EVENT_DATE} = {{today:String}}"
-        f" AND {_BASE_FILTER} AND {USERNAME} != ''"
+        f" AND {_BASE_FILTER} AND {USER_ID} IS NOT NULL"
         + _working_hours_filter(time_filter)
         + f" GROUP BY {USERNAME}"
     )
@@ -244,7 +246,7 @@ def get_all_users_today_chats(time_filter: str = "auto") -> dict[str, int]:
         f"SELECT {USERNAME}, count() FROM events"
         f" WHERE {EVENT_DATE} = {{today:String}}"
         f" AND {EVENT_CODE} = 'chat_request_response'"
-        f" AND totalToken > 0 AND {USERNAME} != ''"
+        f" AND totalToken > 0 AND {USER_ID} IS NOT NULL"
         + _working_hours_filter(time_filter)
         + f" GROUP BY {USERNAME}"
     )
@@ -266,7 +268,7 @@ def get_all_users_monthly_chats(time_filter: str = "all") -> dict[str, int]:
         f"SELECT {USERNAME}, count() FROM events"
         f" WHERE toYYYYMM({EVENT_DATE}) = toYYYYMM(today())"
         f" AND {EVENT_CODE} = 'chat_request_response'"
-        f" AND totalToken > 0 AND {USERNAME} != ''"
+        f" AND totalToken > 0 AND {USER_ID} IS NOT NULL"
         + _working_hours_filter(time_filter)
         + f" GROUP BY {USERNAME}"
     )
@@ -303,7 +305,7 @@ def get_all_users_tokens_in_range(start_date: str, end_date: str, time_filter: s
     sql = (
         f"SELECT {USERNAME}, sum({TOTAL_TOKEN})"
         f" FROM events WHERE {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}"
-        f" AND {_BASE_FILTER} AND {USERNAME} != ''"
+        f" AND {_BASE_FILTER} AND {USER_ID} IS NOT NULL"
         + _working_hours_filter(time_filter)
         + f" GROUP BY {USERNAME}"
     )
@@ -322,7 +324,7 @@ def get_all_users_requests_in_range(start_date: str, end_date: str, time_filter:
     sql = (
         f"SELECT {USERNAME}, count() AS req_count"
         f" FROM events WHERE {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}"
-        f" AND {_BASE_FILTER} AND {USERNAME} != ''"
+        f" AND {_BASE_FILTER} AND {USER_ID} IS NOT NULL"
         + _working_hours_filter(time_filter)
         + f" GROUP BY {USERNAME}"
     )
@@ -341,7 +343,7 @@ def get_all_users_chats_in_range(start_date: str, end_date: str, time_filter: st
     sql = (
         f"SELECT {USERNAME}, count() FROM events"
         f" WHERE {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}"
-        f" AND {EVENT_CODE} = 'chat_request_response' AND totalToken > 0 AND {USERNAME} != ''"
+        f" AND {EVENT_CODE} = 'chat_request_response' AND totalToken > 0 AND {USER_ID} IS NOT NULL"
         + _working_hours_filter(time_filter)
         + f" GROUP BY {USERNAME}"
     )
@@ -371,7 +373,7 @@ def _get_all_users_from_clickhouse_impl() -> list[dict[str, Any]]:
         f" anyLast(enterprise) as enterprise"
         f" FROM events"
         f" PREWHERE event_date >= toDate(toStartOfMonth(today()))"
-        f" WHERE {_BASE_FILTER} AND {USERNAME} != ''"
+        f" WHERE {_BASE_FILTER} AND {USER_ID} IS NOT NULL"
         f" GROUP BY {USERNAME}"
         f" ORDER BY {USERNAME}"
     )
@@ -449,14 +451,14 @@ def _get_all_users_batch_impl(
         f" AND {EVENT_DATE} <= {{end:String}}{wh}) AS monthly_token,"
         f" sumIf({TOTAL_TOKEN}, {EVENT_DATE} >= {{start:String}}"
         f" AND {EVENT_DATE} <= {{end:String}}) AS monthly_token_all,"
-        f" countIf({EVENT_CODE} = 'chat_request_response' AND totalToken > 0"
+        f" uniqIf({CONVERSATION_ID}, {EVENT_CODE} = 'chat_request_response' AND totalToken > 0"
         f" AND {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}{wh}) AS monthly_chats,"
-        f" countIf({EVENT_CODE} = 'chat_request_response' AND totalToken > 0"
+        f" uniqIf({CONVERSATION_ID}, {EVENT_CODE} = 'chat_request_response' AND totalToken > 0"
         f" AND {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}) AS monthly_chats_all,"
         f" countIf({EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}{wh}) AS monthly_requests"
         f" FROM events"
         f" PREWHERE {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}"
-        f" WHERE {_BASE_FILTER} AND {USERNAME} != ''"
+        f" WHERE {_BASE_FILTER} AND {USER_ID} IS NOT NULL"
         f" GROUP BY {USERNAME}"
     )
     monthly_rows = client.query(sql_monthly, parameters={"start": start, "end": end}).result_rows
@@ -484,12 +486,12 @@ def _get_all_users_batch_impl(
             f"SELECT {USERNAME},"
             f" sumIf({TOTAL_TOKEN}, True{wh}) AS today_token,"
             f" sum({TOTAL_TOKEN}) AS today_token_all,"
-            f" countIf({EVENT_CODE} = 'chat_request_response' AND totalToken > 0{wh}) AS today_chats,"
-            f" countIf({EVENT_CODE} = 'chat_request_response' AND totalToken > 0) AS today_chats_all,"
+            f" uniqIf({CONVERSATION_ID}, {EVENT_CODE} = 'chat_request_response' AND totalToken > 0{wh}) AS today_chats,"
+            f" uniqIf({CONVERSATION_ID}, {EVENT_CODE} = 'chat_request_response' AND totalToken > 0) AS today_chats_all,"
             f" count() AS daily_requests"
             f" FROM events"
             f" PREWHERE {EVENT_DATE} = {{today:String}}"
-            f" WHERE {_BASE_FILTER} AND {USERNAME} != ''"
+            f" WHERE {_BASE_FILTER} AND {USER_ID} IS NOT NULL"
             f" GROUP BY {USERNAME}"
         )
         today_rows = client.query(sql_today, parameters={"today": today}).result_rows
@@ -558,10 +560,10 @@ def _get_leaderboard_batch_impl(
         f" anyLast({ENTERPRISE}) AS enterprise,"
         f" sum({TOTAL_TOKEN}) AS total_token,"
         f" count() AS total_requests,"
-        f" countIf({EVENT_CODE} = 'chat_request_response' AND totalToken > 0) AS total_chats"
+        f" uniq({CONVERSATION_ID}) AS total_chats"
         f" FROM events"
         f" PREWHERE {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}"
-        f" WHERE {_BASE_FILTER} AND {USERNAME} != ''"
+        f" WHERE {_BASE_FILTER} AND {USER_ID} IS NOT NULL"
         + wh
         + f" GROUP BY {USERNAME}"
         f" ORDER BY total_token DESC"

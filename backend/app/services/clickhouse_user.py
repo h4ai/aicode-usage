@@ -10,6 +10,7 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
 from app.data_schema import (
+    CONVERSATION_ID,
     EVENT_CODE,
     EVENT_DATE,
     IDE_TYPE,
@@ -327,7 +328,7 @@ def get_detail_records(
             f"SELECT {EVENT_DATE}, {REQUEST_MODEL_NAME},"
             f" count() AS request_count,"
             f" sum({INPUT_TOKEN}), sum({OUTPUT_TOKEN}), sum({TOTAL_TOKEN}),"
-            f" countIf({EVENT_CODE} = 'chat_request_response' AND totalToken > 0) AS chat_count"
+            f" uniqIf({CONVERSATION_ID}, {EVENT_CODE} = 'chat_request_response' AND totalToken > 0) AS chat_count"
             f" FROM events"
             f" WHERE {user_cond}"
             f" AND {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}"
@@ -369,7 +370,7 @@ def get_chat_session_count(user: dict[str, Any], scope: str = "month", time_filt
 
         if scope == "today":
             sql = (
-                f"SELECT count() FROM events WHERE {user_cond}"
+                f"SELECT count(DISTINCT {CONVERSATION_ID}) FROM events WHERE {user_cond}"
                 f" AND {EVENT_DATE} = {{today:String}}"
                 f" AND {EVENT_CODE} = 'chat_request_response'"
                 f" AND totalToken > 0" + tf
@@ -380,7 +381,7 @@ def get_chat_session_count(user: dict[str, Any], scope: str = "month", time_filt
             today = datetime.now(tz=timezone(timedelta(hours=8))).date()
             week_start = (today - timedelta(days=today.weekday())).isoformat()
             sql = (
-                f"SELECT count() FROM events WHERE {user_cond}"
+                f"SELECT count(DISTINCT {CONVERSATION_ID}) FROM events WHERE {user_cond}"
                 f" AND {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{today:String}}"
                 f" AND {EVENT_CODE} = 'chat_request_response'"
                 f" AND totalToken > 0" + tf
@@ -389,7 +390,7 @@ def get_chat_session_count(user: dict[str, Any], scope: str = "month", time_filt
             rows = client.query(sql, parameters=params).result_rows
         else:
             sql = (
-                f"SELECT count() FROM events WHERE {user_cond}"
+                f"SELECT count(DISTINCT {CONVERSATION_ID}) FROM events WHERE {user_cond}"
                 f" AND toYYYYMM({EVENT_DATE}) = toYYYYMM(today())"
                 f" AND {EVENT_CODE} = 'chat_request_response'"
                 f" AND totalToken > 0" + tf
