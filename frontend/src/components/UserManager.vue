@@ -222,14 +222,14 @@
 
       <!-- 当月对话轮次 -->
       <el-table-column
-        label="当月对话"
+        label="当月限额对话"
         width="100"
         sortable
         :sort-method="(a: UserItem, b: UserItem) => a.monthly_chats - b.monthly_chats"
       >
         <template #header>
           <el-tooltip content="当月工作时段内有效对话轮次（以 chat_request_response 且 token>0 计）" placement="top">
-            <span style="cursor:help">当月对话 <el-icon style="font-size:12px;vertical-align:middle"><QuestionFilled /></el-icon></span>
+            <span style="cursor:help">当月限额对话 <el-icon style="font-size:12px;vertical-align:middle"><QuestionFilled /></el-icon></span>
           </el-tooltip>
         </template>
         <template #default="{ row }">
