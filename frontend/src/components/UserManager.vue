@@ -174,6 +174,30 @@
         </template>
       </el-table-column>
 
+      <!-- 当月总Token（全天，不受时段过滤） -->
+      <el-table-column
+        label="当月总Token"
+        min-width="120"
+        sortable
+        :sort-method="(a: UserItem, b: UserItem) => a.monthly_token_all - b.monthly_token_all"
+      >
+        <template #default="{ row }">
+          <span>{{ formatWan(row.monthly_token_all ?? row.monthly_token) }}</span>
+        </template>
+      </el-table-column>
+
+      <!-- 当月对话轮次 -->
+      <el-table-column
+        label="当月对话"
+        width="100"
+        sortable
+        :sort-method="(a: UserItem, b: UserItem) => a.monthly_chats - b.monthly_chats"
+      >
+        <template #default="{ row }">
+          <span>{{ row.monthly_chats }}</span>
+        </template>
+      </el-table-column>
+
       <!-- 今日 Token -->
       <el-table-column
         label="今日 Token"
@@ -217,28 +241,6 @@
         </template>
       </el-table-column>
 
-      <!-- 当月对话轮次 -->
-      <el-table-column
-        label="当月对话"
-        width="100"
-        sortable
-        :sort-method="(a: UserItem, b: UserItem) => a.monthly_chats - b.monthly_chats"
-      >
-        <template #default="{ row }">
-          <span>{{ row.monthly_chats }}</span>
-        </template>
-      </el-table-column>
-      <!-- 当月总Token（全天，不受时段过滤） -->
-      <el-table-column
-        label="当月总Token"
-        min-width="120"
-        sortable
-        :sort-method="(a: UserItem, b: UserItem) => a.monthly_token_all - b.monthly_token_all"
-      >
-        <template #default="{ row }">
-          <span>{{ formatWan(row.monthly_token_all ?? row.monthly_token) }}</span>
-        </template>
-      </el-table-column>
       <!-- 今日总对话（全天，不受时段过滤） -->
       <el-table-column
         label="今日总对话"
@@ -368,7 +370,7 @@ async function fetchUsers() {
   loading.value = true
   try {
     const { year, month } = _queryYearMonth()
-    const url = `/admin/users?time_filter=all&year=${year}&month=${month}`
+    const url = `/admin/users?time_filter=work&year=${year}&month=${month}`
     const { data } = await api.get<{ items: UserItem[]; total: number } | UserItem[]>(url)
     // 后端可能返回分页对象 {items, total} 或旧格式数组
     const list: UserItem[] = Array.isArray(data) ? data : (data as { items: UserItem[] }).items ?? []
@@ -401,7 +403,7 @@ async function exportCsv() {
   exporting.value = true
   try {
     const { year, month } = _queryYearMonth()
-    const url_path = `/admin/users/export-csv?time_filter=all&year=${year}&month=${month}`
+    const url_path = `/admin/users/export-csv?time_filter=work&year=${year}&month=${month}`
     const { data } = await api.get(url_path, { responseType: 'blob' })
     const url = URL.createObjectURL(data as Blob)
     const a = document.createElement('a')
