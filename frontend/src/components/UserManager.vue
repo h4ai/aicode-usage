@@ -210,6 +210,18 @@
         </template>
       </el-table-column>
 
+      <!-- 今日总Token（全天，不受时段过滤） -->
+      <el-table-column
+        label="今日总Token"
+        min-width="110"
+        sortable
+        :sort-method="(a: UserItem, b: UserItem) => (a.today_token_all ?? a.today_token) - (b.today_token_all ?? b.today_token)"
+      >
+        <template #default="{ row }">
+          <span>{{ isCurrentMonth ? formatWan(row.today_token_all ?? row.today_token) : '--' }}</span>
+        </template>
+      </el-table-column>
+
       <!-- 今日对话轮次 -->
       <el-table-column
         label="今日限额对话"
@@ -282,6 +294,7 @@ interface UserItem {
   monthly_token: number       // 限额统计用（受time_filter影响）
   monthly_token_all: number   // 全天本月总量
   today_token: number
+  today_token_all: number     // 全天今日总token
   today_chats: number         // 限额统计用（受time_filter影响）
   today_chats_all: number     // 全天今日总对话
   monthly_chats: number
