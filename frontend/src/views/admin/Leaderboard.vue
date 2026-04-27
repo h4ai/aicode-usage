@@ -120,6 +120,13 @@
           align="right"
         />
         <el-table-column
+          prop="user_initiated_requests"
+          label="主动对话次数"
+          sortable
+          width="130"
+          align="right"
+        />
+        <el-table-column
           prop="monthly_requests"
           label="请求数"
           sortable

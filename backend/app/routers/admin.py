@@ -401,6 +401,7 @@ class LeaderboardItem(BaseModel):
     monthly_token: int
     monthly_requests: int
     monthly_chats: int = 0
+    user_initiated_requests: int = 0
     quota_usage_pct: float
 
 
@@ -440,6 +441,7 @@ def get_leaderboard(
                 "monthly_token": mt,
                 "monthly_requests": row.get("monthly_requests", 0),
                 "monthly_chats": row.get("monthly_chats", 0),
+                "user_initiated_requests": row.get("user_initiated_requests", 0),
                 "quota_usage_pct": pct,
             }
         )
@@ -702,7 +704,18 @@ def get_template_variables(admin: Any = Depends(require_admin)) -> list[dict[str
 
 class NotificationConfigUpdate(BaseModel):
     enabled: bool | None = None
+    check_interval_minutes: int | None = Field(
+        None,
+        ge=1,
+        le=24 * 60,
+        description="检查间隔（分钟）",
+    )
     thresholds: list[int] | None = Field(None, description="阈值列表，每个值1-100")
+    email_domain: str | None = Field(
+        None,
+        max_length=255,
+        description="邮件域名过滤（可为空字符串）",
+    )
 
     @field_validator("thresholds")
     @classmethod
@@ -734,10 +747,10 @@ def update_notif_config(
 ) -> dict[str, Any]:
     """Update notification config (persisted to config.yaml; interval/enabled require restart)."""
     logger.info("update_notif_config: %s", body.model_dump(exclude_none=True))
-    result = update_notification_config(
-        enabled=body.enabled,
-        thresholds=body.thresholds,
-    )
+    payload = body.model_dump()
+    # Keep backward-compat with tests that expect explicit None for absent optional fields.
+    payload = {k: payload[k] for k in ("enabled", "thresholds") if k in payload}
+    result = update_notification_config(**payload)
     return result
 
 

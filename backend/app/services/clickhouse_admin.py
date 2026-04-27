@@ -560,7 +560,8 @@ def _get_leaderboard_batch_impl(
         f" anyLast({ENTERPRISE}) AS enterprise,"
         f" sum({TOTAL_TOKEN}) AS total_token,"
         f" count() AS total_requests,"
-        f" uniq({CONVERSATION_ID}) AS total_chats"
+        f" uniq({CONVERSATION_ID}) AS total_chats,"
+        f" countIf({EVENT_CODE} = 'chat_request_response') AS user_initiated_requests"
         f" FROM events"
         f" PREWHERE {EVENT_DATE} >= {{start:String}} AND {EVENT_DATE} <= {{end:String}}"
         f" WHERE {_BASE_FILTER} AND {USER_ID} IS NOT NULL"
@@ -576,6 +577,7 @@ def _get_leaderboard_batch_impl(
             "monthly_token": _safe_int(row[2]),
             "monthly_requests": _safe_int(row[3]),
             "monthly_chats": _safe_int(row[4]),
+            "user_initiated_requests": _safe_int(row[5]),
         }
         for row in rows
         if row[0]
