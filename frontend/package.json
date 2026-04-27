@@ -18,7 +18,7 @@
     "express": "^4.21.0",
     "http-proxy-middleware": "^2.0.7",
     "pinia": "^3.0.0",
-    "vue": "^3.5.0",
+    "vue": "^3.5.33",
     "vue-router": "^5.0.0"
   },
   "devDependencies": {
