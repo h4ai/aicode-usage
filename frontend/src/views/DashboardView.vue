@@ -31,7 +31,7 @@
                   <strong>时段过滤说明</strong>
                   <ul>
                     <li><b>全天</b>：统计当日/本周/本月所有时间段的数据，不做任何限制。</li>
-                    <li><b>工作时段</b>：仅统计 {{ workStart }}~{{ workEnd }}{{ weekdayOnly ? "（工作日，周一至周五）" : "" }}内产生的数据。</li>
+                    <li><b>工作时段</b>：仅统计 {{ workPeriodsText }}{{ weekdayOnly ? "（工作日，周一至周五）" : "" }}内产生的数据。</li>
                     <li><b>非工作时段</b>：仅统计工作时间以外{{ weekdayOnly ? "（含周六/周日全天）" : "" }}产生的数据。</li>
                   </ul>
                   <p class="tooltip-scope">
@@ -139,16 +139,23 @@ function handleCommand(cmd: string) {
   else if (cmd === 'api-tokens') { router.push('/api-tokens') }
 }
 
-const workStart = ref('08:30')
+const workStart = ref('09:00')
 const workEnd = ref('18:00')
+const workPeriods = ref<{start: string, end: string}[]>([])
+const workPeriodsText = computed(() =>
+  workPeriods.value.length
+    ? workPeriods.value.map(p => `${p.start}~${p.end}`).join('、')
+    : `${workStart.value}~${workEnd.value}`
+)
 const weekdayOnly = ref(true)
 const workingHoursEnabled = ref(true)
 
 onMounted(async () => {
   try {
     const { data } = await api.get('/metrics/working-hours-config')
-    workStart.value = data.start
-    workEnd.value = data.end
+    workStart.value = data.start || (data.periods?.[0]?.start ?? '09:00')
+    workEnd.value = data.end || (data.periods?.at(-1)?.end ?? '18:00')
+    workPeriods.value = data.periods || []
     weekdayOnly.value = data.weekday_only
     workingHoursEnabled.value = data.enabled
     if (!data.enabled) tf.timeFilter = 'all'

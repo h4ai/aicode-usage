@@ -36,7 +36,7 @@
       <div class="quota-bar-row">
         <span class="quota-label">当日 Token
           <el-tooltip
-            :content="!quota.is_quota_period ? '当前为非限额时段，此时段使用不计入当日配额' : '仅统计工作日限额时段内的Token使用量（09:00-12:00, 13:00-18:00）'"
+            :content="!quota.is_quota_period ? '当前为非限额时段，此时段使用不计入当日配额' : quotaPeriodText"
             placement="top"
           >
             <el-icon style="font-size:12px;color:#c0c4cc;margin-left:2px;vertical-align:middle"><QuestionFilled /></el-icon>
@@ -88,6 +88,7 @@ interface QuotaUsage {
 
 const loading = ref(true)
 const quota = ref<QuotaUsage | null>(null)
+const quotaPeriodText = ref('工作日限额时段内的Token使用量')
 
 const colorMap: Record<string, string> = {
   green: '#67c23a',
@@ -121,8 +122,15 @@ function formatKM(n: number): string {
 
 onMounted(async () => {
   try {
-    const { data } = await api.get<QuotaUsage>(`/quota/usage?time_filter=${props.timeFilter}`)
-    quota.value = data
+    const [quotaRes, whRes] = await Promise.all([
+      api.get<QuotaUsage>(`/quota/usage?time_filter=${props.timeFilter}`),
+      api.get('/metrics/working-hours-config'),
+    ])
+    quota.value = quotaRes.data
+    const periods: {start:string, end:string}[] = whRes.data.periods || []
+    if (periods.length) {
+      quotaPeriodText.value = '仅统计工作日限额时段（' + periods.map((p: {start:string,end:string}) => `${p.start}-${p.end}`).join('、') + '）内的Token使用量'
+    }
   } finally {
     loading.value = false
   }

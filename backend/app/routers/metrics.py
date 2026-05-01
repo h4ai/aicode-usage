@@ -258,9 +258,19 @@ def get_working_hours_config() -> dict:
     from app.config import get_config
 
     cfg = get_config().get("working_hours", {})
+    # Support new multi-period format; fall back to legacy start/end
+    raw_periods = cfg.get("periods") or []
+    if raw_periods:
+        periods = [{"start": p.get("start", ""), "end": p.get("end", "")} for p in raw_periods]
+    elif cfg.get("start"):
+        periods = [{"start": cfg["start"], "end": cfg.get("end", "")}]
+    else:
+        periods = [{"start": "09:00", "end": "18:00"}]
     return {
         "enabled": cfg.get("enabled", False),
-        "start": cfg.get("start", "08:30"),
-        "end": cfg.get("end", "18:00"),
+        "periods": periods,
+        # legacy fields: first period start/end for backward compat
+        "start": periods[0]["start"] if periods else "09:00",
+        "end": periods[-1]["end"] if periods else "18:00",
         "weekday_only": cfg.get("weekday_only", True),
     }
