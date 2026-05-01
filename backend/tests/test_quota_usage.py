@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
-from app.routers.quota import _monthly_color, _daily_color, _chat_color
+from app.routers.quota import _monthly_color, _daily_color, _daily_token_color
 
 
 # ---------------------------------------------------------------------------
@@ -80,23 +80,23 @@ def test_daily_color_boundary_80():
 
 
 # ---------------------------------------------------------------------------
-# Color helper unit tests — _chat_color
+# Color helper unit tests — _daily_token_color
 # ---------------------------------------------------------------------------
 
-def test_chat_color_green_below_80():
-    color, msg = _chat_color(40.0)
+def test_daily_token_color_green_below_80():
+    color, msg = _daily_token_color(40.0)
     assert color == "green"
     assert "正常" in msg
 
 
-def test_chat_color_orange_80_to_99():
-    color, msg = _chat_color(85.0)
+def test_daily_token_color_orange_80_to_99():
+    color, msg = _daily_token_color(85.0)
     assert color == "orange"
     assert "85%" in msg
 
 
-def test_chat_color_red_at_100():
-    color, msg = _chat_color(100.0)
+def test_daily_token_color_red_at_100():
+    color, msg = _daily_token_color(100.0)
     assert color == "red"
     assert "超出" in msg
 
@@ -105,19 +105,19 @@ def test_chat_color_red_at_100():
 # /api/quota/usage endpoint
 # ---------------------------------------------------------------------------
 
-def _mock_quota_usage(client, token, *, monthly_used=0, chats_used=0, daily_used=0,
-                      monthly_limit=10000, chats_limit=50, daily_limit=500,
+def _mock_quota_usage(client, token, *, monthly_used=0, daily_token_used=0, daily_used=0,
+                      monthly_limit=10000, daily_token_limit=5000, daily_limit=500,
                       quota_level="L1"):
     with (
         patch("app.routers.quota.get_user", return_value={"quota_level": quota_level}),
         patch("app.routers.quota.get_quota_limits", return_value={
             "monthly_token": monthly_limit,
-            "daily_chats": chats_limit,
+            "daily_token_limit": daily_token_limit,
             "daily_requests": daily_limit,
         }),
         patch("app.routers.quota.get_monthly_token_usage", return_value=monthly_used),
         patch("app.routers.quota.get_daily_request_count", return_value=daily_used),
-        patch("app.routers.quota.get_chat_session_count", return_value=chats_used),
+        patch("app.routers.quota.get_today_token_usage", return_value=daily_token_used),
     ):
         return client.get(
             "/api/quota/usage",
@@ -140,8 +140,9 @@ def test_quota_usage_has_required_fields(client, admin_token, admin_config_patch
     resp = _mock_quota_usage(client, admin_token)
     data = resp.json()
     assert "monthly_token" in data
-    assert "daily_chats" in data
+    assert "daily_token" in data
     assert "daily_requests" in data
+    assert "is_quota_period" in data
 
 
 def test_quota_usage_bar_fields(client, admin_token, admin_config_patch):
@@ -186,11 +187,11 @@ def test_quota_usage_user_not_in_db_defaults_l1(client, admin_token, admin_confi
         patch("app.routers.quota.get_user", return_value=None),
         patch("app.routers.quota.upsert_user", return_value={"quota_level": "L1"}),
         patch("app.routers.quota.get_quota_limits", return_value={
-            "monthly_token": 5000000, "daily_chats": 50, "daily_requests": 500,
+            "monthly_token": 5000000, "daily_token_limit": 5000, "daily_requests": 500,
         }) as mock_limits,
         patch("app.routers.quota.get_monthly_token_usage", return_value=0),
         patch("app.routers.quota.get_daily_request_count", return_value=0),
-        patch("app.routers.quota.get_chat_session_count", return_value=0),
+        patch("app.routers.quota.get_today_token_usage", return_value=0),
     ):
         resp = client.get(
             "/api/quota/usage",

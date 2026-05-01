@@ -57,7 +57,8 @@ router = APIRouter(prefix="/api/admin")
 class QuotaLevelItem(BaseModel):
     level: str
     monthly_token: int
-    daily_chats: int
+    daily_chats: int  # deprecated
+    daily_token_limit: int = 0
     daily_requests: int
     user_count: int
 
@@ -84,7 +85,8 @@ def list_quota_levels(
 
 class QuotaLevelUpdate(BaseModel):
     monthly_token: int = Field(ge=0, description="月度Token上限，0表示不限制")
-    daily_chats: int = Field(ge=0, description="日对话上限，0表示不限制")
+    daily_chats: int = Field(ge=0, default=0, description="日对话上限（deprecated）")
+    daily_token_limit: int = Field(ge=0, default=0, description="当日Token限额，0表示不限制")
     daily_requests: int = Field(ge=0, description="日请求上限，0表示不限制")
 
 
@@ -97,12 +99,12 @@ def edit_quota_level(
     if level not in ("L1", "L2", "L3"):
         logger.warning("edit_quota_level: invalid level=%s", level)
         raise HTTPException(status_code=400, detail="仅支持 L1/L2/L3 级别")
-    row = update_quota_level(level, body.monthly_token, body.daily_chats, body.daily_requests)
+    row = update_quota_level(level, body.monthly_token, body.daily_chats, body.daily_requests, body.daily_token_limit)
     if row is None:
         logger.warning("edit_quota_level: level=%s not found", level)
         raise HTTPException(status_code=404, detail="级别不存在")
-    logger.info("edit_quota_level: level=%s monthly_token=%d daily_chats=%d daily_requests=%d",
-                level, body.monthly_token, body.daily_chats, body.daily_requests)
+    logger.info("edit_quota_level: level=%s monthly_token=%d daily_token_limit=%d daily_requests=%d",
+                level, body.monthly_token, body.daily_token_limit, body.daily_requests)
     # Fetch user count separately since UPDATE RETURNING doesn't include it
     all_levels = get_all_quota_levels()
     for lv in all_levels:
@@ -112,6 +114,7 @@ def edit_quota_level(
         level=level,
         monthly_token=body.monthly_token,
         daily_chats=body.daily_chats,
+        daily_token_limit=body.daily_token_limit,
         daily_requests=body.daily_requests,
         user_count=0,
     )
@@ -226,7 +229,7 @@ def list_users(
                     today_token_all=s.get("today_token_all", 0),
                     daily_requests=s.get("daily_requests", 0),
                     status_token=_token_status(mt, int(limits.get("monthly_token", 0))),
-                    status_chat=_chat_status(tc, int(limits.get("daily_chats", 0))),
+                    status_chat=_chat_status(tc, int(limits.get("daily_token_limit", 0))),
                 )
             )
         all_items = result
@@ -683,7 +686,7 @@ def preview_template(body: EmailTemplateUpdate, admin: Any = Depends(require_adm
 _TEMPLATE_VARIABLES = [
     {"name": "username", "description": "用户显示名"},
     {"name": "user_id", "description": "用户账号（sAMAccountName）"},
-    {"name": "quota_type_label", "description": "配额类型中文名（月度Token/日对话轮次）"},
+    {"name": "quota_type_label", "description": "配额类型中文名（月度Token/当日Token（限额时段））"},
     {"name": "used", "description": "已用量（千分位格式）"},
     {"name": "limit", "description": "上限值（千分位格式）"},
     {"name": "percent", "description": "当前使用百分比"},
@@ -858,6 +861,10 @@ def resend_email_notification(
     if body.quota_type == "monthly_token":
         used = get_monthly_token_usage(user_dict)
         limit_val = limits.get("monthly_token", 0)
+    elif body.quota_type == "daily_work_tokens":
+        from app.services.clickhouse_user import get_today_token_usage
+        used = get_today_token_usage(user_dict, time_filter="work")
+        limit_val = limits.get("daily_token_limit", 0)
     else:
         used = get_daily_request_count(user_dict)
         limit_val = limits.get("daily_chats", 0)

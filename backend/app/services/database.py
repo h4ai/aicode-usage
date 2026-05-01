@@ -32,12 +32,13 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS quota_levels (
     level            TEXT PRIMARY KEY,
     monthly_token    BIGINT NOT NULL DEFAULT 0,
-    daily_chats    INT    NOT NULL DEFAULT 0,
+    daily_chats      INT    NOT NULL DEFAULT 0,
+    daily_token_limit BIGINT NOT NULL DEFAULT 0,
     daily_requests   INT    NOT NULL DEFAULT 0
 );
 
-INSERT INTO quota_levels (level, monthly_token, daily_chats, daily_requests)
-VALUES ('L1', 25000000, 100, 500), ('L2', 50000000, 200, 1000), ('L3', 100000000, 500, 2000)
+INSERT INTO quota_levels (level, monthly_token, daily_chats, daily_token_limit, daily_requests)
+VALUES ('L1', 25000000, 100, 6250000, 500), ('L2', 50000000, 200, 12500000, 1000), ('L3', 100000000, 500, 25000000, 2000)
 ON CONFLICT (level) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS email_alerts (
@@ -161,6 +162,20 @@ def init_db() -> None:
     with _get_conn_ctx() as conn:
         with conn.cursor() as cur:
             cur.execute(_INIT_SQL)
+            # Migration: add daily_token_limit column if not exists
+            cur.execute("""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'quota_levels' AND column_name = 'daily_token_limit'
+                    ) THEN
+                        ALTER TABLE quota_levels ADD COLUMN daily_token_limit BIGINT NOT NULL DEFAULT 0;
+                        -- Initialize: floor(monthly_token / 20 * 5)
+                        UPDATE quota_levels SET daily_token_limit = floor(monthly_token / 20.0 * 5);
+                    END IF;
+                END $$;
+            """)
         conn.commit()
         logger.info("Database initialised (users table ensured)")
 
@@ -178,11 +193,11 @@ def get_quota_limits(level: str) -> dict[str, Any]:
     with _get_conn_ctx() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
-                "SELECT monthly_token, daily_chats, daily_requests FROM quota_levels WHERE level = %s",
+                "SELECT monthly_token, daily_chats, daily_token_limit, daily_requests FROM quota_levels WHERE level = %s",
                 (level,),
             )
             row = cur.fetchone()
-            return dict(row) if row else {"monthly_token": 0, "daily_chats": 0, "daily_requests": 0}
+            return dict(row) if row else {"monthly_token": 0, "daily_chats": 0, "daily_token_limit": 0, "daily_requests": 0}
 
 
 def get_all_quota_levels() -> list[dict[str, Any]]:
@@ -191,11 +206,11 @@ def get_all_quota_levels() -> list[dict[str, Any]]:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
                 """
-                SELECT ql.level, ql.monthly_token, ql.daily_chats, ql.daily_requests,
+                SELECT ql.level, ql.monthly_token, ql.daily_chats, ql.daily_token_limit, ql.daily_requests,
                        COUNT(u.user_id)::int AS user_count
                 FROM quota_levels ql
                 LEFT JOIN users u ON u.quota_level = ql.level
-                GROUP BY ql.level, ql.monthly_token, ql.daily_chats, ql.daily_requests
+                GROUP BY ql.level, ql.monthly_token, ql.daily_chats, ql.daily_token_limit, ql.daily_requests
                 ORDER BY ql.level
                 """,
             )
@@ -207,6 +222,7 @@ def update_quota_level(
     monthly_token: int,
     daily_chats: int,
     daily_requests: int,
+    daily_token_limit: int = 0,
 ) -> dict[str, Any] | None:
     """Update limits for an existing quota level. Returns updated row or None."""
     if level not in ("L1", "L2", "L3"):
@@ -216,11 +232,11 @@ def update_quota_level(
             cur.execute(
                 """
                 UPDATE quota_levels
-                SET monthly_token = %s, daily_chats = %s, daily_requests = %s
+                SET monthly_token = %s, daily_chats = %s, daily_token_limit = %s, daily_requests = %s
                 WHERE level = %s
                 RETURNING *
                 """,
-                (monthly_token, daily_chats, daily_requests, level),
+                (monthly_token, daily_chats, daily_token_limit, daily_requests, level),
             )
             row = cur.fetchone()
         conn.commit()

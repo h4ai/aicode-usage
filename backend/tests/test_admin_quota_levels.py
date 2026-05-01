@@ -8,9 +8,9 @@ from unittest.mock import patch
 import pytest
 
 _MOCK_QUOTA_LEVELS = [
-    {"level": "L1", "monthly_token": 5000000, "daily_chats": 50, "daily_requests": 500, "user_count": 20},
-    {"level": "L2", "monthly_token": 10000000, "daily_chats": 100, "daily_requests": 1000, "user_count": 5},
-    {"level": "L3", "monthly_token": 20000000, "daily_chats": 200, "daily_requests": 2000, "user_count": 2},
+    {"level": "L1", "monthly_token": 5000000, "daily_chats": 50, "daily_token_limit": 1250000, "daily_requests": 500, "user_count": 20},
+    {"level": "L2", "monthly_token": 10000000, "daily_chats": 100, "daily_token_limit": 2500000, "daily_requests": 1000, "user_count": 5},
+    {"level": "L3", "monthly_token": 20000000, "daily_chats": 200, "daily_token_limit": 5000000, "daily_requests": 2000, "user_count": 2},
 ]
 
 
@@ -100,7 +100,7 @@ def test_edit_quota_level_not_found_in_db(client, admin_token, admin_config_patc
 
 
 def test_edit_quota_level_success(client, admin_token, admin_config_patch):
-    updated = {"level": "L1", "monthly_token": 6000000, "daily_chats": 60, "daily_requests": 600, "user_count": 20}
+    updated = {"level": "L1", "monthly_token": 6000000, "daily_chats": 60, "daily_token_limit": 1500000, "daily_requests": 600, "user_count": 20}
     with (
         patch("app.routers.admin.update_quota_level", return_value=updated),
         patch("app.routers.admin.get_all_quota_levels", return_value=[updated]),
@@ -118,7 +118,7 @@ def test_edit_quota_level_success(client, admin_token, admin_config_patch):
 
 def test_edit_quota_level_fallback_when_not_in_list(client, admin_token, admin_config_patch):
     """If level not found in all_quota_levels after update, fall back to body values."""
-    updated = {"level": "L2", "monthly_token": 9000000, "daily_chats": 90, "daily_requests": 900, "user_count": 5}
+    updated = {"level": "L2", "monthly_token": 9000000, "daily_chats": 90, "daily_token_limit": 2250000, "daily_requests": 900, "user_count": 5}
     with (
         patch("app.routers.admin.update_quota_level", return_value=updated),
         patch("app.routers.admin.get_all_quota_levels", return_value=[]),  # empty → triggers fallback
@@ -140,7 +140,7 @@ def test_edit_quota_level_fallback_when_not_in_list(client, admin_token, admin_c
 
 def test_quota_level_zero_value_allowed(client, admin_token, admin_config_patch):
     """Bug2 regression: ge=0 validation allows zero values for all quota fields."""
-    updated = {"level": "L1", "monthly_token": 0, "daily_chats": 0, "daily_requests": 0, "user_count": 0}
+    updated = {"level": "L1", "monthly_token": 0, "daily_chats": 0, "daily_token_limit": 0, "daily_requests": 0, "user_count": 0}
     with (
         patch("app.routers.admin.update_quota_level", return_value=updated),
         patch("app.routers.admin.get_all_quota_levels", return_value=[updated]),
@@ -179,5 +179,5 @@ def test_init_db_does_not_overwrite_existing_quota_levels():
     executed_sql = mock_cursor.execute.call_args_list[0][0][0]
     assert "ON CONFLICT" in executed_sql
     assert "DO NOTHING" in executed_sql
-    # init_db was called twice → execute called twice with same SQL
-    assert mock_cursor.execute.call_count == 2
+    # init_db was called twice → execute called at least twice (DDL + migration per call)
+    assert mock_cursor.execute.call_count >= 2

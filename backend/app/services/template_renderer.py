@@ -34,7 +34,13 @@ def build_context(
         parts = period_key.split("-")
         period = f"{parts[0]}年{int(parts[1])}月"
         reset_time = "每月1日重置"
-    else:  # daily_chats
+    elif quota_type == "daily_work_tokens":
+        quota_type_label = "当日Token（限额时段）"
+        # period_key = "2026-04-21"
+        parts = period_key.split("-")
+        period = f"今日（{int(parts[1])}月{int(parts[2])}日）"
+        reset_time = "次日00:00重置"
+    else:  # legacy daily_chats
         quota_type_label = "日对话轮次"
         # period_key = "2026-04-21"
         parts = period_key.split("-")

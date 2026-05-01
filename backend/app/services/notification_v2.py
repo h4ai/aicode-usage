@@ -149,16 +149,17 @@ def check_quota_alerts() -> None:
 
         # Check each quota type
         # monthly_token: 使用 time_filter="auto"（工作时段），与配额判断口径一致
-        # daily_chats: 使用 time_filter="auto"（工作时段）
+        # daily_work_tokens: 当日工作时段Token使用量
         def _monthly_usage(u: dict) -> int:
             return get_monthly_token_usage(u, time_filter="auto")
 
-        def _daily_chats_usage(u: dict) -> int:
-            return get_daily_chat_count(u, time_filter="auto")
+        def _daily_token_usage(u: dict) -> int:
+            from app.services.clickhouse_user import get_today_token_usage
+            return get_today_token_usage(u, time_filter="work")
 
         quota_checks = [
             ("monthly_token", limits.get("monthly_token", 0), _monthly_usage, month_key),
-            ("daily_chats", limits.get("daily_chats", 0), _daily_chats_usage, day_key),
+            ("daily_work_tokens", limits.get("daily_token_limit", 0), _daily_token_usage, day_key),
         ]
 
         # 先收集所有配额类型的最高触发阈值，最终只发严重度最高的一封
