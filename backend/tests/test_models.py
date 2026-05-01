@@ -576,12 +576,14 @@ class TestWorkingHoursConfig:
             WorkingHoursConfig(start="09:00", end="18:00")  # type: ignore[call-arg]
 
     def test_missing_start_raises(self):
-        with pytest.raises(ValidationError):
-            WorkingHoursConfig(enabled=True, end="18:00")  # type: ignore[call-arg]
+        # With multi-period model, start/end are optional deprecated fields; periods has defaults
+        cfg = WorkingHoursConfig(enabled=True, end="18:00")  # type: ignore[call-arg]
+        assert cfg.enabled is True
 
     def test_missing_end_raises(self):
-        with pytest.raises(ValidationError):
-            WorkingHoursConfig(enabled=True, start="09:00")  # type: ignore[call-arg]
+        # With multi-period model, start/end are optional deprecated fields; periods has defaults
+        cfg = WorkingHoursConfig(enabled=True, start="09:00")  # type: ignore[call-arg]
+        assert cfg.enabled is True
 
     def test_bool_coercion(self):
         # Pydantic coerces truthy/falsy values to bool
@@ -590,7 +592,12 @@ class TestWorkingHoursConfig:
 
     def test_serialise(self):
         data = WorkingHoursConfig(enabled=True, start="09:00", end="18:00").model_dump()
-        assert data == {"enabled": True, "start": "09:00", "end": "18:00", "weekday_only": True}
+        # periods is populated from defaults; start/end are deprecated backward-compat fields
+        assert data["enabled"] is True
+        assert data["weekday_only"] is True
+        assert data["start"] == "09:00"
+        assert data["end"] == "18:00"
+        assert len(data["periods"]) >= 1
 
 
 # ===========================================================================

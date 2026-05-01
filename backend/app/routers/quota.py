@@ -66,15 +66,31 @@ def _daily_token_color(pct: float) -> tuple[str, str]:
 
 
 def _is_quota_period() -> bool:
-    """Check if current time is within quota enforcement period (workday + work hours)."""
+    """Check if current time is within quota enforcement period (workday + work hours).
+    Reads periods dynamically from config.yaml working_hours.periods."""
+    from app.config import get_config
     now = datetime.now(tz=_SHANGHAI_TZ)
-    # Monday=0 ... Friday=4
-    if now.weekday() > 4:
+    cfg = get_config().get("working_hours", {})
+    # Check weekday_only
+    if cfg.get("weekday_only", True) and now.weekday() > 4:
         return False
-    hour_minute = now.hour * 60 + now.minute
-    # 09:00-12:00 or 13:00-18:00
-    if (540 <= hour_minute < 720) or (780 <= hour_minute < 1080):
+    # If working_hours disabled, treat all time as quota period
+    if not cfg.get("enabled", False):
         return True
+    hour_minute = now.hour * 60 + now.minute
+    periods = cfg.get("periods", [])
+    if not periods:
+        # fallback: 09:00-12:00 or 13:00-18:00
+        return (540 <= hour_minute < 720) or (780 <= hour_minute < 1080)
+    for p in periods:
+        start_str = str(p.get("start", "09:00"))
+        end_str = str(p.get("end", "18:00"))
+        sh, sm = map(int, start_str.split(":"))
+        eh, em = map(int, end_str.split(":"))
+        start_min = sh * 60 + sm
+        end_min = eh * 60 + em
+        if start_min <= hour_minute < end_min:
+            return True
     return False
 
 
