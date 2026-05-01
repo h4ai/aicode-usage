@@ -585,11 +585,38 @@ def export_leaderboard_csv(
 # ---- Working Hours Config ---------------------------------------------------
 
 
-class WorkingHoursConfig(BaseModel):
-    enabled: bool
+class TimePeriod(BaseModel):
     start: str = Field(pattern=r"^\d{2}:\d{2}$", description="开始时间 HH:MM")
     end: str = Field(pattern=r"^\d{2}:\d{2}$", description="结束时间 HH:MM")
+
+
+class WorkingHoursConfig(BaseModel):
+    enabled: bool
     weekday_only: bool = True  # True=仅周一至周五，False=不限星期
+    periods: list[TimePeriod] = Field(
+        default_factory=lambda: [TimePeriod(start="09:00", end="18:00")],
+        description="工作时段列表，每个时段有 start 和 end",
+    )
+    # Backward-compat: single start/end fields (deprecated, use periods)
+    start: str | None = Field(None, pattern=r"^\d{2}:\d{2}$", description="[deprecated] 开始时间 HH:MM")
+    end: str | None = Field(None, pattern=r"^\d{2}:\d{2}$", description="[deprecated] 结束时间 HH:MM")
+
+
+def _parse_working_hours_config(cfg: dict) -> WorkingHoursConfig:
+    """Parse working_hours config dict, supporting both old single-period and new multi-period formats."""
+    enabled = cfg.get("enabled", False)
+    weekday_only = cfg.get("weekday_only", True)
+
+    # New multi-period format
+    if "periods" in cfg and cfg["periods"]:
+        periods = [TimePeriod(start=p["start"], end=p["end"]) for p in cfg["periods"]]
+    # Old single-period format — migrate to periods
+    elif "start" in cfg and "end" in cfg:
+        periods = [TimePeriod(start=cfg["start"], end=cfg["end"])]
+    else:
+        periods = [TimePeriod(start="09:00", end="18:00")]
+
+    return WorkingHoursConfig(enabled=enabled, weekday_only=weekday_only, periods=periods)
 
 
 @router.get("/working-hours", response_model=WorkingHoursConfig)
@@ -600,11 +627,7 @@ def get_working_hours(
     from app.config import get_config
 
     cfg = get_config().get("working_hours", {})
-    return WorkingHoursConfig(
-        enabled=cfg.get("enabled", False),
-        start=cfg.get("start", "08:30"),
-        end=cfg.get("end", "18:00"),
-    )
+    return _parse_working_hours_config(cfg)
 
 
 @router.put("/working-hours", response_model=WorkingHoursConfig)
@@ -627,9 +650,8 @@ def update_working_hours(
 
         cfg["working_hours"] = {
             "enabled": body.enabled,
-            "start": body.start,
-            "end": body.end,
             "weekday_only": body.weekday_only,
+            "periods": [{"start": p.start, "end": p.end} for p in body.periods],
         }
         with open(config_path, "w") as f:
             _flock_write(f, cfg, sort_keys=False)

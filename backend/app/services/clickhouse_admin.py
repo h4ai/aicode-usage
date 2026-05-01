@@ -363,7 +363,7 @@ def get_all_users_from_clickhouse() -> list[dict[str, Any]]:
 
 
 def _get_all_users_from_clickhouse_impl() -> list[dict[str, Any]]:
-    cache_key = "ch_all_users"
+    cache_key = "ch_all_users_v2"  # renamed to avoid stale cache from old query
     if cache_key in _cache:
         return list(_cache[cache_key])
 
@@ -372,7 +372,6 @@ def _get_all_users_from_clickhouse_impl() -> list[dict[str, Any]]:
         f"SELECT {USERNAME},"
         f" anyLast(enterprise) as enterprise"
         f" FROM events"
-        f" PREWHERE event_date >= toDate(toStartOfMonth(today()))"
         f" WHERE {_BASE_FILTER} AND {USER_ID} IS NOT NULL"
         f" GROUP BY {USERNAME}"
         f" ORDER BY {USERNAME}"
