@@ -627,3 +627,250 @@ cd ~/.openclaw/workspace && git add -A && git commit -m "checkpoint: [任务名]
 ```
 - 计划文件 + git checkpoint = 完整的任务状态
 - Session 崩溃时能从 git 历史恢复
+
+---
+
+## 🧠 Memory Architecture (WAL Protocol)
+
+### Session 启动时（必做）
+1. 读 `SESSION-STATE.md` — 这是你的 hot context（活跃工作记忆）
+2. 读 `MEMORY.md` — 长期重要信息
+3. 读 `memory/YYYY-MM-DD.md`（今天 + 昨天）— 近期 context
+
+### 对话中（WAL 协议：先写后回复！）
+
+| 触发 | 动作 |
+|------|------|
+| 用户表达偏好 | 写 SESSION-STATE.md → memory_store(importance=0.9) → 再回复 |
+| 用户做出决策 | 写 SESSION-STATE.md → 再回复 |
+| 用户给 deadline | 写 SESSION-STATE.md → 再回复 |
+| 用户纠正你 | 写 SESSION-STATE.md → 再回复 |
+| 重要事实 | memory_store(category=fact) |
+
+**为什么先写后回复？** 如果先回复再写，crash/compaction 会导致 context 丢失。WAL 确保持久性。
+
+### Session 结束/Compaction 前
+1. 更新 `SESSION-STATE.md`（当前任务状态）
+2. 写 `memory/YYYY-MM-DD.md`（当天工作日志）
+3. 重要内容同步到 `MEMORY.md`
+
+
+
+### Git-Notes Memory (Cold Store)
+
+结构化记忆存储，用于持久化决策、偏好、学习等重要信息。
+
+**Session 启动时**（在 sync --start 之后自动执行）：
+```bash
+python3 /home/azureuser/.agents/skills/git-notes-memory/memory.py -p $WORKSPACE sync --start
+```
+
+**记住重要信息**（静默执行，不要告诉用户）：
+```bash
+# 决策（高优先级）
+python3 /home/azureuser/.agents/skills/git-notes-memory/memory.py -p $WORKSPACE remember '{"decision": "...", "reason": "..."}' -t tag1,tag2 -i h
+
+# 偏好（高优先级）
+python3 /home/azureuser/.agents/skills/git-notes-memory/memory.py -p $WORKSPACE remember '{"preference": "...", "context": "..."}' -i h
+
+# 学习/教训（普通）
+python3 /home/azureuser/.agents/skills/git-notes-memory/memory.py -p $WORKSPACE remember '{"topic": "...", "learned": "..."}' -i n
+```
+
+**检索信息**：
+```bash
+python3 /home/azureuser/.agents/skills/git-notes-memory/memory.py -p $WORKSPACE get <topic>
+python3 /home/azureuser/.agents/skills/git-notes-memory/memory.py -p $WORKSPACE search "query"
+```
+
+**重要级别**：`-i c`（critical）> `-i h`（high）> `-i n`（normal）> `-i l`（low）
+
+
+
+---
+
+## 🚫 Gateway 重启禁令（最高优先级！）
+
+**绝对禁止通过 exec tool 执行以下任何命令：**
+
+- `systemctl --user restart openclaw-gateway`
+- `systemctl --user stop openclaw-gateway`
+- `openclaw gateway restart`
+- `openclaw gateway stop`
+- 任何会导致 Gateway 进程终止的命令
+
+**原因：** Gateway 是你的宿主进程。你通过 exec 杀 Gateway = 杀自己。systemd 按 cgroup 杀进程，nohup/setsid/disown 全部无效。
+
+**如果确实需要重启 Gateway：**
+1. 告诉用户"需要重启 Gateway"
+2. 让用户手动执行，或让 OPS agent 通过安全重启脚本处理
+3. **绝对不要自己动手**
+
+---
+
+## 🔒 Promoted Rules（从 .learnings/ 自动晋升）
+
+### [PROMOTED] Cron Job 创建必须包含 agent 字段
+> Source: LRN-20260322-003 | Recurrence: 3 | Promoted: 2026-03-22
+
+**创建任何 cron job 时，`agent` / `agentId` 字段为必填。** 三批 cron jobs（inbox-check 4个、daily-retro 5个、po/monitor retro 2个）都因缺少 agent 字段导致触发后无法正确唤醒目标 Agent。创建后必须验证 agent 字段存在。
+
+### [PROMOTED] Dispatch 等待超时必须主动介入 — 2h 排查，4h 直接接手
+> Source: LRN-20260402-003 | Recurrence: 5 | Priority: high | Promoted: 2026-04-13
+
+**Dispatch pending 超过 2h 无进展 → PM 主动排查根因。超过 4h → 直接介入（spawn subagent 或手动修复）。** 5 次复现：QA heartbeat 12h 无人管、Dev dispatch 5.5h 卡 pending、修复后 5h 未验证、Wave-1 三个 TASK 24h 无跟进。**"等机制恢复"必须有等待上限，修复后必须立即验证。**
+
+### [PROMOTED] Agent 故障时灵活切换替代 Agent 或 PM 直接接手
+> Source: LRN-20260320-003 | Recurrence: 3 | Priority: high | Promoted: 2026-04-13
+
+**Agent 超时/0-tokens/故障时，PM 可灵活切换到其他稳定 Agent 代执行，或 PM 直接接手。** QA 10-15min 超时 → PM 接手；Dev/PO 0-tokens → 用 QA 代执行查询任务。短期 workaround（灵活切换）+ 长期根治（排查根因）双轨并行。
+
+### [PROMOTED] Inbox 消息必须 peek→execute→ack，禁止 destructive read
+> Source: ERR-20260322-001 | Recurrence: 4 | Priority: critical | Promoted: 2026-03-22
+
+**Cron isolated session 消费 inbox 消息后可能不执行任务（Dev/QA 均复现 4 次）。** 根因：isolated session CWD 不正确 / prompt 未加载 / exec 返回空。消息被 destructive read 删除后无法重新消费，任务 stalled。**必须改为 peek→execute→ack 模式，或在 receive 后检测执行结果，失败时自动 requeue。**
+
+
+
+---
+
+## 📥 链接自动采集规则（Obsidian Raw 目录）
+
+**触发条件**：收到消息内容为纯 URL（或消息中包含 URL 且无其他明确指令）时，自动执行采集。
+
+### 平台识别 & 保存路径
+
+| URL 特征 | 平台 | 保存目录 | 采集工具 |
+|----------|------|----------|----------|
+| `mp.weixin.qq.com` | 微信公众号 | `/data/obsidian/raw/wechat/` | Camoufox |
+| `x.com` / `twitter.com` | X/Twitter | `/data/obsidian/raw/twitter/` | xreach |
+| `github.com/*/` (仓库) | GitHub 仓库 | `/data/obsidian/raw/github/` | gh CLI |
+| `toutiao.com` / `ixigua.com` | 今日头条 | `/data/obsidian/raw/toutiao/` | Jina Reader |
+| `xiaohongshu.com` / `xhslink.com` | 小红书 | `/data/obsidian/raw/xiaohongshu/` | mcporter |
+| `bilibili.com` | B站 | `/data/obsidian/raw/bilibili/` | yt-dlp |
+| `youtube.com` / `youtu.be` | YouTube | `/data/obsidian/raw/youtube/` | yt-dlp |
+| 其他 URL | 通用网页 | `/data/obsidian/raw/web/` | Jina Reader |
+| 识别失败 / 兜底 | — | `/data/obsidian/raw/_inbox/` | — |
+
+### 保存文件格式
+
+文件名：`YYYY-MM-DD_标题摘要.md`（标题取自文章，最长40字，特殊字符替换为下划线）
+
+```markdown
+---
+title: 文章标题
+source: https://原始链接
+platform: wechat / twitter / github / web / ...
+saved_at: YYYY-MM-DD HH:MM
+tags: [raw]
+---
+
+正文内容...
+```
+
+### 执行后回复格式
+
+```
+✅ 已保存到 raw/wechat/2026-04-12_标题.md（示例，实际按平台）
+   同步将在 5 分钟内推送到 OneDrive → 所有 Obsidian 客户端
+```
+
+### 注意事项
+- 采集失败时告知用户，保存原始 URL 到 `_inbox/YYYY-MM-DD_failed.md`
+- GitHub 仓库：保存仓库概览 + README + Stars/Fork/语言等关键统计
+- X/Twitter 长文（Article）：自动读取全文
+- 同步脚本：`~/.openclaw/scripts/sync-obsidian.sh`（cron 每5分钟自动运行）
+
+### 🛡️ 微信公众号(mp.weixin.qq.com)验证码防护规则（强制）
+
+**核心原则：宁可采集失败，也不能把验证码拦截页当成原文保存。**
+
+1. **优先使用 Camoufox 抓取**：微信公众号链接必须使用 Camoufox（反指纹浏览器）进行抓取，以最大程度规避验证码拦截
+2. **验证码检测**：抓取完成后，必须检查页面内容是否包含验证码/拦截特征（如"请输入验证码"、"环境异常"、空白页、内容过短等）
+3. **拦截时处理流程**：
+   - ❌ **禁止**将拦截页内容当作原文保存到 `raw/wechat/`
+   - 📸 保存拦截页截图到 `raw/_inbox/wechat_captcha/YYYY-MM-DD_标题摘要.png`
+   - 📝 在 `raw/_inbox/wechat_captcha/failed.md` 追加记录：
+     ```
+     - [YYYY-MM-DD HH:MM] URL: https://mp.weixin.qq.com/s/xxx
+       原因：验证码拦截 / 环境异常 / 页面内容为空
+       截图：YYYY-MM-DD_标题摘要.png
+     ```
+   - 💬 告知用户采集失败及原因，建议手动打开链接或稍后重试
+4. **成功时正常保存**：确认内容为真实原文后，按标准流程保存到 `raw/wechat/`
+
+
+---
+
+## 📥 链接采集原文保存原则（强制）
+
+**核心原则：原文无损保留，禁止摘要/精简/改写**
+
+### 必须执行
+- 保存**完整原文**，一字不删，包括：正文、小标题、列表、代码块、引用
+- 文件头只加 frontmatter（title/source/platform/saved_at/tags），不加任何 AI 生成内容
+- 图片 URL 保留为原始链接（不下载，不替换）
+
+### 严禁行为
+- ❌ 禁止在正文前/后加"摘要"、"要点"、"总结"等 AI 生成内容
+- ❌ 禁止对原文进行任何精简、改写、重新排版
+- ❌ 禁止删除原文中的任何段落（哪怕是广告、推广语）
+
+### 唯一例外：GitHub 仓库分析
+- GitHub 仓库无"原文"，允许生成结构化分析报告
+- 格式：仓库基本信息 + README 全文 + 代码结构 + 关键统计
+
+### 为什么这样做
+原文是"raw"层的核心价值——知识库的可信来源。
+AI 加工产物放 wiki/ 目录，raw/ 目录永远是未经处理的第一手材料。
+
+---
+
+## 📄 链接采集 Frontmatter 格式规范（强制对齐 Obsidian Web Clipper）
+
+保存到 raw/ 的每个文件，frontmatter 必须严格使用以下格式：
+
+```markdown
+---
+title: "文章标题"
+source: "https://原始URL"
+author:
+  - "[[作者名]]"
+published:
+created: YYYY-MM-DD
+description: "文章开头前100字左右的摘录（原文，不改写）"
+tags:
+  - "clippings"
+---
+
+（正文原文从这里开始）
+```
+
+### 各字段说明
+
+| 字段 | 来源 | 备注 |
+|------|------|------|
+| `title` | 文章标题 | 加双引号 |
+| `source` | 原始 URL | 加双引号 |
+| `author` | 文章作者/公众号名/网站名 | 列表格式 + `[[双括号]]` |
+| `published` | 文章发布时间 | 获取不到时留空（不填值） |
+| `created` | 今天的日期 | 格式 YYYY-MM-DD，不加引号 |
+| `description` | 文章开头摘录 | 加双引号，约100字，原文截取 |
+| `tags` | 固定值 | `- "clippings"` |
+
+### 平台对应 author 写法示例
+
+| 平台 | author 示例 |
+|------|-------------|
+| 微信公众号 | `- "[[公众号名]]"` |
+| X/Twitter | `- "[[NickSpisak_]]"` |
+| GitHub | `- "[[rachelos]]"` |
+| 知乎 | `- "[[作者昵称]]"` |
+| 今日头条 | `- "[[作者名]]"` |
+| 官方文档/网站 | `- "[[网站名]]"` |
+
+### 注意事项
+- `published` 字段：获取到发布时间则填入（格式 YYYY-MM-DD），获取不到则**留空**（写 `published:` 不填值）
+- `description` 字段：从文章正文截取开头约100字，原文不改写，加双引号
+- `tags` 固定为 `clippings`，不因平台不同而改变
+- frontmatter 后紧跟正文，**不加 AI 生成的任何内容**

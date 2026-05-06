@@ -1,0 +1,468 @@
+{
+  "last_updated": "2026-05-06T09:21:01+08:00",
+  "summary": {
+    "total_pending": 0,
+    "total_done": 59,
+    "total_failed": 11
+  },
+  "dispatches": {
+    "dev": {
+      "AI-CODE-P1-FIXES-001.dispatch.json": {
+        "status": "done",
+        "taskId": "AI-CODE-P1-FIXES-001",
+        "title": "P1 代码质量修复：admin日志+clickhouse拆分+错误处理+Pydantic校验",
+        "created_at": "2026-04-21T18:05:00+08:00"
+      },
+      "CASCADE-RETRY-V2.dispatch.json": {
+        "status": "done",
+        "taskId": "DEV-CASCADE-RETRY-V2",
+        "title": "🔴 P0 补全 cascade-retry 闭环：Dev 完成 → 自动重派 QA",
+        "created_at": "2026-04-20T20:28:00+08:00"
+      },
+      "DEV-API-FULL-TEST.dispatch.json": {
+        "status": "done",
+        "taskId": "",
+        "title": "全量后台接口验证测试 — 所有 API 端点无报错 + 日志无报错",
+        "created_at": "2026-04-21T16:35:00+08:00"
+      },
+      "DISPATCH-SPRINT7-HOTFIX-WAVE1.dispatch.json": {
+        "status": "done",
+        "taskId": "",
+        "title": "⚠️ P0 Sprint 7 Hotfix Wave-1 — 4 个并行修复任务",
+        "created_at": "2026-04-15T21:10:00+08:00"
+      },
+      "DISPATCH-TASK-127.dispatch.json": {
+        "status": "done",
+        "taskId": "",
+        "title": "TASK-127 Git 发布模板 + Webhook 自动同步 — US-014 ⚠️ 高风险",
+        "created_at": "2026-04-14T15:01:00+08:00"
+      },
+      "DISPATCH-TASK-128-FIX.dispatch.json": {
+        "status": "done",
+        "taskId": "",
+        "title": "⚠️ P0 TASK-128 QA 失败修复 — Prisma Schema Drift",
+        "created_at": "2026-04-15T07:48:00+08:00"
+      },
+      "ENV-PREP-SPRINT7-QA.dispatch.json": {
+        "status": "failed",
+        "taskId": "ENV-PREP",
+        "title": "🔧 Sprint 7 QA 重测环境准备 — 拉最新代码 + Docker 启动",
+        "created_at": "2026-04-16T22:00:00+08:00"
+      },
+      "HOTFIX-CLI-COMMANDS.dispatch.json": {
+        "status": "done",
+        "taskId": "SPRINT7-HOTFIX-CLI-COMMANDS",
+        "title": "🟡 P1 CLI 命令入口补全（AC-16/17/18）",
+        "created_at": "2026-04-18T09:00:00+08:00"
+      },
+      "HOTFIX-CLI-LOGIN.dispatch.json": {
+        "status": "done",
+        "taskId": "SPRINT7-HOTFIX-CLI-LOGIN",
+        "title": "🔴 P0 CLI login 非交互模式修复（AC-16 blocker）",
+        "created_at": "2026-04-19T15:30:00+08:00"
+      },
+      "HOTFIX-PUBLISH-API.dispatch.json": {
+        "status": "done",
+        "taskId": "SPRINT7-HOTFIX-PUBLISH-API",
+        "title": "🔴 P0 模板发布链路补全（AC-16 blocker）",
+        "created_at": "2026-04-20T07:57:00+08:00"
+      },
+      "HOTFIX-REBUILD-VERIFY.dispatch.json": {
+        "status": "done",
+        "taskId": "SPRINT7-REBUILD-VERIFY",
+        "title": "🔴 P0 Docker 重建 + API 路由验证",
+        "created_at": "2026-04-18T23:33:00+08:00"
+      },
+      "HOTFIX-SEED-PUBLISHED.dispatch.json": {
+        "status": "done",
+        "taskId": "SPRINT7-SEED-PUBLISHED-TEMPLATE",
+        "title": "🔴 P0 Seed PUBLISHED 模板数据（打破 QA 死循环）",
+        "created_at": "2026-04-20T22:59:00+08:00"
+      },
+      "HOTFIX-SSRF.dispatch.json": {
+        "status": "done",
+        "taskId": "SPRINT7-HOTFIX-SSRF",
+        "title": "🔴 P0 SSRF Guard 修复（AC-19）",
+        "created_at": "2026-04-17T23:45:00+08:00"
+      },
+      "HOTFIX-TEMPLATE-LOCK.dispatch.json": {
+        "status": "done",
+        "taskId": "SPRINT7-HOTFIX-TEMPLATE-LOCK",
+        "title": "🟡 P1 template.lock 解析修复（AC-12）",
+        "created_at": "2026-04-18T09:00:00+08:00"
+      },
+      "HOTFIX-TEMPLATES500.dispatch.json": {
+        "status": "done",
+        "taskId": "SPRINT7-HOTFIX-TEMPLATES500",
+        "title": "🔴 P0 Templates 接口 500 修复（AC-12/14/15/16/18 共因）",
+        "created_at": "2026-04-17T23:45:00+08:00"
+      },
+      "PM-REQ-UPDATE-V08.dispatch.json": {
+        "status": "canceled",
+        "taskId": "PM-REQ-UPDATE-V08",
+        "title": "📋 更新主需求文档 docs/requirements.md → v0.8（main 分支）",
+        "created_at": "2026-04-20T22:52:00+08:00"
+      },
+      "PM-SPEC-L1-PURGE-001.dispatch.json": {
+        "status": "canceled",
+        "taskId": "PM-SPEC-L1-PURGE-001",
+        "title": "📄 需求文档 L1 净化 + 架构文档拆分 — feature/model-pricing 分支",
+        "created_at": "2026-04-20T22:24:00+08:00"
+      },
+      "PM-UI-FIXES-001.dispatch.json": {
+        "status": "done",
+        "taskId": "PM-UI-FIXES-001",
+        "title": "🔧 前端+登录 3项修复 — 提交 PR 不合并",
+        "created_at": "2026-04-20T22:03:00+08:00"
+      },
+      "SPRINT7-GATE-FIX.dispatch.json": {
+        "status": "done",
+        "taskId": "",
+        "title": "⚠️ P0 Sprint 7 门禁修复 — 补齐 TASK-124/125/126 交付物",
+        "created_at": "2026-04-14T00:17:00+08:00"
+      },
+      "SPRINT7-HOTFIX-WAVE2.dispatch.json": {
+        "status": "failed",
+        "taskId": "SPRINT7-HOTFIX-WAVE2",
+        "title": "🚨 Sprint 7 Hotfix Wave-2 — QA 重测全部 FAIL/BLOCKED",
+        "created_at": "2026-04-17T20:43:00+08:00"
+      },
+      "SPRINT7-WAVE1-FIX-v2.dispatch.json": {
+        "status": "done",
+        "taskId": "",
+        "title": "⚠️ P0 Sprint 7 Wave-1 修复 — 环境 + 测试 + 交付物补齐",
+        "created_at": "2026-04-13T07:35:00+08:00"
+      },
+      "SPRINT7-WAVE1-FIX.dispatch.json": {
+        "status": "done",
+        "taskId": "",
+        "title": "⚠️ Sprint 7 Wave-1 修复 — 环境 + 测试 + 交付物补齐",
+        "created_at": "2026-04-12T18:57:00+08:00"
+      },
+      "TASK-122.dispatch.json": {
+        "status": "failed",
+        "taskId": "TASK-122",
+        "title": "🔥 [hotfix] Sprint 6 集成测试套件（E2E: Namespace→模板发布→init 闭环） — QA",
+        "created_at": "2026-04-21T00:02:01.981Z"
+      },
+      "TASK-124.dispatch.json": {
+        "status": "done",
+        "taskId": "",
+        "title": "CLI 模板更新检查（update / outdated）— US-012",
+        "created_at": "2026-04-11T22:52:00+08:00"
+      },
+      "TASK-125.dispatch.json": {
+        "status": "failed",
+        "taskId": "",
+        "title": "Git 凭证管理 CRUD + 加密存储 — US-013",
+        "created_at": "2026-04-11T22:52:00+08:00"
+      },
+      "TASK-126.dispatch.json": {
+        "status": "done",
+        "taskId": "",
+        "title": "Skill SemVer 依赖同步 + Major 变更通知 — US-016",
+        "created_at": "2026-04-11T22:52:00+08:00"
+      },
+      "TASK-128.dispatch.json": {
+        "status": "done",
+        "taskId": "TASK-128",
+        "title": "🔥 [hotfix] Sprint 7 集成测试套件（Git集成 + SemVer同步 + 模板更新 E2E） — QA",
+        "created_at": "2026-04-20T04:52:01.818Z"
+      },
+      "TASK-131.dispatch.json": {
+        "status": "done",
+        "taskId": "TASK-131",
+        "title": "⚠️ P0 Hotfix: Git Publish DTO + 发布流程打通（AC-16）⭐ 最关键",
+        "created_at": "2026-04-16T07:22:00+08:00"
+      },
+      "TASK-132.dispatch.json": {
+        "status": "done",
+        "taskId": "TASK-132",
+        "title": "Hotfix: Webhook 发布触发 + Secret 配置 — AC-18",
+        "created_at": "2026-04-16T06:14:10.179Z"
+      },
+      "TASK-133.dispatch.json": {
+        "status": "failed",
+        "taskId": "TASK-133",
+        "title": "⚠️ P0 Hotfix: 安全三件套 — 凭证验证 + SSRF + 超时（AC-17/19）🔒",
+        "created_at": "2026-04-16T07:22:00+08:00"
+      },
+      "TASK-134.dispatch.json": {
+        "status": "done",
+        "taskId": "TASK-134",
+        "title": "Hotfix: SemVer 同步管道运行时修复 — AC-14/AC-15",
+        "created_at": "2026-04-16T06:14:10.181Z"
+      },
+      "TASK-QUOTA-EMAIL-V2.dispatch.json": {
+        "status": "done",
+        "taskId": "",
+        "title": "配额邮件通知增强 US-017~022（Ralph TDD 流程）",
+        "created_at": "2026-04-21T13:12:00+08:00"
+      },
+      "TASK122-GATE-FIX.dispatch.json": {
+        "status": "done",
+        "taskId": "TASK-122",
+        "title": "P1 补全 TASK-122 门禁材料（Sprint 6 遗留）",
+        "created_at": "2026-04-22T08:29:00+08:00"
+      },
+      "TASK128-GATE-FIX.dispatch.json": {
+        "status": "done",
+        "taskId": "TASK-128",
+        "title": "🔴 P0 补全 TASK-128 门禁材料（QA 已通过，差元数据）",
+        "created_at": "2026-04-21T19:43:00+08:00"
+      },
+      "TASK129-GATE-FIX.dispatch.json": {
+        "status": "done",
+        "taskId": "TASK-129",
+        "title": "🔴 P0 补全 TASK-129 门禁材料（PO 验收已完成，差元数据）",
+        "created_at": "2026-04-22T06:36:00+08:00"
+      }
+    },
+    "qa": {
+      "AI-CODE-USAGE-E2E-QA-R2.dispatch.json": {
+        "status": "done",
+        "taskId": "",
+        "title": "",
+        "created_at": "2026-04-18T11:36:00+08:00"
+      },
+      "AI-CODE-USAGE-E2E-QA.dispatch.json": {
+        "status": "paused",
+        "taskId": "",
+        "title": "AI Code Usage 看板 端到端 E2E 测试",
+        "created_at": "2026-04-18T09:04:00+08:00"
+      },
+      "AI-CODE-USAGE-REGRESSION-001.dispatch.json": {
+        "status": "failed",
+        "taskId": "AI-CODE-USAGE-REGRESSION-001",
+        "title": "AI Code Usage Dashboard 回归测试 — 2026-04-19 迭代",
+        "created_at": "2026-04-19T09:13:00+08:00"
+      },
+      "AI-CODE-USAGE-REGRESSION-002.dispatch.json": {
+        "status": "done",
+        "taskId": "AI-CODE-USAGE-REGRESSION-002",
+        "title": "AI Code Usage Dashboard 回归测试重跑（E2E 修复后）",
+        "created_at": "2026-04-19T10:06:30+08:00"
+      },
+      "QA-AICODE-20260423-001.dispatch.json": {
+        "status": "failed",
+        "taskId": "QA-AICODE-20260423-001",
+        "title": "ai-code-usage 全量回归测试",
+        "created_at": "2026-04-23T08:31:00Z"
+      },
+      "QA-AICODE-20260423-002.dispatch.json": {
+        "status": "failed",
+        "taskId": "QA-AICODE-20260423-002",
+        "title": "ai-code-usage 全量回归（main 3e25655）",
+        "created_at": "2026-04-23T08:51:00Z"
+      },
+      "QA-FULL-E2E.dispatch.json": {
+        "status": "done",
+        "taskId": "",
+        "title": "AI Code Usage 全量端到端测试（新旧功能）+ Playwright 截图 + PDF 报告",
+        "created_at": "2026-04-21T16:32:00+08:00"
+      },
+      "QA-QUOTA-EMAIL-V2.dispatch.json": {
+        "status": "canceled",
+        "taskId": "",
+        "title": "配额邮件通知 v2.0 功能验证 + Playwright 截图 + PDF 报告",
+        "created_at": "2026-04-21T16:24:00+08:00"
+      },
+      "QA-QUOTA-TOKEN-20260501-001.dispatch.json": {
+        "status": "failed",
+        "taskId": "QA-QUOTA-TOKEN-20260501-001",
+        "title": "配额口径 Token 迁移 - 端到端测试 + 截图验证",
+        "created_at": "2026-05-01T09:07:00+08:00"
+      },
+      "QA-QUOTA-TOKEN-20260501-002.dispatch.json": {
+        "status": "done",
+        "taskId": "QA-QUOTA-TOKEN-20260501-002",
+        "title": "配额口径 Token 迁移 - E2E 测试（含 Mock 数据）",
+        "created_at": "2026-05-01T21:20:00+08:00"
+      },
+      "SPRINT6-8-QA-REVIEW.dispatch.json": {
+        "status": "done",
+        "taskId": "SPRINT6-8-QA-REVIEW",
+        "title": "Sprint 6-8 User Stories 测试评审 — QA 视角",
+        "created_at": "2026-04-01T20:34:00+08:00"
+      },
+      "SPRINT7-QA-WAVE1-VERIFY.dispatch.json": {
+        "status": "done",
+        "taskId": "",
+        "title": "Sprint 7 Wave-1 QA 验证 — TASK-124/125/126 代码质量检查",
+        "created_at": "2026-04-14T08:12:00+08:00"
+      },
+      "TASK-122-QA-DISPATCH.dispatch.json": {
+        "status": "superseded",
+        "taskId": "TASK-122",
+        "title": "TASK-122 QA 集成测试执行",
+        "created_at": "2026-04-02T08:30:00+08:00"
+      },
+      "TASK-122-QA-RETEST.dispatch.json": {
+        "status": "done",
+        "taskId": "TASK-122",
+        "title": "TASK-122 QA 集成测试（重新派发）",
+        "created_at": "2026-04-03T07:50:00+08:00"
+      },
+      "TASK-122-SECURITY.dispatch.json": {
+        "status": "done",
+        "taskId": "TASK-122",
+        "title": "安全测试: Zip Slip + 命名空间权限 + Handlebars 注入",
+        "created_at": "2026-04-02T19:23:00+08:00"
+      },
+      "TASK-122-SUITE-A.dispatch.json": {
+        "status": "failed",
+        "taskId": "TASK-122",
+        "title": "E2E 套件A: Namespace→成员→发布模板→审核→查询",
+        "created_at": "2026-04-02T19:23:00+08:00"
+      },
+      "TASK-122-SUITE-B.dispatch.json": {
+        "status": "failed",
+        "taskId": "TASK-122",
+        "title": "E2E 套件B: CLI init→lock→去重下载",
+        "created_at": "2026-04-02T19:23:00+08:00"
+      },
+      "TASK-128-RETEST10.dispatch.json": {
+        "status": "done",
+        "taskId": "TASK-128",
+        "title": "Sprint 7 集成测试套件（Git集成 + SemVer同步 + 模板更新 E2E） — QA 重测 Round 1",
+        "created_at": "2026-04-21T11:22:01.742Z"
+      },
+      "TASK-128-RETEST11.dispatch.json": {
+        "status": "done",
+        "taskId": "TASK-128",
+        "title": "Sprint 7 集成测试套件（Git集成 + SemVer同步 + 模板更新 E2E） — QA 重测 Round 1",
+        "created_at": "2026-04-21T11:32:01.714Z"
+      },
+      "TASK-128-RETEST12.dispatch.json": {
+        "status": "done",
+        "taskId": "TASK-128",
+        "title": "Sprint 7 集成测试套件（Git集成 + SemVer同步 + 模板更新 E2E） — QA 重测 Round 1",
+        "created_at": "2026-04-21T11:42:02.393Z"
+      },
+      "TASK-128-RETEST2.dispatch.json": {
+        "status": "done",
+        "taskId": "TASK-128",
+        "title": "Sprint 7 集成测试套件（Git集成 + SemVer同步 + 模板更新 E2E） — QA 重测 Round 2",
+        "created_at": "2026-04-21T09:32:01.309Z"
+      },
+      "TASK-128-RETEST3.dispatch.json": {
+        "status": "done",
+        "taskId": "TASK-128",
+        "title": "Sprint 7 集成测试套件（Git集成 + SemVer同步 + 模板更新 E2E） — QA 重测 Round 3",
+        "created_at": "2026-04-21T10:12:01.705Z"
+      },
+      "TASK-128-RETEST4.dispatch.json": {
+        "status": "done",
+        "taskId": "TASK-128",
+        "title": "Sprint 7 集成测试套件（Git集成 + SemVer同步 + 模板更新 E2E） — QA 重测 Round 4",
+        "created_at": "2026-04-21T10:22:01.425Z"
+      },
+      "TASK-128-RETEST5.dispatch.json": {
+        "status": "done",
+        "taskId": "TASK-128",
+        "title": "Sprint 7 集成测试套件（Git集成 + SemVer同步 + 模板更新 E2E） — QA 重测 Round 5",
+        "created_at": "2026-04-21T10:32:01.358Z"
+      },
+      "TASK-128-RETEST6.dispatch.json": {
+        "status": "done",
+        "taskId": "TASK-128",
+        "title": "Sprint 7 集成测试套件（Git集成 + SemVer同步 + 模板更新 E2E） — QA 重测 Round 6",
+        "created_at": "2026-04-21T10:42:01.494Z"
+      },
+      "TASK-128-RETEST7.dispatch.json": {
+        "status": "done",
+        "taskId": "TASK-128",
+        "title": "Sprint 7 集成测试套件（Git集成 + SemVer同步 + 模板更新 E2E） — QA 重测 Round 7",
+        "created_at": "2026-04-21T10:52:01.381Z"
+      },
+      "TASK-128-RETEST8.dispatch.json": {
+        "status": "done",
+        "taskId": "TASK-128",
+        "title": "Sprint 7 集成测试套件（Git集成 + SemVer同步 + 模板更新 E2E） — QA 重测 Round 8",
+        "created_at": "2026-04-21T11:02:01.562Z"
+      },
+      "TASK-128-RETEST9.dispatch.json": {
+        "status": "done",
+        "taskId": "TASK-128",
+        "title": "Sprint 7 集成测试套件（Git集成 + SemVer同步 + 模板更新 E2E） — QA 重测 Round 9",
+        "created_at": "2026-04-21T11:12:01.670Z"
+      },
+      "TASK-128.dispatch.json": {
+        "status": "done",
+        "taskId": "TASK-128",
+        "title": "Sprint 7 集成测试套件（Git集成 + SemVer同步 + 模板更新 E2E） — QA 重测 Round 1",
+        "created_at": "2026-04-21T08:52:01.646Z"
+      }
+    },
+    "po": {
+      "AI-CODE-USAGE-PO-ACCEPTANCE-R2.dispatch.json": {
+        "status": "done",
+        "taskId": "",
+        "title": "",
+        "created_at": "2026-04-18T10:35:30+08:00"
+      },
+      "AI-CODE-USAGE-PO-ACCEPTANCE.dispatch.json": {
+        "status": "done",
+        "taskId": "",
+        "title": "",
+        "created_at": "2026-04-18T09:24:00+08:00"
+      },
+      "AI-CODE-USAGE-PO-UAT.dispatch.json": {
+        "status": "done",
+        "taskId": "",
+        "title": "",
+        "created_at": "2026-04-18T11:41:00+08:00"
+      },
+      "TASK-129.dispatch.json": {
+        "status": "done",
+        "taskId": "TASK-129",
+        "title": "Sprint 7 PO 验收（US-012/013/014/016 覆盖率检查）",
+        "created_at": "2026-04-21T11:50:02.004Z"
+      }
+    },
+    "sa": {
+      "DISPATCH-SA-SECURITY-REVIEW.dispatch.json": {
+        "status": "done",
+        "taskId": "",
+        "title": "SA 协助 — TASK-133 安全方案评审（SSRF + 凭证 + 超时）",
+        "created_at": "2026-04-15T21:10:00+08:00"
+      },
+      "PM-AUTODISPATCH-ANALYSIS.dispatch.json": {
+        "status": "done",
+        "taskId": "SA-PM-AUTODISPATCH-ANALYSIS",
+        "title": "分析 PM 巡检未自动派发任务的根因",
+        "created_at": "2026-04-20T07:58:00+08:00"
+      },
+      "SA-CASCADE-RETRY-LOOP.dispatch.json": {
+        "status": "done",
+        "taskId": "SA-CASCADE-RETRY-LOOP",
+        "title": "🔴 P0 排查 cascade-retry 死循环 + QA 任务为何不停派",
+        "created_at": "2026-04-22T22:09:00+08:00"
+      },
+      "SA-CONFIRM-LOOP-ANALYSIS.dispatch.json": {
+        "status": "done",
+        "taskId": "",
+        "title": "",
+        "created_at": "2026-04-18T09:27:00+08:00"
+      },
+      "SA-INBOX-AUDIT.dispatch.json": {
+        "status": "done",
+        "taskId": "",
+        "title": "排查 Dev inbox dispatch 文件消失问题",
+        "created_at": "2026-04-13T07:35:00+08:00"
+      },
+      "SA-OPS-PENDING-CHECK.dispatch.json": {
+        "status": "done",
+        "taskId": "SA-OPS-PENDING-CHECK",
+        "title": "P1 排查 OPS pending dispatch（OPS-SESSION-ROTATION）",
+        "created_at": "2026-04-22T22:09:00+08:00"
+      },
+      "SA-QA-HEARTBEAT-INVESTIGATION.dispatch.json": {
+        "status": "done",
+        "taskId": "",
+        "title": "调查 QA Agent heartbeat 未触发 / 任务未执行问题",
+        "created_at": "2026-04-21T17:02:00+08:00"
+      }
+    }
+  }
+}

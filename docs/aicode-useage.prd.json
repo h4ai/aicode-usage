@@ -1,0 +1,171 @@
+{
+  "id": "aicode-useage",
+  "title": "配额口径从"日对话上限"迁移为"当日 Token 限额"",
+  "version": "2.0.0",
+  "status": "ready_for_dev",
+  "created_at": "2026-04-30",
+  "updated_at": "2026-04-30",
+  "source_doc": "docs/requirements-quota-token-migration.md",
+  "aligned_docs": [
+    "docs/requirements.md",
+    "docs/requirements-quota-email-v2.md"
+  ],
+  "background": {
+    "goal": "将系统日配额口径从对话/请求次数统一迁移为 Token 使用量，以更贴近实际 LLM 资源消耗，实现更精准的费控管理",
+    "success_criteria": [
+      "管理员后台当日 Token 限额可正常配置并触发超限拦截",
+      "个人看板展示当日 Token 数（K/M 缩写格式），且口径与配额一致",
+      "非限额时段查看看板时展示 Tooltip 说明",
+      "邮件通知按 Token 口径正常触发（阈值策略不变）",
+      "月度配额及其他链路不受影响",
+      "历史数据保留，旧字段标记 deprecated"
+    ],
+    "out_of_scope": [
+      "月度 Token 配额口径（不变）",
+      "邮件通知阈值策略（不变）",
+      "法定节假日逻辑（暂不考虑）",
+      "降级服务（远期规划，本期不实现）"
+    ]
+  },
+  "quota_rule": {
+    "dimension": "user",
+    "timezone": "Asia/Shanghai",
+    "workdays": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+    "public_holidays": "not_considered",
+    "work_hours": [
+      { "start": "09:00", "end": "12:00" },
+      { "start": "13:00", "end": "18:00" }
+    ],
+    "token_attribution": {
+      "rule": "按请求发起时间判定归属时段",
+      "cross_boundary_example": "17:59 发起、18:03 返回的请求，按发起时间归属，计入限额时段",
+      "note": "响应何时返回不影响归属判定"
+    },
+    "token_field": "totalToken",
+    "token_components": {
+      "input": "ClickHouse inputToken",
+      "output": "ClickHouse outputToken",
+      "total": "ClickHouse totalToken（若现有报表使用其他公式，以代码实现为准）"
+    },
+    "excluded_periods": ["weekends", "12:00-13:00", "18:00-09:00_next_day"],
+    "reset_time": "00:00 Asia/Shanghai（自然日重置，统计仅覆盖限额时段）"
+  },
+  "features": [
+    {
+      "id": "F-001",
+      "module": "管理员后台 — 配额级别",
+      "description": "将日对话上限字段替换为当日 Token 限额，支持配置整数 Token 值",
+      "pages": [
+        {
+          "page": "列表页",
+          "change": { "from": "日对话上限", "to": "当日 Token 限额", "unit": "Token" }
+        },
+        {
+          "page": "详情页",
+          "change": { "from": "日对话上限", "to": "当日 Token 限额", "unit": "Token" }
+        },
+        {
+          "page": "编辑页",
+          "field_label": "当日 Token 限额",
+          "input_type": "integer",
+          "note": "需支持较大数值，单位说明：Token（仅统计工作日限额时段内使用量）",
+          "validation": "沿用现有配额级别编辑校验逻辑"
+        }
+      ],
+      "api_field_change": {
+        "from": "daily_chat_limit（deprecated）",
+        "to": "daily_token_limit",
+        "note": "避免旧字段名语义漂移，前端与外部调用方需同步"
+      }
+    },
+    {
+      "id": "F-002",
+      "module": "超限判断与拦截",
+      "description": "将原当日对话/请求次数超限逻辑替换为 Token 使用量超限判断",
+      "threshold_condition": "consumed_tokens >= daily_token_limit",
+      "consume_source": "当日【工作日 + 限额时段】totalToken（按请求发起时间）",
+      "behavior_on_limit": "拒绝请求并返回超限提示",
+      "fallback": "降级服务本期不实现，为远期规划"
+    },
+    {
+      "id": "F-003",
+      "module": "个人看板 — 今日指标",
+      "description": "将今日对话次数替换为当日 Token 数，支持 K/M 格式展示及非限额时段 Tooltip",
+      "metric_change": {
+        "from": "今日对话次数",
+        "to": "当日 Token 数",
+        "data_source": "当日【工作日 + 限额时段】totalToken（按请求发起时间）"
+      },
+      "display": {
+        "format": "K/M 缩写（如 120K、1.2M）",
+        "progress_bar": "consumed / limit（百分比）"
+      },
+      "tooltip": {
+        "trigger": "非限额时段（周末 / 12:00–13:00 / 18:00 后）",
+        "content": "当前为非限额时段，此时段使用不计入当日配额"
+      }
+    },
+    {
+      "id": "F-004",
+      "module": "邮件通知",
+      "description": "沿用现有阈值/去重策略，仅将口径切换为 Token 限额与 Token 消耗",
+      "quota_type": "daily_work_tokens",
+      "quota_type_label": "当日Token（限额时段）",
+      "deprecated_quota_type": {
+        "key": "daily_chats",
+        "handling": "标记废弃，迁移期仅允许映射到 daily_work_tokens，不得继续展示为日对话轮次"
+      },
+      "thresholds": {
+        "preferred": [50, 80, 100],
+        "fallback": "若系统仅实现 80%，则当日 Token 同样只在 80% 触发"
+      },
+      "email_content_fields": [
+        "当日已用 Token（工作日+限额时段口径，K/M 格式）",
+        "当日 Token 限额",
+        "使用占比",
+        "reset_time: 次日 00:00 Asia/Shanghai"
+      ],
+      "dedup_strategy": "沿用 requirements-quota-email-v2.md 策略，period_key 按自然日划分"
+    }
+  ],
+  "ui_text_mapping": [
+    { "from": "每日请求次数进度条", "to": "当日 Token 进度条（限额时段）" },
+    { "from": "今日请求次数", "to": "当日 Token" },
+    { "from": "日请求上限", "to": "当日 Token 限额" },
+    { "from": "日对话轮次", "to": "当日Token（限额时段）" },
+    { "from": "日对话上限", "to": "当日 Token 限额" },
+    { "from": "今日对话次数", "to": "当日 Token 数" }
+  ],
+  "data_migration": {
+    "strategy": "直接替换字段，旧字段废弃",
+    "old_field": "daily_chat_limit（日对话上限，次数口径）",
+    "new_field": "daily_token_limit（当日 Token 限额）",
+    "history_data": "旧字段数据、历史告警记录、审计日志保留不删除，标记为 deprecated",
+    "initial_value_formula": "floor(monthly_token_limit / 20 * 5)",
+    "formula_note": "20 为固定常数，不按自然月实际工作日动态变化，取整规则为向下取整（floor）"
+  },
+  "impact_areas": [
+    { "area": "配额与限流", "action": "所有基于次数的日限流/拒绝逻辑切换为 Token" },
+    { "area": "统计与榜单", "action": "今日对话次数/请求数指标替换或新增 Token 指标" },
+    { "area": "图表与趋势", "action": "涉及今日指标的趋势图同步替换口径与文案" },
+    { "area": "缓存与预聚合", "action": "按天缓存/预聚合表需补齐 Token 维度" },
+    { "area": "API 契约", "action": "字段改名影响前端与外部调用方，需同步" },
+    { "area": "权限与审计", "action": "配额修改审计日志字段同步" },
+    { "area": "测试与 QA 用例", "action": "断言与文案受影响，需更新单测/E2E/UI 截图测试" },
+    { "area": "邮件模板", "action": "主题/正文/占位符字段、阈值配置项同步" },
+    { "area": "数据脚本", "action": "生成/导入测试数据脚本同步 token 字段" }
+  ],
+  "acceptance_criteria": [
+    { "module": "管理后台", "criteria": "配额级别页面展示当日 Token 限额，可保存并生效" },
+    { "module": "管理后台", "criteria": "超限判断使用当日【工作日+限额时段】Token 使用量（>= 限额即拒绝）" },
+    { "module": "管理后台", "criteria": "超限时返回超限提示，降级服务不触发" },
+    { "module": "个人看板", "criteria": "今日对话次数已替换为当日 Token 数，与后端统计一致" },
+    { "module": "个人看板", "criteria": "数值以 K / M 缩写展示，进度条显示百分比" },
+    { "module": "个人看板", "criteria": "非限额时段（含周末、12:00–13:00、18:00 后）展示 Tooltip 说明" },
+    { "module": "Token 归属", "criteria": "跨边界请求（如 17:59 发起）按发起时间归属，计入当日限额" },
+    { "module": "邮件通知", "criteria": "告警按原策略阈值触发，判断与文案均为 Token 口径" },
+    { "module": "月度配额", "criteria": "月度 Token 配额逻辑、进度条颜色文案不受影响" },
+    { "module": "数据迁移", "criteria": "旧字段标记 deprecated 且历史数据保留；新字段初始值 = floor(monthly_token_limit / 20 × 5)" },
+    { "module": "回归", "criteria": "其他页面与核心链路无异常" }
+  ]
+}
