@@ -62,10 +62,10 @@ def test_get_current_user_valid_user_token(client):
     token = _make_token("alice", "user")
     with (
         patch("app.routers.quota.get_user", return_value={"quota_level": "L1"}),
-        patch("app.routers.quota.get_quota_limits", return_value={"monthly_token": 1000, "daily_requests": 100, "daily_chats": 50}),
+        patch("app.routers.quota.get_quota_limits", return_value={"monthly_token": 1000, "daily_requests": 100, "daily_token_limit": 5000}),
         patch("app.routers.quota.get_monthly_token_usage", return_value=0),
         patch("app.routers.quota.get_daily_request_count", return_value=0),
-        patch("app.routers.quota.get_chat_session_count", return_value=0),
+        patch("app.routers.quota.get_today_token_usage", return_value=0),
     ):
         resp = client.get(
             "/api/quota/usage",

@@ -34,30 +34,30 @@
         </el-tooltip>
       </div>
       <div class="quota-bar-row">
-        <span class="quota-label">今日对话
+        <span class="quota-label">当日 Token
           <el-tooltip
-            content="仅统计工作时段内的对话轮次（时段由管理员配置）"
+            :content="!quota.is_quota_period ? '当前为非限额时段，此时段使用不计入当日配额' : quotaPeriodText"
             placement="top"
           >
             <el-icon style="font-size:12px;color:#c0c4cc;margin-left:2px;vertical-align:middle"><QuestionFilled /></el-icon>
           </el-tooltip>
         </span>
         <el-progress
-          :percentage="Math.min(quota.daily_chats.percent, 100)"
-          :color="colorMap[quota.daily_chats.color]"
+          :percentage="Math.min(quota.daily_token.percent, 100)"
+          :color="colorMap[quota.daily_token.color]"
           :stroke-width="18"
           :text-inside="true"
-          :format="() => quota!.daily_chats.used + ' / ' + quota!.daily_chats.limit + ' 轮'"
+          :format="() => formatKM(quota!.daily_token.used) + ' / ' + formatKM(quota!.daily_token.limit)"
         />
         <el-tooltip
-          :content="quota.daily_chats.message"
+          :content="quota.daily_token.message"
           placement="top"
         >
           <el-tag
-            :type="tagType(quota.daily_chats.color)"
+            :type="tagType(quota.daily_token.color)"
             size="small"
           >
-            {{ quota.daily_chats.message }}
+            {{ quota.daily_token.message }}
           </el-tag>
         </el-tooltip>
       </div>
@@ -67,6 +67,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { QuestionFilled } from '@element-plus/icons-vue'
 const props = withDefaults(defineProps<{ timeFilter?: string }>(), { timeFilter: 'all' })
 import api from '@/api'
 
@@ -80,12 +81,14 @@ interface QuotaBar {
 
 interface QuotaUsage {
   monthly_token: QuotaBar
-  daily_chats: QuotaBar
+  daily_token: QuotaBar
   daily_requests: QuotaBar
+  is_quota_period: boolean
 }
 
 const loading = ref(true)
 const quota = ref<QuotaUsage | null>(null)
+const quotaPeriodText = ref('工作日限额时段内的Token使用量')
 
 const colorMap: Record<string, string> = {
   green: '#67c23a',
@@ -107,10 +110,27 @@ function formatWan(n: number): string {
   return String(n)
 }
 
+function formatKM(n: number): string {
+  if (n >= 1000000) {
+    return (n / 1000000).toFixed(1) + 'M'
+  }
+  if (n >= 1000) {
+    return (n / 1000).toFixed(0) + 'K'
+  }
+  return String(n)
+}
+
 onMounted(async () => {
   try {
-    const { data } = await api.get<QuotaUsage>(`/quota/usage?time_filter=${props.timeFilter}`)
-    quota.value = data
+    const [quotaRes, whRes] = await Promise.all([
+      api.get<QuotaUsage>(`/quota/usage?time_filter=${props.timeFilter}`),
+      api.get('/metrics/working-hours-config'),
+    ])
+    quota.value = quotaRes.data
+    const periods: {start:string, end:string}[] = whRes.data.periods || []
+    if (periods.length) {
+      quotaPeriodText.value = '仅统计工作日限额时段（' + periods.map((p: {start:string,end:string}) => `${p.start}-${p.end}`).join('、') + '）内的Token使用量'
+    }
   } finally {
     loading.value = false
   }
@@ -135,7 +155,7 @@ onMounted(async () => {
 
 .quota-label {
   flex-shrink: 0;
-  width: 70px;
+  width: 80px;
   font-size: 14px;
   color: #606266;
 }

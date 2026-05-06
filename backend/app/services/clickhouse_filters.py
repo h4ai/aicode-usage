@@ -82,14 +82,22 @@ def _working_hours_filter(time_filter: str = "auto") -> str:
       "work"     - force working hours only
       "non_work" - force non-working hours only
       "all"      - no filter (full day)
+
+    Supports multi-period config via `periods` list. Falls back to single `start/end`.
     """
     cfg = get_config().get("working_hours", {})
-    start = cfg.get("start", "08:30")
-    end = cfg.get("end", "18:00")
-    sh, sm = map(int, start.split(":"))
-    eh, em = map(int, end.split(":"))
-    start_sec = sh * 3600 + sm * 60
-    end_sec = eh * 3600 + em * 60
+
+    # Parse periods (new format) or fall back to single start/end (old format)
+    if "periods" in cfg and cfg["periods"]:
+        periods = cfg["periods"]
+    elif "start" in cfg and "end" in cfg:
+        periods = [{"start": cfg["start"], "end": cfg["end"]}]
+    else:
+        periods = [{"start": "08:30", "end": "18:00"}]
+
+    def _to_secs(t: str) -> int:
+        h, m = map(int, t.split(":"))
+        return h * 3600 + m * 60
 
     time_expr = (
         "toHour(toDateTime(timestamp / 1000, 'Asia/Shanghai')) * 3600 +"
@@ -108,18 +116,27 @@ def _working_hours_filter(time_filter: str = "auto") -> str:
     weekday_only = cfg.get("weekday_only", True)
 
     if effective == "work":
+        # Build OR of all periods
+        period_clauses = [
+            f"({time_expr} >= {_to_secs(p['start'])} AND {time_expr} < {_to_secs(p['end'])})"
+            for p in periods
+        ]
+        period_sql = " OR ".join(period_clauses)
         if weekday_only:
-            return (
-                f" AND {dow_expr} BETWEEN 1 AND 5"
-                f" AND {time_expr} >= {start_sec} AND {time_expr} < {end_sec}"
-            )
+            return f" AND {dow_expr} BETWEEN 1 AND 5 AND ({period_sql})"
         else:
-            return f" AND {time_expr} >= {start_sec} AND {time_expr} < {end_sec}"
+            return f" AND ({period_sql})"
     elif effective == "non_work":
+        # NOT any of the work periods
+        period_clauses = [
+            f"({time_expr} < {_to_secs(p['start'])} OR {time_expr} >= {_to_secs(p['end'])})"
+            for p in periods
+        ]
+        period_sql = " AND ".join(period_clauses)
         if weekday_only:
-            return f" AND ({dow_expr} > 5 OR {time_expr} < {start_sec} OR {time_expr} >= {end_sec})"
+            return f" AND ({dow_expr} > 5 OR ({period_sql}))"
         else:
-            return f" AND ({time_expr} < {start_sec} OR {time_expr} >= {end_sec})"
+            return f" AND ({period_sql})"
     else:
         return ""
 

@@ -36,21 +36,21 @@
         </template>
       </el-table-column>
       <el-table-column
-        label="日对话上限"
+        label="当日Token限额"
         min-width="150"
       >
         <template #default="{ row }">
           <template v-if="editingLevel === row.level">
             <el-input-number
-              v-model="editForm.daily_chats"
+              v-model="editForm.daily_token_limit"
               :min="0"
-              :step="500"
+              :step="1000000"
               controls-position="right"
               style="width: 100%"
             />
           </template>
           <template v-else>
-            {{ row.daily_chats }}
+            {{ formatNumber(row.daily_token_limit) }}
           </template>
         </template>
       </el-table-column>
@@ -123,6 +123,7 @@ interface QuotaLevel {
   level: string
   monthly_token: number
   daily_chats: number
+  daily_token_limit: number
   daily_requests: number
   user_count: number
 }
@@ -130,7 +131,7 @@ interface QuotaLevel {
 const levels = ref<QuotaLevel[]>([])
 const loading = ref(false)
 const editingLevel = ref<string | null>(null)
-const editForm = ref({ monthly_token: 0, daily_chats: 0, daily_requests: 0 })
+const editForm = ref({ monthly_token: 0, daily_chats: 0, daily_token_limit: 0, daily_requests: 0 })
 
 function formatNumber(n: number): string {
   return n.toLocaleString()
@@ -151,6 +152,7 @@ function startEdit(row: QuotaLevel) {
   editForm.value = {
     monthly_token: row.monthly_token,
     daily_chats: row.daily_chats,
+    daily_token_limit: row.daily_token_limit,
     daily_requests: row.daily_requests,
   }
 }
@@ -165,6 +167,7 @@ async function saveLevel(level: string) {
     const payload = {
       monthly_token: editForm.value.monthly_token ?? 0,
       daily_chats: editForm.value.daily_chats ?? 0,
+      daily_token_limit: editForm.value.daily_token_limit ?? 0,
       daily_requests: editForm.value.daily_requests ?? 0,
     }
     await api.put(`/admin/quota-levels/${level}`, payload)

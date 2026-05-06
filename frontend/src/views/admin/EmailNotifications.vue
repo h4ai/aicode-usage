@@ -29,8 +29,8 @@
               label="月度Token"
             />
             <el-option
-              value="daily_chats"
-              label="日对话"
+              value="daily_work_tokens"
+              label="当日Token（限额时段）"
             />
           </el-select>
         </el-form-item>

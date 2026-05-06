@@ -11,6 +11,18 @@ import pytest
 _DEFAULT_WH_CONFIG = {
     "working_hours": {
         "enabled": True,
+        "weekday_only": True,
+        "periods": [
+            {"start": "09:00", "end": "12:00"},
+            {"start": "13:00", "end": "18:00"},
+        ],
+    }
+}
+
+# Old-format config for backward-compat tests
+_OLD_FORMAT_WH_CONFIG = {
+    "working_hours": {
+        "enabled": True,
         "start": "09:00",
         "end": "18:00",
         "weekday_only": True,
@@ -44,8 +56,7 @@ def test_get_working_hours_has_required_fields(client, admin_token, admin_config
         )
     data = resp.json()
     assert "enabled" in data
-    assert "start" in data
-    assert "end" in data
+    assert "periods" in data
     assert "weekday_only" in data
 
 
@@ -57,8 +68,11 @@ def test_get_working_hours_returns_configured_values(client, admin_token, admin_
         )
     data = resp.json()
     assert data["enabled"] is True
-    assert data["start"] == "09:00"
-    assert data["end"] == "18:00"
+    assert len(data["periods"]) == 2
+    assert data["periods"][0]["start"] == "09:00"
+    assert data["periods"][0]["end"] == "12:00"
+    assert data["periods"][1]["start"] == "13:00"
+    assert data["periods"][1]["end"] == "18:00"
 
 
 def test_get_working_hours_defaults_when_not_configured(client, admin_token, admin_config_patch):
@@ -69,8 +83,23 @@ def test_get_working_hours_defaults_when_not_configured(client, admin_token, adm
         )
     data = resp.json()
     assert data["enabled"] is False
-    assert data["start"] == "08:30"
-    assert data["end"] == "18:00"
+    assert "periods" in data
+    assert len(data["periods"]) >= 1
+
+
+def test_get_working_hours_backward_compat_old_format(client, admin_token, admin_config_patch):
+    """Old single start/end format should be migrated to periods."""
+    with patch("app.config.get_config", return_value=_OLD_FORMAT_WH_CONFIG):
+        resp = client.get(
+            "/api/admin/working-hours",
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+    data = resp.json()
+    assert data["enabled"] is True
+    assert "periods" in data
+    assert len(data["periods"]) == 1
+    assert data["periods"][0]["start"] == "09:00"
+    assert data["periods"][0]["end"] == "18:00"
 
 
 # ---------------------------------------------------------------------------
@@ -80,7 +109,7 @@ def test_get_working_hours_defaults_when_not_configured(client, admin_token, adm
 def test_update_working_hours_requires_auth(client):
     resp = client.put(
         "/api/admin/working-hours",
-        json={"enabled": True, "start": "09:00", "end": "18:00", "weekday_only": True},
+        json={"enabled": True, "weekday_only": True, "periods": [{"start": "09:00", "end": "18:00"}]},
     )
     assert resp.status_code in (401, 403)
 
@@ -88,7 +117,7 @@ def test_update_working_hours_requires_auth(client):
 def test_update_working_hours_invalid_time_format(client, admin_token, admin_config_patch):
     resp = client.put(
         "/api/admin/working-hours",
-        json={"enabled": True, "start": "9:00", "end": "18:00", "weekday_only": True},
+        json={"enabled": True, "weekday_only": True, "periods": [{"start": "9:00", "end": "18:00"}]},
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert resp.status_code in (400, 422)
@@ -97,7 +126,7 @@ def test_update_working_hours_invalid_time_format(client, admin_token, admin_con
 def test_update_working_hours_invalid_end_format(client, admin_token, admin_config_patch):
     resp = client.put(
         "/api/admin/working-hours",
-        json={"enabled": True, "start": "09:00", "end": "6pm", "weekday_only": True},
+        json={"enabled": True, "weekday_only": True, "periods": [{"start": "09:00", "end": "6pm"}]},
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert resp.status_code in (400, 422)
@@ -115,15 +144,22 @@ def test_update_working_hours_success(client, admin_token, admin_config_patch):
     ):
         resp = client.put(
             "/api/admin/working-hours",
-            json={"enabled": True, "start": "09:00", "end": "17:30", "weekday_only": False},
+            json={
+                "enabled": True,
+                "weekday_only": False,
+                "periods": [
+                    {"start": "09:00", "end": "12:00"},
+                    {"start": "13:00", "end": "17:30"},
+                ],
+            },
             headers={"Authorization": f"Bearer {admin_token}"},
         )
     assert resp.status_code == 200
     data = resp.json()
     assert data["enabled"] is True
-    assert data["start"] == "09:00"
-    assert data["end"] == "17:30"
     assert data["weekday_only"] is False
+    assert len(data["periods"]) == 2
+    assert data["periods"][1]["end"] == "17:30"
 
 
 def test_update_working_hours_persists_to_file(client, admin_token, admin_config_patch, tmp_path):
@@ -134,7 +170,9 @@ def test_update_working_hours_persists_to_file(client, admin_token, admin_config
 
     cfg_file = tmp_path / "config.yaml"
     cfg_file.write_text(yaml.dump({"admins": [], "working_hours": {
-        "enabled": True, "start": "08:30", "end": "18:00", "weekday_only": True,
+        "enabled": True,
+        "weekday_only": True,
+        "periods": [{"start": "09:00", "end": "12:00"}, {"start": "13:00", "end": "18:00"}],
     }}))
 
     original_path = cfg_mod._CONFIG_PATH
@@ -145,7 +183,11 @@ def test_update_working_hours_persists_to_file(client, admin_token, admin_config
         with patch("app.config.load_config"):
             resp = client.put(
                 "/api/admin/working-hours",
-                json={"enabled": False, "start": "09:00", "end": "17:00", "weekday_only": False},
+                json={
+                    "enabled": False,
+                    "weekday_only": False,
+                    "periods": [{"start": "09:00", "end": "17:00"}],
+                },
                 headers={"Authorization": f"Bearer {admin_token}"},
             )
         assert resp.status_code == 200
@@ -153,7 +195,7 @@ def test_update_working_hours_persists_to_file(client, admin_token, admin_config
         # Verify persisted to disk
         saved = yaml.safe_load(cfg_file.read_text())
         assert saved["working_hours"]["enabled"] is False
-        assert saved["working_hours"]["start"] == "09:00"
+        assert saved["working_hours"]["periods"][0]["start"] == "09:00"
 
         # Verify GET returns the updated values
         with patch("app.config.get_config", return_value=saved):
@@ -165,3 +207,4 @@ def test_update_working_hours_persists_to_file(client, admin_token, admin_config
         assert resp2.json()["enabled"] is False
     finally:
         cfg_mod._CONFIG_PATH = original_path
+

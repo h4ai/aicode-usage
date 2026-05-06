@@ -101,7 +101,7 @@ def test_retry_exponential_backoff_sleep_times():
          patch("app.services.notification_v2.get_all_users_from_clickhouse", return_value=[
              {"user_id": "u1", "username": "u1", "nickname": "U1", "mail": "u1@x.com", "quota_level": "L1"}
          ]), \
-         patch("app.services.notification_v2.get_quota_limits", return_value={"monthly_token": 10000000, "daily_chats": 0}), \
+         patch("app.services.notification_v2.get_quota_limits", return_value={"monthly_token": 10000000, "daily_chats": 0, "daily_token_limit": 0}), \
          patch("app.services.notification_v2.get_monthly_token_usage", return_value=9000000), \
          patch("app.services.notification_v2.get_daily_request_count", return_value=0), \
          patch("app.services.notification_v2.has_sent_notification", return_value=False), \
@@ -129,7 +129,7 @@ def test_retry_succeeds_on_second_attempt():
          patch("app.services.notification_v2.get_all_users_from_clickhouse", return_value=[
              {"user_id": "u1", "username": "u1", "nickname": "U1", "mail": "u1@x.com", "quota_level": "L1"}
          ]), \
-         patch("app.services.notification_v2.get_quota_limits", return_value={"monthly_token": 10000000, "daily_chats": 0}), \
+         patch("app.services.notification_v2.get_quota_limits", return_value={"monthly_token": 10000000, "daily_chats": 0, "daily_token_limit": 0}), \
          patch("app.services.notification_v2.get_monthly_token_usage", return_value=9000000), \
          patch("app.services.notification_v2.get_daily_request_count", return_value=0), \
          patch("app.services.notification_v2.has_sent_notification", return_value=False), \
@@ -156,7 +156,7 @@ def test_one_user_failure_does_not_skip_next_user():
     }), \
          patch("app.services.notification_v2.get_all_users_from_clickhouse", return_value=users), \
          patch("app.services.notification_v2.get_all_users", return_value=[]), \
-         patch("app.services.notification_v2.get_quota_limits", return_value={"monthly_token": 10000000, "daily_chats": 0}), \
+         patch("app.services.notification_v2.get_quota_limits", return_value={"monthly_token": 10000000, "daily_chats": 0, "daily_token_limit": 0}), \
          patch("app.services.notification_v2.get_monthly_token_usage", return_value=9000000), \
          patch("app.services.notification_v2.get_daily_request_count", return_value=0), \
          patch("app.services.notification_v2.has_sent_notification", return_value=False), \
@@ -180,7 +180,7 @@ def test_default_thresholds_when_config_missing():
          patch("app.services.notification_v2.get_all_users_from_clickhouse", return_value=[
              {"user_id": "u1", "username": "u1", "nickname": "U1", "mail": "u1@x.com", "quota_level": "L1"}
          ]), \
-         patch("app.services.notification_v2.get_quota_limits", return_value={"monthly_token": 10000000, "daily_chats": 0}), \
+         patch("app.services.notification_v2.get_quota_limits", return_value={"monthly_token": 10000000, "daily_chats": 0, "daily_token_limit": 0}), \
          patch("app.services.notification_v2.get_monthly_token_usage", return_value=5500000),  \
          patch("app.services.notification_v2.get_daily_request_count", return_value=0), \
          patch("app.services.notification_v2.has_sent_notification", return_value=False), \
@@ -266,7 +266,7 @@ def test_email_batch_rate_limiting_calls_sleep():
          patch("app.services.notification_v2.get_all_users", return_value=[]), \
          patch("app.services.notification_v2.get_all_users_from_clickhouse", return_value=users), \
          patch("app.services.notification_v2.get_quota_limits", return_value={
-             "monthly_token": 1000, "daily_chats": 0, "daily_requests": 0,
+             "monthly_token": 1000, "daily_chats": 0, "daily_token_limit": 0, "daily_requests": 0,
          }), \
          patch("app.services.notification_v2.get_monthly_token_usage", return_value=900), \
          patch("app.services.notification_v2.get_daily_request_count", return_value=0), \

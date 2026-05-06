@@ -144,21 +144,21 @@ class TestQuotaUsageResponse:
     def test_valid(self):
         resp = QuotaUsageResponse(
             monthly_token=self._bar(),
-            daily_chats=self._bar(used=5, limit=50),
+            daily_token=self._bar(used=5, limit=50),
             daily_requests=self._bar(used=20, limit=200),
         )
         assert resp.monthly_token.used == 100
-        assert resp.daily_chats.limit == 50
+        assert resp.daily_token.limit == 50
         assert resp.daily_requests.limit == 200
 
     def test_missing_monthly_token_raises(self):
         with pytest.raises(ValidationError):
             QuotaUsageResponse(
-                daily_chats=self._bar(),
+                daily_token=self._bar(),
                 daily_requests=self._bar(),
             )  # type: ignore[call-arg]
 
-    def test_missing_daily_chats_raises(self):
+    def test_missing_daily_token_raises(self):
         with pytest.raises(ValidationError):
             QuotaUsageResponse(
                 monthly_token=self._bar(),
@@ -168,7 +168,7 @@ class TestQuotaUsageResponse:
     def test_nested_serialise(self):
         resp = QuotaUsageResponse(
             monthly_token=self._bar(),
-            daily_chats=self._bar(),
+            daily_token=self._bar(),
             daily_requests=self._bar(),
         )
         data = resp.model_dump()
@@ -345,7 +345,7 @@ class TestQuotaLevelItem:
 
 
 class TestQuotaLevelUpdate:
-    _VALID = dict(monthly_token=5000000, daily_chats=50, daily_requests=500)
+    _VALID = dict(monthly_token=5000000, daily_chats=50, daily_token_limit=0, daily_requests=500)
 
     def test_valid(self):
         upd = QuotaLevelUpdate(**self._VALID)
@@ -358,10 +358,10 @@ class TestQuotaLevelUpdate:
         with pytest.raises(ValidationError):
             QuotaLevelUpdate(**d)
 
-    def test_missing_daily_chats_raises(self):
+    def test_missing_daily_chats_uses_default(self):
         d = {k: v for k, v in self._VALID.items() if k != "daily_chats"}
-        with pytest.raises(ValidationError):
-            QuotaLevelUpdate(**d)
+        upd = QuotaLevelUpdate(**d)
+        assert upd.daily_chats == 0
 
     def test_serialise(self):
         data = QuotaLevelUpdate(**self._VALID).model_dump()
@@ -576,12 +576,14 @@ class TestWorkingHoursConfig:
             WorkingHoursConfig(start="09:00", end="18:00")  # type: ignore[call-arg]
 
     def test_missing_start_raises(self):
-        with pytest.raises(ValidationError):
-            WorkingHoursConfig(enabled=True, end="18:00")  # type: ignore[call-arg]
+        # With multi-period model, start/end are optional deprecated fields; periods has defaults
+        cfg = WorkingHoursConfig(enabled=True, end="18:00")  # type: ignore[call-arg]
+        assert cfg.enabled is True
 
     def test_missing_end_raises(self):
-        with pytest.raises(ValidationError):
-            WorkingHoursConfig(enabled=True, start="09:00")  # type: ignore[call-arg]
+        # With multi-period model, start/end are optional deprecated fields; periods has defaults
+        cfg = WorkingHoursConfig(enabled=True, start="09:00")  # type: ignore[call-arg]
+        assert cfg.enabled is True
 
     def test_bool_coercion(self):
         # Pydantic coerces truthy/falsy values to bool
@@ -590,7 +592,12 @@ class TestWorkingHoursConfig:
 
     def test_serialise(self):
         data = WorkingHoursConfig(enabled=True, start="09:00", end="18:00").model_dump()
-        assert data == {"enabled": True, "start": "09:00", "end": "18:00", "weekday_only": True}
+        # periods is populated from defaults; start/end are deprecated backward-compat fields
+        assert data["enabled"] is True
+        assert data["weekday_only"] is True
+        assert data["start"] == "09:00"
+        assert data["end"] == "18:00"
+        assert len(data["periods"]) >= 1
 
 
 # ===========================================================================
